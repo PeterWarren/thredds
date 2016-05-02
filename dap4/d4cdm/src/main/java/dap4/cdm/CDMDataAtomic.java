@@ -72,6 +72,12 @@ public class CDMDataAtomic extends AbstractDataVariable
     }
 
     @Override
+    public void setByteStringOffsets(long total, int[] positions)
+    {
+
+    }
+
+    @Override
     public void
     read(List<Slice> slices, Object data, long offset)
         //read(long start, long count, Object data, long offset)

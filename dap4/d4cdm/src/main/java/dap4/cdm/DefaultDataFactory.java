@@ -12,7 +12,7 @@ import dap4.core.dmr.*;
 import dap4.core.util.DapException;
 import dap4.core.util.DapSort;
 
-public class DefaultDataFactory
+public class DefaultDataFactory implements DapDataFactory
 {
     //////////////////////////////////////////////////
     // Constants

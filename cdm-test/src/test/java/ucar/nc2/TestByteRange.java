@@ -47,12 +47,12 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import ucar.nc2.util.UnitTestCommon;
+import ucar.nc2.util.CommonTestUtils;
 import ucar.unidata.test.Diff;
 import ucar.unidata.test.util.NeedsExternalResource;
 import ucar.unidata.test.util.TestDir;
 
-public class TestByteRange extends UnitTestCommon
+public class TestByteRange extends CommonTestUtils
 {
     // Collect testcases locally
     static public class Testcase

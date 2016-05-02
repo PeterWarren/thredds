@@ -32,7 +32,7 @@ public interface DSP
     public Object getContext();
     public DapDataset getDMR() throws DapException;
 
-    public DataDataset getDataDataset() throws IOException;
+    public DataDataset getDataDataset() throws DataException;
     public void setDataDataset(DataDataset ds);
 
     public void close() throws IOException;

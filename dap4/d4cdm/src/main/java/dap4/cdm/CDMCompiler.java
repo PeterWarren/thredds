@@ -7,14 +7,18 @@ package dap4.cdm;
 
 import dap4.core.data.*;
 import dap4.core.dmr.*;
-import dap4.core.util.*;
-import dap4.dap4shared.*;
-import ucar.ma2.*;
-import ucar.nc2.*;
+import dap4.core.util.DapException;
+import dap4.core.util.DapSort;
+import dap4.core.util.DapUtil;
+import dap4.core.util.Escape;
+import ucar.ma2.Array;
+import ucar.nc2.Attribute;
+import ucar.nc2.Variable;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The goal for the CDM compiler is two-fold:
@@ -58,9 +62,9 @@ public class CDMCompiler
     /**
      * Constructor
      *
-     * @param ncfile the target NetcdfFile
-     * @param dsp    the compiled D4 databuffer
-     * @param factory    the node building factory
+     * @param ncfile  the target NetcdfFile
+     * @param dsp     the compiled D4 databuffer
+     * @param factory the node building factory
      */
 
     public CDMCompiler(DapNetcdfFile ncfile, DSP dsp, DapDataFactory factory)
@@ -104,7 +108,7 @@ public class CDMCompiler
 
     /* package access*/
     void
-    compile(Map<Variable,Array> arraymap)
+    compile(Map<Variable, Array> arraymap)
             throws DapException
     {
         assert d4root.getSort() == DataSort.DATASET;
@@ -115,7 +119,7 @@ public class CDMCompiler
         for(DataVariable var : vars) {
             Variable cdmvar = (Variable) nodemap.get(var.getTemplate());
             Array array = compileVar(var);
-	    arraymap.put(cdmvar,array);
+            arraymap.put(cdmvar, array);
         }
     }
 
@@ -219,7 +223,7 @@ public class CDMCompiler
             assert (d4var.getSort() == DataSort.STRUCTURE);
             DataStructure d4struct = (DataStructure) d4var;
             // Create a 1-element compound array
-            DataCompoundArray dca = new DataCompoundArray(this.dsp, dapstruct);
+            DataCompoundArray dca = new CDMDataCompoundArray((CDMDSP) this.dsp, dapstruct);
             dca.addElement(d4struct);
             d4var = dca;
             dimproduct = 1;
@@ -247,7 +251,7 @@ public class CDMCompiler
      * (esp. NetcdfDataset) apparently does not support nested
      * sequence arrays.
      *
-     * @param d4var     the data underlying this sequence instance
+     * @param d4var the data underlying this sequence instance
      * @return A CDMArraySequence for this instance
      * @throws DapException
      */
@@ -278,12 +282,11 @@ public class CDMCompiler
      * with rank > 0 (ignoring the vlen dimension)
      * so this code may throw an exception.
      *
-     * @see CDMArraySequence
-     *      to see how a dimensioned Sequence is represented.
-     *
      * @param d4var The D4 databuffer wrapper
      * @return A CDMArraySequence for the databuffer for this seq.
      * @throws DapException
+     * @see CDMArraySequence
+     * to see how a dimensioned Sequence is represented.
      */
 
     protected Array
@@ -316,7 +319,7 @@ public class CDMCompiler
 
     /**
      * Compute the size in databuffer of the serialized form
-     * <p/>
+     * <p>
      * param daptype
      *
      * @return type's serialized form size

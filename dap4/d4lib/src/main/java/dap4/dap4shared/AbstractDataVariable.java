@@ -14,10 +14,10 @@ abstract public class AbstractDataVariable extends AbstractData
     //////////////////////////////////////////////////
     // Constructor(s)
 
-    protected AbstractDataVariable(DapNode template)
+    protected AbstractDataVariable(DapVariable dv)
         throws DataException
     {
-        super(template);
+        super(dv);
     }
 
     //////////////////////////////////////////////////

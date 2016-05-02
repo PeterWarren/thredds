@@ -16,8 +16,8 @@ public class CDMDataDataset extends AbstractData implements DataDataset
     //////////////////////////////////////////////////
     // Instance variables
 
-    CDMDSP dsp = null;
-    Map<DapVariable,DataVariable> variables = new HashMap<DapVariable,DataVariable>();
+    protected CDMDSP dsp = null;
+    protected Map<DapVariable,DataVariable> variables = new HashMap<DapVariable,DataVariable>();
 
     //////////////////////////////////////////////////
     // Constructors
@@ -31,8 +31,15 @@ public class CDMDataDataset extends AbstractData implements DataDataset
     }
 
     //////////////////////////////////////////////////
-    // Accessors
+    // DataDataset API
 
+    @Override
+    public List<DataVariable>  getTopVariables()
+    {
+         return new ArrayList<DataVariable>(variables.values());
+    }
+
+    @Override
     public void
     addVariable(DataVariable dv)
     {

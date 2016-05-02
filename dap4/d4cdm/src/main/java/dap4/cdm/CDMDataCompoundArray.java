@@ -30,13 +30,19 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
     protected CDMDSP dsp = null;
     //Coverity[FB.URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD]
     protected Variable cdmvar = null;
-    protected DataCompound[] instances = null;
     protected ArrayStructure array = null;
     protected int[] shape = null;
-    protected long nelems = 0;
+    protected DataCompound[] instances = null;
+    protected long defined = 0; // Current defined length of instances
 
     //////////////////////////////////////////////////
     // Constructors
+
+    public CDMDataCompoundArray(CDMDSP dsp, DapVariable dv)
+           throws DataException
+    {
+        this(dsp,dv,null);
+    }
 
     public CDMDataCompoundArray(CDMDSP dsp, DapVariable dv, ArrayStructure array)
         throws DataException
@@ -49,12 +55,12 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
         this.shape = array.getShape();
         if(this.shape.length == 0) this.shape = null; // uniform scalar mark
         // compute shape cross product
-        this.nelems = 1;
+        long len = 1;
         if(this.shape != null) {
             for(int i = 0;i < this.shape.length;i++)
-                this.nelems *= this.shape[i];
+                len *= this.shape[i];
         }
-        instances = new DataCompound[(int) this.nelems];
+        instances = new DataCompound[(int) len];
         Arrays.fill(instances, null);
     }
 
@@ -72,10 +78,19 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
     }
 
     @Override
+    public void
+    addElement(DataCompound instance)
+    {
+        if(this.defined >= this.instances.length)
+            throw new IllegalStateException("too many elements");
+        this.instances[(int)this.defined++] = instance;
+    }
+
+    @Override
     public long
     getCount() // dimension cross-product
     {
-        return this.nelems;
+        return this.instances.length;
     }
 
     // Provide a read of a single value at a given offset in a dimensioned variable.

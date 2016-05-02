@@ -32,6 +32,7 @@
 
 package ucar.nc2.util.net;
 
+import org.junit.Assert;
 import org.junit.Test;
 import ucar.httpservices.HTTPFactory;
 import ucar.httpservices.HTTPMethod;

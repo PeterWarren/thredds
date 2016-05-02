@@ -20,10 +20,10 @@ abstract public class AbstractData implements Data
     //////////////////////////////////////////////////
     // Constructor(s)
 
-    protected AbstractData(DapNode template)
+    protected AbstractData(DapNode dv)
         throws DataException
     {
-        this.template = template;
+        this.template = dv;
         this.sort = computesort();
     }
 
