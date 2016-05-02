@@ -28,7 +28,7 @@ import java.util.Set;
 
 @ContextConfiguration
 @WebAppConfiguration("file:src/test/data")
-abstract public class DapTestCommon
+abstract public class DapTestCommon extends CommonTestUtils
 {
     //////////////////////////////////////////////////
     // Constants
@@ -55,8 +55,6 @@ abstract public class DapTestCommon
         public String url = null;
         public String servletname = null;
         public DapTestCommon parent = null;
-
-        public DapController controller = null;
 
         public Mocker(String servletname, String url, DapTestCommon parent)
                 throws Exception
@@ -100,6 +98,15 @@ abstract public class DapTestCommon
          * Given the url it should be possible
          * to initialize a lot of its fields.
          * Instead, it requires the user to so do.
+         * The request elements to set are:
+         * - servletpath
+         * - protocol
+         * - querystring
+         * - servername
+         * - serverport
+         * - contextpath
+         * - pathinfo
+         * - servletpath
          */
         protected void setup()
                 throws Exception
@@ -115,38 +122,25 @@ abstract public class DapTestCommon
             if(path != null) {// probably more complex than it needs to be
                 String prefix = null;
                 String suffix = null;
-                String spiece = "/" + servletname;
-                if(path.equals(spiece) || path.equals(spiece + "/")) {
-                    // path is just spiece
-                    prefix = spiece;
+                if(path.equals("/"+this.servletname) || path.equals("/" + this.servletname + "/")) {
+                    // path is just servlet tag
+                    prefix = "/" + this.servletname;
                     suffix = "/";
                 } else {
-
-                    String[] pieces = path.split(spiece + "/"); // try this first
-                    if(pieces.length == 1 && path.endsWith(spiece))
-                        pieces = path.split(spiece);  // try this
-                    switch (pieces.length) {
-                    case 0:
-                        throw new IllegalArgumentException("CommonTestUtils");
-                    case 1:
-                        prefix = pieces[0] + spiece;
-                        suffix = "";
-                        break;
-                    default: // > 1
-                        prefix = pieces[0] + spiece;
-                        suffix = path.substring(prefix.length());
-                        break;
+                    int i;
+                    String[] pieces = path.split("[/]");
+                    for(i=0;i<pieces.length;i++) { // find servletname piece
+                        if(pieces[i].equals(this.servletname) break;
                     }
+                    if(i >= pieces.length) // not found
+                        throw new IllegalArgumentException("DapTestCommon");
+                    prefix = DapUtil.join(pieces,"/",0,i);
+                    suffix = DapUtil.join(pieces,"/",i+1,pieces.length);
                 }
-                this.req.setContextPath(prefix);
+                this.req.setContextPath(DapUtil.absolutize(prefix));
                 this.req.setPathInfo(suffix);
+                this.req.setServletPath(DapUtil.absolutize(suffix));
             }
-            if(i == pieces.length)
-                throw new IllegalArgumentException("Bad mock uri path: " + path);
-            String cp = "/" + DapUtil.join(pieces, "/", 0, i);
-            String sp = "/" + DapUtil.join(pieces, "/", i, pieces.length);
-            this.req.setContextPath(cp);
-            this.req.setServletPath(sp);
         }
 
         public byte[] execute()
@@ -284,21 +278,6 @@ abstract public class DapTestCommon
         System.out.println("---------------");
         System.out.print(captured);
         System.out.println("---------------");
-    }
-
-    public boolean
-
-    compare(String baselinecontent, String testresult)
-            throws Exception
-    {
-        StringReader baserdr = new StringReader(baselinecontent);
-        StringReader resultrdr = new StringReader(testresult);
-        // Diff the two files
-        Diff diff = new Diff("Testing " + getTitle());
-        boolean pass = !diff.doDiff(baserdr, resultrdr);
-        baserdr.close();
-        resultrdr.close();
-        return pass;
     }
 
     protected void

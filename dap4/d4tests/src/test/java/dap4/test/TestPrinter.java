@@ -9,7 +9,7 @@ import dap4.core.dmr.DapDataset;
 import dap4.core.util.*;
 import dap4.core.data.DSP;
 import dap4.servlet.DMRPrint;
-import dap4.dap4shared.D4DSP;
+import dap4.core.data.DSP;
 import ucar.nc2.*;
 
 import java.io.IOException;
@@ -57,7 +57,7 @@ public class TestPrinter
         setVarMap(null);
     }
 
-    public TestPrinter(D4DSP dsp, PrintWriter writer)
+    public TestPrinter(DSP dsp, PrintWriter writer)
     {
         try {
             setDSP(dsp);
