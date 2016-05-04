@@ -112,7 +112,7 @@ public class TestSerial extends DapTestCommon
             this.resourceroot = DapUtil.absolutize(this.resourceroot);
         this.datasetpath = this.resourceroot + "/" + BASELINEDIR;
         findServer(this.datasetpath);
-        this.sourceurl = d4tsServer;
+        this.sourceurl = this.d4tsserver;
         System.out.println("Using source url " + this.sourceurl);
         defineAllTestcases(this.resourceroot, this.sourceurl);
         chooseTestcases();

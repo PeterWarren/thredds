@@ -12,13 +12,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Wrap D4DSP to project the CDM API.
+ * Wrap DSP to project the CDM Meta-Data API.
  * CDMDataset is the top level, root
  * object that manages the whole
  * databuffer part of a CDM wrap of a dap4 response.
  * It is never seen by the client
  * and it is not related to ucar.nc2.Array.
- */
+ * The other components of a CDMDataset are:
+ * CDMDataCompoundArray
+ * CDMDataRecord
+ * CDMDataDataset
+ * CDMDataset
+ * CDMDataStructure
+ * CDMDataVariable
+ * Note that the data part (equivalent to ucar.ma2.Array)
+ * is a separate set of classes (see CDMArray for details).
+*/
 
 public class CDMDataset
 {

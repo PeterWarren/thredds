@@ -19,7 +19,9 @@ import java.util.*;
 /**
  * Provide DSP support for an
  * array of Structure or Sequence
- * instances.
+ * instances. There is no corresponding
+ * CDMDataAtomicArray because we merge that
+ * functionality into one class: CDMDataAtomic.
  */
 
 public class CDMDataCompoundArray extends AbstractDataVariable implements DataCompoundArray

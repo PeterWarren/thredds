@@ -8,46 +8,41 @@ import dap4.core.data.*;
 import dap4.core.dmr.DapNode;
 import dap4.core.dmr.DapVariable;
 
-abstract public class AbstractData implements Data
+public interface AbstractData extends Data
 {
 
     //////////////////////////////////////////////////
     // Instance variables
 
-    protected DataSort sort = null;
-    protected DapNode template = null;
+//    protected DataSort sort = null;
+//    protected DapNode template = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
 
+/*
     protected AbstractData(DapNode dv)
         throws DataException
     {
         this.template = dv;
         this.sort = computesort();
     }
-
+*/
     //////////////////////////////////////////////////
     // Data Interface
 
-    @Override
     public DataSort
-    getSort()
-    {
-        return sort;
-    }
+    getSort();
+//        return sort;
 
-    @Override
     public DapNode
-    getTemplate()
-    {
-        return template;
-    }
+    getTemplate();
+//        return template;
 
     //////////////////////////////////////////////////
     // Utilities
 
-    protected DataSort
+    default DataSort
     computesort()
     {   // order is important
         if(this instanceof DataAtomic) return DataSort.ATOMIC;

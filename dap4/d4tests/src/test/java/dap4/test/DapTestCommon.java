@@ -7,8 +7,6 @@ package dap4.test;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.servlet.DapController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -20,11 +18,9 @@ import ucar.nc2.util.CommonTestUtils;
 import ucar.unidata.test.util.TestDir;
 
 import javax.servlet.ServletException;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.Charset;
-import java.util.EnumSet;
-import java.util.Set;
 
 @ContextConfiguration
 @WebAppConfiguration("file:src/test/data")
@@ -46,7 +42,7 @@ abstract public class DapTestCommon extends CommonTestUtils
     //////////////////////////////////////////////////
     // Type decls
 
-    static  class Mocker
+    static class Mocker
     {
         public MockHttpServletRequest req = null;
         public MockHttpServletResponse resp = null;
@@ -59,12 +55,12 @@ abstract public class DapTestCommon extends CommonTestUtils
         public Mocker(String servletname, String url, DapTestCommon parent)
                 throws Exception
         {
-            this(servletname,url,new Dap4Controller(),parent);
+            this(servletname, url, new Dap4Controller(), parent);
         }
 
         public Mocker(String servletname, String url, DapController controller, DapTestCommon parent)
-                        throws Exception
-                {
+                throws Exception
+        {
             this.parent = parent;
             this.url = url;
             this.servletname = servletname;
@@ -122,20 +118,20 @@ abstract public class DapTestCommon extends CommonTestUtils
             if(path != null) {// probably more complex than it needs to be
                 String prefix = null;
                 String suffix = null;
-                if(path.equals("/"+this.servletname) || path.equals("/" + this.servletname + "/")) {
+                if(path.equals("/" + this.servletname) || path.equals("/" + this.servletname + "/")) {
                     // path is just servlet tag
                     prefix = "/" + this.servletname;
                     suffix = "/";
                 } else {
                     int i;
                     String[] pieces = path.split("[/]");
-                    for(i=0;i<pieces.length;i++) { // find servletname piece
-                        if(pieces[i].equals(this.servletname) break;
+                    for(i = 0; i < pieces.length; i++) { // find servletname piece
+                        if(pieces[i].equals(this.servletname)) break;
                     }
                     if(i >= pieces.length) // not found
                         throw new IllegalArgumentException("DapTestCommon");
-                    prefix = DapUtil.join(pieces,"/",0,i);
-                    suffix = DapUtil.join(pieces,"/",i+1,pieces.length);
+                    prefix = DapUtil.join(pieces, "/", 0, i);
+                    suffix = DapUtil.join(pieces, "/", i + 1, pieces.length);
                 }
                 this.req.setContextPath(DapUtil.absolutize(prefix));
                 this.req.setPathInfo(suffix);
@@ -172,20 +168,13 @@ abstract public class DapTestCommon extends CommonTestUtils
     //////////////////////////////////////////////////
     // Instance variables
 
-    // System properties
-    protected boolean prop_ascii = true;
-    protected boolean prop_diff = true;
-    protected boolean prop_baseline = false;
-    protected boolean prop_visual = false;
-    protected boolean prop_debug = DEBUG;
-    protected boolean prop_generate = true;
-    protected String prop_controls = null;
 
-    // Define a tree pattern to recognize the root.
-    protected String threddsroot = null;
     protected String dap4root = null;
+    protected String dap4testroot = null;
+    protected String d4tsserver = null;
+    protected String resourcedir = null;
 
-    protected String title = "Testing";
+    protected String title = "Dap4 Testing";
 
     public DapTestCommon()
     {
@@ -199,10 +188,10 @@ abstract public class DapTestCommon extends CommonTestUtils
         if(this.dap4root == null)
             System.err.println("Cannot locate /dap4 parent dir");
         this.dap4testroot = dap4root + "/" + D4TESTDIRNAME;
-        // Compute the set of SOURCES
-        this.d4tsServer = TestDir.dap4TestServer;
+        this.resourcedir = dap4root + "/" + DFALTRESOURCEPATH;
+        this.d4tsserver = TestDir.dap4TestServer;
         if(DEBUG)
-            System.err.println("DapTestCommon: d4tsServer=" + d4tsServer);
+            System.err.println("DapTestCommon: d4tsServer=" + d4tsserver);
     }
 
     /**
@@ -284,15 +273,11 @@ abstract public class DapTestCommon extends CommonTestUtils
     findServer(String path)
             throws DapException
     {
-        if(d4tsServer.startsWith("file:")) {
-            d4tsServer = FILESERVER + "/" + path;
-        } else {
-            String svc = "http://" + d4tsServer + "/d4ts";
-            if(!checkServer(svc))
-                log.warn("D4TS Server not reachable: " + svc);
-            // Since we will be accessing it thru NetcdfDataset, we need to change the schema.
-            d4tsServer = "dap4://" + d4tsServer + "/d4ts";
-        }
+        String svc = "http://" + this.d4tsserver + "/d4ts";
+        if(!checkServer(svc))
+            log.warn("D4TS Server not reachable: " + svc);
+        // Since we will be accessing it thru NetcdfDataset, we need to change the schema.
+        d4tsserver = "dap4://" + d4tsserver + "/d4ts";
     }
 
     //////////////////////////////////////////////////

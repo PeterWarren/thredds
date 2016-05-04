@@ -1,7 +1,7 @@
 package dap4.test;
 
+import dap4.core.data.DSP;
 import dap4.core.util.DapUtil;
-import dap4.dap4shared.D4DSP;
 import dap4.servlet.DapCache;
 import org.junit.Assert;
 import org.junit.Before;
@@ -154,7 +154,7 @@ public class TestCDMClient extends DapTestCommon
         this.resourceroot = DapUtil.absolutize(this.resourceroot); // handle problem of windows paths
         this.datasetpath = this.resourceroot + "/" + TESTINPUTDIR;
         findServer(this.datasetpath);
-        this.sourceurl = d4tsServer;
+        this.sourceurl = this.d4tsserver;
         System.out.println("Using source url " + this.sourceurl);
         defineAllTestcases(this.resourceroot, this.sourceurl);
         chooseTestcases();
@@ -215,10 +215,6 @@ public class TestCDMClient extends DapTestCommon
     public void testCDMClient()
             throws Exception
     {
-        if(DEBUG) {
-            //DataCompiler.DEBUG = true;
-            D4DSP.DEBUG = true;
-        }
         boolean pass = true;
         for(ClientTest testcase : chosentests) {
             if(!doOneTest(testcase)) pass = false;

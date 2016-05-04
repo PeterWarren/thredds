@@ -104,7 +104,7 @@ public class TestConstraints extends DapTestCommon
             this.resourceroot = "/" + this.resourceroot;
         this.datasetpath = this.resourceroot + "/" + TESTINPUTDIR;
         findServer(this.datasetpath);
-        this.sourceurl = d4tsServer;
+        this.sourceurl = this.d4tsserver;
         System.out.println("Using source url " + this.sourceurl);
         defineAllTestcases(this.resourceroot, this.sourceurl);
         chooseTestcases();

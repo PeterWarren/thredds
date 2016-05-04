@@ -7,18 +7,19 @@ package dap4.core.data;
 import dap4.core.dmr.DapType;
 import dap4.core.util.Slice;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
-DataAtomic represents a non-container object.
-*/
+ * DataAtomic represents a non-container object.
+ * It includes array info
+ */
 
 public interface DataAtomic extends DataVariable
 {
     /**
      * Get the type of this atomic variable
-     * @return  the type
+     *
+     * @return the type
      */
     public DapType getType();
 
@@ -27,34 +28,32 @@ public interface DataAtomic extends DataVariable
      * A scalar is treated as a one element array.
      *
      * @return 1 if the variable is scalar, else the product
-     *         of the dimensions of the variable.
+     * of the dimensions of the variable.
      */
     public long getCount(); // dimension product
 
     /**
      * Get the s ize of a single element in bytes; 0 => undefined
-     * @return  size
+     *
+     * @return size
      */
     public long getElementSize();
 
-    public void setByteStringOffsets(long total, int[] positions);
-
-
     /**
-     *  Read of multiple values at once.
-     *  The returned value (parameter "data") is some form of java array (e.g. int[]).
-     *  The type depends on the value of getType().
-     *  Note that implementations of this interface are free to provide
-     *  alternate read methods that return values in e.g. a java.nio.Buffer.
-     *  Note that unsigned types (e.g. UInt64) are returned as a signed version
-     *  (e.g. Int64), and will have the proper bit pattern for the unsigned value.
-     *  If the size of the "data" array is not the correct size, then an error
-     *  will be returned.
-     *  For opaque data, the result is ByteBuffer[].
+     * Read of multiple values at once.
+     * The returned value (parameter "data") is some form of java array (e.g. int[]).
+     * The type depends on the value of getType().
+     * Note that implementations of this interface are free to provide
+     * alternate read methods that return values in e.g. a java.nio.Buffer.
+     * Note that unsigned types (e.g. UInt64) are returned as a signed version
+     * (e.g. Int64), and will have the proper bit pattern for the unsigned value.
+     * If the size of the "data" array is not the correct size, then an error
+     * will be returned.
+     * For opaque data, the result is ByteBuffer[].
      *
      * @param constraint the set of slices defining which values to return
-     * @param data the array into which the values are returned
-     * @param offset the offset into data into which to read
+     * @param data       the array into which the values are returned
+     * @param offset     the offset into data into which to read
      */
     public void read(List<Slice> constraint, Object data, long offset) throws DataException;
 
@@ -69,11 +68,25 @@ public interface DataAtomic extends DataVariable
 
 
     /**
-     *  Provide a read of a single value at a given offset in a (possibly dimensioned)
-     *  atomic valued variable. As mentioned above, unsigned types are returned as a signed version.
-     *  The type of the returned value is the obvious one (e.g. int->Integer, opaque->ByteBuffer, etc.).
+     * Provide a read of a single value at a given offset in a (possibly dimensioned)
+     * atomic valued variable. As mentioned above, unsigned types are returned as a signed version.
+     * The type of the returned value is the obvious one (e.g. int->Integer, opaque->ByteBuffer, etc.).
      */
 
     public Object read(long index) throws DataException;
+
+
+    default DataSort
+    computesort()
+    {   // order is important
+        if(this instanceof DataAtomic) return DataSort.ATOMIC;
+        if(this instanceof DataRecord) return DataSort.RECORD;
+        if(this instanceof DataSequence) return DataSort.SEQUENCE;
+        if(this instanceof DataStructure) return DataSort.STRUCTURE;
+        if(this instanceof DataDataset) return DataSort.DATASET;
+        if(this instanceof DataCompoundArray) return DataSort.COMPOUNDARRAY;
+        assert false : "Cannot compute sort";
+        return null;
+    }
 
 }

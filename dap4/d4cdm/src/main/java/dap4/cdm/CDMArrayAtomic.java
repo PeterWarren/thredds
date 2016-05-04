@@ -2,25 +2,32 @@
    See the LICENSE file for more information.
 */
 
-package   dap4.cdm;
+package dap4.cdm;
 
 import dap4.core.data.DSP;
 import dap4.core.data.DataAtomic;
-import dap4.core.dmr.*;
+import dap4.core.data.DataException;
+import dap4.core.data.DataSort;
+import dap4.core.dmr.DapType;
+import dap4.core.dmr.DapVariable;
 import dap4.core.util.*;
-import dap4.dap4shared.*;
-import ucar.ma2.*;
+import dap4.dap4shared.Dap4Util;
+import ucar.ma2.Array;
+import ucar.ma2.DataType;
+import ucar.ma2.Index;
+import ucar.ma2.IndexIterator;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
- * CDMArrayAtomic wraps a D4DataAtomic object to present
+ * CDMArrayAtomic wraps a CDMDataAtomic object to present
  * the ucar.ma2.Array interface.
  * CDMArrayAtomic manages a single CDM atomic variable:
  * either top-level or for a member.
  */
 
-public class CDMArrayAtomic extends Array implements CDMArray
+public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
 {
     /////////////////////////////////////////////////////
     // Constants
@@ -28,10 +35,12 @@ public class CDMArrayAtomic extends Array implements CDMArray
     /////////////////////////////////////////////////////
     // Instance variables
 
+    protected DataSort sort = null;
+    protected DapVariable template = null;
+
     // CDMArry variables
     protected CDMDataset root = null;
     protected DSP dsp = null;
-    protected DapVariable template = null;
     protected long bytesize = 0;
     protected DapType basetype = null;
 
@@ -51,6 +60,9 @@ public class CDMArrayAtomic extends Array implements CDMArray
     //Coverity[FB.URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD]
     protected int totalbytestringsize = 0;  // total space used by the bytestrings
 
+    // DataAtomic instance variables
+
+
     //////////////////////////////////////////////////
     // Constructor(s)
 
@@ -62,13 +74,14 @@ public class CDMArrayAtomic extends Array implements CDMArray
      */
     CDMArrayAtomic(DSP dsp, CDMDataset root, DataAtomic d4data)
     {
-        super( CDMUtil.daptype2cdmtype(((DapVariable) d4data.getTemplate()).getBaseType()),
+        super(CDMUtil.daptype2cdmtype(((DapVariable) d4data.getTemplate()).getBaseType()),
                 CDMUtil.computeEffectiveShape(((DapVariable) d4data.getTemplate()).getDimensions()));
         this.dsp = dsp;
         this.root = root;
         this.d4data = d4data;
         this.template = (DapVariable) d4data.getTemplate();
         this.basetype = this.template.getBaseType();
+        this.sort = computesort();
 
         this.isbytestring = (basetype.isStringType() || basetype.isOpaqueType());
         this.dimsize = DapUtil.dimProduct(this.template.getDimensions());
@@ -77,12 +90,12 @@ public class CDMArrayAtomic extends Array implements CDMArray
         this.bytesize = computeTotalSize();
     }
 
-    //////////////////////////////////////////////////
+    // ///////////////////////////////////////////////
     // CDMArray Interface
 
     @Override
     public DapType
-    getBaseType()
+    getType()
     {
         return this.basetype;
     }
@@ -167,7 +180,7 @@ public class CDMArrayAtomic extends Array implements CDMArray
     {
         DataType dt = CDMUtil.daptype2cdmtype(this.basetype);
         if(dt == null)
-            throw new IllegalArgumentException("Unknown datatype: "+this.basetype);
+            throw new IllegalArgumentException("Unknown datatype: " + this.basetype);
         return CDMUtil.cdmElementClass(dt);
     }
 
@@ -513,5 +526,221 @@ public class CDMArrayAtomic extends Array implements CDMArray
     }
     */
 
+    //////////////////////////////////////////////////
+        // DataAtomic Interface
+
+        @Override
+        public DataSort
+        getSort()
+        {
+            return this.sort;
+        }
+
+    @Override
+        public long getCount() // dimension cross-product
+        {
+            return this.product;
+        }
+
+        @Override
+        public long getElementSize()
+        {
+            return Dap4Util.daptypeSize(this.atomtype);
+        }
+
+        @Override
+        public void setByteStringOffsets(long total, int[] positions)
+        {
+            this.bytestrings = positions;
+            this.totalbytestringsize = total;
+        }
+
+        @Override
+        public void
+        read(List<Slice> slices, Object data, long offset)
+            //read(long start, long count, Object data, long offset)
+                throws DataException
+        {
+            Array array = (Array) this.data;
+            // If content.getDataType returns object, then we
+            // really do not know its true datatype. So, as a rule,
+            // we will rely on this.basetype.
+            DataType datatype = CDMUtil.daptype2cdmtype(this.basetype);
+            if(datatype == null)
+                throw new DataException("Unknown basetype: " + this.basetype);
+            Class elementclass = CDMUtil.cdmElementClass(datatype);
+            if(elementclass == null)
+                throw new DataException("Attempt to read non-atomic value of type: " + datatype);
+            Object content = array.get1DJavaArray(elementclass); // not very efficient
+            try {
+                Odometer odom = Odometer.factory(slices, ((DapVariable) this.getTemplate()).getDimensions(), false);
+                while(odom.hasNext()) {
+                    long index = odom.next();
+                    System.arraycopy(content, (int) index, data, (int) offset, 1);
+                    offset++;
+                }
+            } catch (DapException de) {
+                throw new DataException(de);
+            }
+    /*
+        switch (datatype) {
+            case BOOLEAN:
+    	    boolean[] bovector = (boolean[])vector;
+
+    	    break;
+            case BYTE:
+    	    byte[] byvector = (byte[])vector;
+    	    break;
+            case CHAR:
+    	    char[] chvector = (char[])vector;
+    	    break;
+            case SHORT:
+    	    short[] shvector = (short[])vector;
+    	    break;
+            case INT:
+    	    int[] invector = (int[])vector;
+    	    break;
+            case LONG:
+    	    long[] lovector = (long[])vector;
+    	    break;
+            case FLOAT:
+    	    float[] flvector = (float[])vector;
+    	    break;
+            case DOUBLE:
+    	    double[] dovector = (double[])vector;
+    	    break;
+            case STRING:
+    	    string[] stvector = (string[])vector;
+    	    break;
+            case OBJECT:
+    	    object[] obvector = (object[])vector;
+    	    break;
+            case STRUCTURE:
+            case SEQUENCE:
+            default:
+    	    throw new DataException("Attempt to read non-atomic value of type: "+datatype);
+            }
+    	return result;
+    */
+        }
+
+        @Override
+        public Object
+        read(long index)
+                throws DataException
+        {
+            int i = (int) index;
+            Array content = (Array) this.data;
+            DataType datatype = content.getDataType();
+            return read(index, datatype, content);
+        }
+
+        protected Object
+        read(long index, DataType datatype, Array content)
+                throws DataException
+        {
+            Object result;
+            int i = (int) index;
+            long tmp = 0;
+            switch (datatype) {
+            case BOOLEAN:
+                result = (Boolean) content.getBoolean(i);
+                break;
+            case BYTE:
+                result = (Byte) content.getByte(i);
+                break;
+            case CHAR:
+                result = (Character) content.getChar(i);
+                break;
+            case SHORT:
+                result = (Short) content.getShort(i);
+                break;
+            case INT:
+                result = (Integer) content.getInt(i);
+                break;
+            case LONG:
+                result = (Long) content.getLong(i);
+                break;
+            case FLOAT:
+                result = (Float) content.getFloat(i);
+                break;
+            case DOUBLE:
+                result = (Double) content.getDouble(i);
+                break;
+            case STRING:
+                result = content.getObject(i).toString();
+                break;
+            case OBJECT:
+                result = content.getObject(i);
+                break;
+            case UBYTE:
+                tmp = content.getByte(i) & 0xFF;
+                result = (Byte) (byte) tmp;
+                break;
+            case USHORT:
+                tmp = content.getShort(i) & 0xFFFF;
+                result = (Short) (short) tmp;
+                break;
+            case UINT:
+                tmp = content.getInt(i) & 0xFFFFFFFF;
+                result = (Integer) (int) tmp;
+                break;
+            case ULONG:
+                result = (Long) content.getLong(i);
+                break;
+            case ENUM1:
+                result = read(index, DataType.BYTE, content);
+                break;
+            case ENUM2:
+                result = read(index, DataType.SHORT, content);
+                break;
+            case ENUM4:
+                result = read(index, DataType.INT, content);
+                break;
+            case OPAQUE:
+                result = content.getObject(i);
+                break;
+            case STRUCTURE:
+            case SEQUENCE:
+            default:
+                throw new DataException("Attempt to read non-atomic value of type: " + datatype);
+            }
+            return result;
+        }
+
+        //////////////////////////////////////////////////
+        // Utilities
+
+        protected DapSort
+        computesort(Array array)
+                throws DataException
+        {
+            DapSort sort = null;
+            Array content = (Array) this.data;
+            switch (content.getDataType()) {
+            case BOOLEAN:
+            case BYTE:
+            case CHAR:
+            case SHORT:
+            case INT:
+            case LONG:
+            case UBYTE:
+            case USHORT:
+            case UINT:
+            case ULONG:
+            case FLOAT:
+            case DOUBLE:
+            case STRING:
+            case OBJECT:
+                return DapSort.ATOMICVARIABLE;
+            case STRUCTURE:
+                return DapSort.STRUCTURE;
+            case SEQUENCE:
+                return DapSort.SEQUENCE;
+            default:
+                break; // sequence is not supported
+            }
+            throw new DataException("Unsupported datatype: " + content.getDataType());
+        }
 }
 

@@ -726,18 +726,16 @@ public class TestD4TS extends DapTestCommon
     {
         DapCache.flush();
         for(ServletTest testcase : chosentests) {
-            Assert.assertTrue(doOneTest(testcase));
+            doOneTest(testcase);
         }
     }
 
     //////////////////////////////////////////////////
     // Primary test method
-    boolean
+    void
     doOneTest(ServletTest testcase)
             throws Exception
     {
-        boolean pass = true;
-
         System.out.println("Testcase: " + testcase.testinputpath);
         System.out.println("Baseline: " + testcase.baselinepath);
 
@@ -745,25 +743,20 @@ public class TestD4TS extends DapTestCommon
             RequestMode ext = RequestMode.modeFor(extension);
             switch (ext) {
             case DMR:
-                pass = dodmr(testcase);
+                dodmr(testcase);
                 break;
             case DAP:
-                pass = dodata(testcase);
+                dodata(testcase);
                 break;
             default:
-                assert (false);
-                if(!pass) break;
             }
-            if(!pass) break;
         }
-        return pass;
     }
 
-    boolean
+    void
     dodmr(ServletTest testcase)
             throws Exception
     {
-        boolean pass = true;
         // Create request and response objects
         Mocker mocker = new Mocker("dap4", testcase.makeurl(RequestMode.DMR), new D4TSServlet(), this);
         // See if the servlet can process this
@@ -772,7 +765,6 @@ public class TestD4TS extends DapTestCommon
         } catch (Throwable t) {
             System.out.println(testcase.xfail ? "XFail" : "Fail");
             t.printStackTrace();
-            return testcase.xfail;
         }
 
         // Collect the output
@@ -789,17 +781,17 @@ public class TestD4TS extends DapTestCommon
             // Read the baseline file
             String baselinecontent = readfile(testcase.baselinepath + ".dmr");
             System.out.println("DMR Comparison: vs " + testcase.baselinepath + ".dmr");
-            pass = compare(baselinecontent, sdmr);
-            System.out.println(pass ? "Pass" : "Fail");
+            String diffs = compare("TestD4TS",baselinecontent, sdmr);
+            if(diffs != null)
+                System.out.println(diffs);
+            Assert.assertTrue("***Fail",diffs == null);
         }
-        return pass;
     }
 
-    boolean
+    void
     dodata(ServletTest testcase)
             throws Exception
     {
-        boolean pass = true;
         String baseline;
         // Create request and response objects
         Mocker mocker = new Mocker("dap4", testcase.makeurl(RequestMode.DAP), this);
@@ -811,7 +803,6 @@ public class TestD4TS extends DapTestCommon
         } catch (Throwable t) {
             System.out.println(testcase.xfail ? "XFail" : "Fail");
             t.printStackTrace();
-            return testcase.xfail;
         }
 
         if(prop_debug || DEBUG) {
@@ -855,11 +846,11 @@ public class TestD4TS extends DapTestCommon
             // Read the baseline file
             System.out.println("Note Comparison:");
             String baselinecontent = readfile(testcase.baselinepath + ".dap");
-            pass = compare(baselinecontent, sdata);
-            System.out.println(pass ? "Pass" : "Fail");
+            String diffs = compare("TestD4TS",baselinecontent, sdata);
+            if(diffs != null)
+            System.out.println(diffs);
+            Assert.assertTrue("***FAIL",diffs == null);
         }
-
-        return pass;
     }
 
     //////////////////////////////////////////////////
