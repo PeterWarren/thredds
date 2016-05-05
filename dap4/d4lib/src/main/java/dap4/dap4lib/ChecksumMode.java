@@ -2,7 +2,7 @@
    See the LICENSE file for more information.
 */
 
-package dap4.dap4shared;
+package dap4.dap4lib;
 
 /**
  * Define possible checksum modes:

@@ -9,7 +9,7 @@ import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.core.util.*;
 import dap4.core.data.DSP;
-import dap4.dap4shared.Dap4Util;
+import dap4.dap4lib.Dap4Util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

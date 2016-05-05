@@ -9,7 +9,7 @@ import dap4.core.data.DataAtomic;
 import dap4.core.data.DataCompoundArray;
 import dap4.core.dmr.*;
 import dap4.core.util.*;
-import dap4.dap4shared.*;
+import dap4.dap4lib.*;
 import ucar.ma2.*;
 
 import java.nio.ByteBuffer;

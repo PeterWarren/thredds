@@ -6,9 +6,9 @@ package dap4.servlet;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.core.util.ResponseFormat;
-import dap4.dap4shared.DapLog;
-import dap4.dap4shared.RequestMode;
-import dap4.dap4shared.XURI;
+import dap4.dap4lib.DapLog;
+import dap4.dap4lib.RequestMode;
+import dap4.dap4lib.XURI;
 import ucar.httpservices.HTTPUtil;
 
 import javax.servlet.ServletContext;

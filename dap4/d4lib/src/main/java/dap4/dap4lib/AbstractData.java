@@ -2,47 +2,52 @@
    See the LICENSE file for more information.
 */
 
-package dap4.dap4shared;
+package dap4.dap4lib;
 
 import dap4.core.data.*;
 import dap4.core.dmr.DapNode;
 import dap4.core.dmr.DapVariable;
 
-public interface AbstractData extends Data
+abstract public class AbstractData implements Data
 {
 
     //////////////////////////////////////////////////
     // Instance variables
 
-//    protected DataSort sort = null;
-//    protected DapNode template = null;
+    protected DataSort sort = null;
+    protected DapNode template = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
 
-/*
-    protected AbstractData(DapNode dv)
+    protected AbstractData(DapNode template)
         throws DataException
     {
-        this.template = dv;
+        this.template = template;
         this.sort = computesort();
     }
-*/
+
     //////////////////////////////////////////////////
     // Data Interface
 
+    @Override
     public DataSort
-    getSort();
-//        return sort;
+    getSort()
+    {
+        return sort;
+    }
 
+    @Override
     public DapNode
-    getTemplate();
-//        return template;
+    getTemplate()
+    {
+        return template;
+    }
 
     //////////////////////////////////////////////////
     // Utilities
 
-    default DataSort
+    public DataSort
     computesort()
     {   // order is important
         if(this instanceof DataAtomic) return DataSort.ATOMIC;

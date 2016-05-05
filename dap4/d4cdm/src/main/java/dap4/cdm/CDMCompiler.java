@@ -52,7 +52,7 @@ public class CDMCompiler
     DapDataset dmr = null;
     DataDataset d4root = null;
     CDMDataset cdmroot = null;
-    DapDataFactory factory = null;
+    DapFactory factory = null;
 
     NodeMap nodemap = new NodeMap();
 

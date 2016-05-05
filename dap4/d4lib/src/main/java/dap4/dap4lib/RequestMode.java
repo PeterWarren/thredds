@@ -3,7 +3,7 @@
 */
 
 
-package dap4.dap4shared;
+package dap4.dap4lib;
 
 /**
 Define the enum for the possible Request/Response modes

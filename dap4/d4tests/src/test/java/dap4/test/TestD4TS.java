@@ -2,8 +2,8 @@ package dap4.test;
 
 import dap4.core.util.DapDump;
 import dap4.d4ts.D4TSServlet;
-import dap4.dap4shared.ChunkInputStream;
-import dap4.dap4shared.RequestMode;
+import dap4.dap4lib.ChunkInputStream;
+import dap4.dap4lib.RequestMode;
 import dap4.servlet.DapCache;
 import dap4.servlet.Generator;
 import org.junit.Assert;

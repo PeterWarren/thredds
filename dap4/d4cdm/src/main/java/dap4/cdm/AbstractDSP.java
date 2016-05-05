@@ -2,23 +2,18 @@
    See the LICENSE file for more information.
 */
 
-package dap4.dap4shared;
 
-import dap4.core.data.DSP;
-import dap4.core.data.DapDataFactory;
 import dap4.core.data.DataDataset;
+import dap4.core.data.DataException;
 import dap4.core.dmr.DapAttribute;
 import dap4.core.dmr.DapDataset;
+import dap4.core.dmr.DapFactoryDMR;
 import dap4.core.dmr.DapNode;
-import dap4.core.dmr.DefaultFactory;
 import dap4.core.dmr.parser.Dap4Parser;
-import dap4.core.dmr.parser.Dap4ParserImpl;
-import dap4.core.util.DapContext;
-import dap4.core.util.DapException;
+import dap4.core.util.*;
 import org.xml.sax.SAXException;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,18 +29,12 @@ abstract public class AbstractDSP implements DSP
 
     static protected final boolean PARSEDEBUG = false;
 
-    static public final boolean USEDOM = false;
-
     //////////////////////////////////////////////////
     // Instance variables
 
     protected DapContext context = null;
     protected DapDataset dmr = null;
     protected String path = null;
-    protected ByteBuffer databuffer = null;
-    protected ByteOrder order = null;
-    protected ChecksumMode checksummode = ChecksumMode.DAP;
-    protected DataDataset datadataset = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -60,17 +49,10 @@ abstract public class AbstractDSP implements DSP
     // Subclass defined
 
     abstract public DSP open(String path, DapContext context) throws DapException;
-    abstract public DapDataFactory getDataFactory();
 
-    public DataDataset getDataDataset()
-    {
-        return this.datadataset;
-    }
+    abstract public DataDataset getDataDataset();
 
-    public void setDataDataset(DataDataset dds)
-    {
-        this.datadataset = dds;
-    }
+    //abstract public String getPath();
 
     @Override
     public DSP open(String path)
@@ -123,38 +105,6 @@ abstract public class AbstractDSP implements DSP
         this.path = path;
     }
 
-    public ByteOrder
-    getOrder()
-    {
-        return this.order;
-    }
-
-    public void
-    setOrder(ByteOrder order)
-    {
-        this.order = order;
-    }
-
-
-    protected void
-    build(String document, byte[] serialdata, ByteOrder order)
-            throws DapException
-    {
-        build(parseDMR(document), serialdata, order);
-    }
-
-    protected void
-    build(DapDataset dmr, byte[] serialdata, ByteOrder order)
-            throws DapException
-    {
-        this.dmr = dmr;
-        // "Compile" the databuffer section of the server response
-        this.databuffer = ByteBuffer.wrap(serialdata).order(order);
-        DataCompiler compiler = new DataCompiler(this, checksummode, this.databuffer, getDataFactory());
-        compiler.compile();
-    }
-
-
     //////////////////////////////////////////////////
     // Utilities
 
@@ -172,22 +122,18 @@ abstract public class AbstractDSP implements DSP
             throws DapException
     {
         // Parse the dmr
-        Dap4Parser parser;
-        //if(USEDOM)
-            parser = new Dap4ParserImpl(new DefaultFactory());
-        //else
-        //    parser = new DOM4Parser(new DefaultFactory());
+        Dap4Parser pushparser = new Dap4Parser(new DapFactoryDMR());
         if(PARSEDEBUG)
-            parser.setDebugLevel(1);
+            pushparser.setDebugLevel(1);
         try {
-            if(!parser.parse(document))
+            if(!pushparser.parse(document))
                 throw new DapException("DMR Parse failed");
         } catch (SAXException se) {
             throw new DapException(se);
         }
-        if(parser.getErrorResponse() != null)
+        if(pushparser.getErrorResponse() != null)
             throw new DapException("Error Response Document not supported");
-        DapDataset result = parser.getDMR();
+        DapDataset result = pushparser.getDMR();
         processAttributes(result);
         return result;
     }
@@ -205,6 +151,7 @@ abstract public class AbstractDSP implements DSP
         List<DapNode> nodes = dataset.getNodeList();
         for(DapNode node : nodes) {
             switch (node.getSort()) {
+            case GRID:
             case SEQUENCE:
             case STRUCTURE:
             case GROUP:

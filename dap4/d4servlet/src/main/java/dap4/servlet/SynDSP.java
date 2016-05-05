@@ -7,7 +7,7 @@ package dap4.servlet;
 import dap4.core.data.DSP;
 import dap4.core.data.DapDataFactory;
 import dap4.core.util.*;
-import dap4.dap4shared.*;
+import dap4.dap4lib.*;
 
 import java.io.*;
 import java.nio.ByteBuffer;

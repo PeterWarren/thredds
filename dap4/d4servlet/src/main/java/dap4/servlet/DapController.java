@@ -15,9 +15,9 @@ import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.core.util.ResponseFormat;
 import dap4.core.data.DSP;
-import dap4.dap4shared.DapLog;
-import dap4.dap4shared.DapProtocol;
-import dap4.dap4shared.RequestMode;
+import dap4.dap4lib.DapLog;
+import dap4.dap4lib.DapProtocol;
+import dap4.dap4lib.RequestMode;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;

@@ -6,7 +6,7 @@ package dap4.servlet;
 
 import dap4.core.dmr.ErrorResponse;
 import dap4.core.util.*;
-import dap4.dap4shared.RequestMode;
+import dap4.dap4lib.RequestMode;
 
 import java.io.*;
 import java.nio.*;

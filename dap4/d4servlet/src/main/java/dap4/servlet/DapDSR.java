@@ -4,8 +4,8 @@
 package dap4.servlet;
 
 import dap4.core.util.IndentWriter;
-import dap4.dap4shared.DapProtocol;
-import dap4.dap4shared.RequestMode;
+import dap4.dap4lib.DapProtocol;
+import dap4.dap4lib.RequestMode;
 
 import java.io.IOException;
 import java.io.StringWriter;

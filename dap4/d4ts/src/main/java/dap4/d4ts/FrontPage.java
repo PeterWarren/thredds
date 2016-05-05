@@ -5,7 +5,7 @@ package dap4.d4ts;
 
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
-import dap4.dap4shared.DapLog;
+import dap4.dap4lib.DapLog;
 import dap4.servlet.DapRequest;
 
 import java.io.File;

@@ -3,7 +3,7 @@
 */
 
 
-package dap4.dap4shared;
+package dap4.dap4lib;
 
 import dap4.core.data.*;
 import dap4.core.dmr.*;
@@ -44,7 +44,7 @@ public class DataCompiler
 
     protected DSP dsp;
 
-    protected DapDataFactory factory = null;
+    protected DapFactory factory = null;
 
     //////////////////////////////////////////////////
     //Constructor(s)
@@ -59,13 +59,14 @@ public class DataCompiler
      */
 
     public DataCompiler(DSP dsp, ChecksumMode checksummode,
-                        ByteBuffer databuffer, DapDataFactory factory)
+                        ByteBuffer databuffer, DapFactory factory)
             throws DapException
     {
         this.dsp = dsp;
         this.dataset = this.dsp.getDMR();
         this.databuffer = databuffer;
         this.checksummode = checksummode;
+        this.factory = factory;
     }
 
     //////////////////////////////////////////////////

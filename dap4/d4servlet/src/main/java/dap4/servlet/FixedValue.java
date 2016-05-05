@@ -8,7 +8,7 @@ package dap4.servlet;
 import dap4.core.dmr.TypeSort;
 import dap4.core.dmr.DapType;
 import dap4.core.util.DapException;
-import dap4.dap4shared.Dap4Util;
+import dap4.dap4lib.Dap4Util;
 
 public class FixedValue extends Value
 {

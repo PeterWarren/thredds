@@ -8,7 +8,7 @@
  * Define an exception to hold the XML content of an
  *error chunk.
  */
-package dap4.dap4shared;
+package dap4.dap4lib;
 
 import dap4.core.util.DapException;
 

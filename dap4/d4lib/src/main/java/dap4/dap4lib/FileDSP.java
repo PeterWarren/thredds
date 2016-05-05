@@ -2,11 +2,11 @@
    See the LICENSE file for more information.
 */
 
-package dap4.dap4shared;
+package dap4.dap4lib;
 
 import dap4.core.data.DSP;
-import dap4.core.data.DapDataFactory;
 import dap4.core.data.DataDataset;
+import dap4.core.dmr.DapFactory;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
@@ -97,7 +97,7 @@ public class FileDSP extends AbstractDSP
         }
     }
 
-    public DapDataFactory
+    public DapFactory
     getDataFactory()
     {
         throw new UnsupportedOperationException();

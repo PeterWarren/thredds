@@ -7,7 +7,7 @@ package dap4.servlet;
 
 import dap4.core.dmr.*;
 import dap4.core.util.DapException;
-import dap4.dap4shared.Dap4Util;
+import dap4.dap4lib.Dap4Util;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
