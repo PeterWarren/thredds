@@ -14,7 +14,7 @@ import dap4.servlet.DMRPrint;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import ucar.nc2.util.CommonTestUtils;
+import ucar.unidata.util.test.UnitTestCommon;
 
 import java.io.File;
 import java.io.PrintWriter;
