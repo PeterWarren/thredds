@@ -5,7 +5,8 @@
 package dap4.dap4lib;
 
 import dap4.core.data.DSP;
-import dap4.core.data.DataDataset;
+import dap4.core.data.DapDataFactory;
+import dap4.core.data.DataCompiler;
 import dap4.core.dmr.DapDataset;
 import dap4.core.dmr.DapFactory;
 import dap4.core.util.DapContext;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 
 /**
  * Make a request to a server and convert the reply
@@ -124,12 +126,6 @@ public class HttpDSP extends AbstractDSP
 
     /////////////////////////////////////////
     // AbstractDSP extensions
-
-    public DapFactory
-    getDataFactory()
-    {
-        throw new UnsupportedOperationException();
-    }
 
     /*@Override
     public String getPath()
@@ -295,4 +291,5 @@ public class HttpDSP extends AbstractDSP
             throw new DapException(use);
         }
     }
+
 }

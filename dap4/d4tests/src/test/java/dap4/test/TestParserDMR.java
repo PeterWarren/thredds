@@ -5,16 +5,14 @@
 package dap4.test;
 
 import dap4.core.dmr.DapDataset;
-import dap4.core.dmr.DefaultFactory;
+import dap4.core.dmr.DefaultDMRFactory;
 import dap4.core.dmr.ErrorResponse;
 import dap4.core.dmr.parser.Dap4Parser;
 import dap4.core.dmr.parser.Dap4ParserImpl;
 import dap4.core.dmr.parser.ParseUtil;
 import dap4.servlet.DMRPrint;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import ucar.unidata.util.test.UnitTestCommon;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -222,7 +220,7 @@ public class TestParserDMR extends DapTestCommon
 
         document = readfile(testinput);
 
-        Dap4Parser parser = new Dap4ParserImpl(new DefaultFactory());
+        Dap4Parser parser = new Dap4ParserImpl(new DefaultDMRFactory());
         if(PARSEDEBUG || debug)
             parser.setDebugLevel(1);
 

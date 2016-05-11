@@ -7,12 +7,12 @@
 
 package dap4.core.dmr;
 
-public class DefaultFactory implements DapFactory
+public class DefaultDMRFactory implements DapFactory
 {
 
     //////////////////////////////////////////////////
     // Constructor
-    public DefaultFactory()
+    public DefaultDMRFactory()
     {
     }
 

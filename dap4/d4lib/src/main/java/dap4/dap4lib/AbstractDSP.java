@@ -5,6 +5,7 @@
 package dap4.dap4lib;
 
 import dap4.core.data.DSP;
+import dap4.core.data.DataCompiler;
 import dap4.core.data.DataDataset;
 import dap4.core.dmr.*;
 import dap4.core.dmr.parser.Dap4Parser;
@@ -56,7 +57,8 @@ abstract public class AbstractDSP implements DSP
     // Subclass defined
 
     abstract public DSP open(String path, DapContext context) throws DapException;
-    abstract public DapFactory getDataFactory();
+
+    //////////////////////////////////////////////////
 
     public DataDataset getDataDataset()
     {
@@ -139,6 +141,14 @@ abstract public class AbstractDSP implements DSP
         build(parseDMR(document), serialdata, order);
     }
 
+    /**
+     * Build the data from the incoming serial data
+     *
+     * @param dmr
+     * @param serialdata
+     * @param order
+     * @throws DapException
+     */
     protected void
     build(DapDataset dmr, byte[] serialdata, ByteOrder order)
             throws DapException
@@ -146,10 +156,9 @@ abstract public class AbstractDSP implements DSP
         this.dmr = dmr;
         // "Compile" the databuffer section of the server response
         this.databuffer = ByteBuffer.wrap(serialdata).order(order);
-        DataCompiler compiler = new DataCompiler(this, checksummode, this.databuffer, getDataFactory());
+        DataCompiler compiler = new D4DataCompiler(this, checksummode, this.databuffer, new DefaultDataFactory());
         compiler.compile();
     }
-
 
     //////////////////////////////////////////////////
     // Utilities
@@ -170,9 +179,9 @@ abstract public class AbstractDSP implements DSP
         // Parse the dmr
         Dap4Parser parser;
         //if(USEDOM)
-            parser = new Dap4ParserImpl(new DefaultFactory());
+        parser = new Dap4ParserImpl(new DefaultDMRFactory());
         //else
-        //    parser = new DOM4Parser(new DefaultFactory());
+        //    parser = new DOM4Parser(new DefaultDMRFactory());
         if(PARSEDEBUG)
             parser.setDebugLevel(1);
         try {

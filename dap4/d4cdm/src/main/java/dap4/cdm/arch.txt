@@ -1,0 +1,31 @@
+CDM :: Dap4 Interactions occur in two ways.
+
+1. Server side.
+The goal is to wrap a NetcdfDataset object as a DSP
+so it can be written using the DAP4 protocol.
+The relevant classes are:
+    ThreddsDSP.java
+    CDMDSP.java
+    CDMDataCompoundArray.java
+    CDMDataDataset.java
+    CDMDataRecord.java
+    CDMDataset.java
+    CDMDataStructure.java
+    CDMDataVariable.java
+
+2. Client Side
+The goal is to wrap a D4DSP to make it look like a CDM NetcdfDataset.
+The D4DSP itself wraps the serialized data of the DAP4 protocol.
+The relevant classes are as follows:
+    DMRToCDM.java
+    DapNetcdfFile.java
+    CDMCompiler.java
+    CDMArray.java
+    CDMArrayAtomic.java
+    CDMArrayDelegate.java
+    CDMArraySequence.java
+    CDMArrayStructure.java
+
+The following are shared Utilities:
+    CDMUtil.java
+    NodeMap.java

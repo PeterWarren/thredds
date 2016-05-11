@@ -6,10 +6,17 @@ package dap4.servlet;
 
 import dap4.core.data.DSP;
 import dap4.core.data.DapDataFactory;
-import dap4.core.util.*;
+import dap4.core.data.DataCompiler;
+import dap4.core.util.DapContext;
+import dap4.core.util.DapDump;
+import dap4.core.util.DapException;
+import dap4.core.util.DapUtil;
 import dap4.dap4lib.*;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -19,10 +26,10 @@ import java.nio.ByteOrder;
 
 public class SynDSP extends AbstractDSP
 {
-    static final protected boolean DEBUG=false;
+    static final protected boolean DEBUG = false;
 
     static protected final String[] SYNEXTENSIONS = new String[]{
-        ".dmr", ".syn"
+            ".dmr", ".syn"
     };
 
     //////////////////////////////////////////////////
@@ -67,7 +74,7 @@ public class SynDSP extends AbstractDSP
     @Override
     public DSP
     open(String path, DapContext context)
-        throws DapException
+            throws DapException
     {
         setPath(path);
         // Read the .dmr/.syn file
@@ -86,7 +93,7 @@ public class SynDSP extends AbstractDSP
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ChunkWriter cw = new ChunkWriter(bos, RequestMode.DAP, ByteOrder.nativeOrder());
-            Generator generator = new Generator(dmr,Value.ValueSource.RANDOM);
+            Generator generator = new Generator(dmr, Value.ValueSource.RANDOM);
             generator.generate(null, cw);
             cw.close();
             bos.close();
@@ -94,7 +101,7 @@ public class SynDSP extends AbstractDSP
             if(DEBUG)
                 DapDump.dumpbytes(ByteBuffer.wrap(raw).order(order), true);
             ByteArrayInputStream bis = new ByteArrayInputStream(raw);
-            ChunkInputStream crdr = new ChunkInputStream(bis,RequestMode.DAP, getOrder());
+            ChunkInputStream crdr = new ChunkInputStream(bis, RequestMode.DAP, getOrder());
             // Skip the dmr
             crdr.readDMR();
             this.raw = DapUtil.readbinaryfile(crdr);
@@ -104,13 +111,4 @@ public class SynDSP extends AbstractDSP
             throw new DapException(ioe);
         }
     }
-
-    ///////////////////////////
-    // AbstractDSP Extensions
-    @Override
-    public DapDataFactory getDataFactory()
-    {
-        throw new UnsupportedOperationException();
-    }
-
 }

@@ -5,7 +5,8 @@
 package dap4.dap4lib;
 
 import dap4.core.data.DSP;
-import dap4.core.data.DataDataset;
+import dap4.core.data.DapDataFactory;
+import dap4.core.data.DataCompiler;
 import dap4.core.dmr.DapFactory;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
@@ -14,6 +15,7 @@ import dap4.core.util.DapUtil;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
@@ -96,12 +98,5 @@ public class FileDSP extends AbstractDSP
             throw new DapException(ioe);
         }
     }
-
-    public DapFactory
-    getDataFactory()
-    {
-        throw new UnsupportedOperationException();
-    }
-
 
 }

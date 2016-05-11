@@ -7,10 +7,12 @@ package dap4.cdm;
 import dap4.core.data.DSP;
 import dap4.core.data.DataAtomic;
 import dap4.core.data.DataCompoundArray;
+import dap4.core.data.DataDataset;
 import dap4.core.dmr.*;
 import dap4.core.util.*;
 import dap4.dap4lib.*;
 import ucar.ma2.*;
+import ucar.nc2.Group;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -35,13 +37,14 @@ public class CDMArrayStructure extends ArrayStructure implements CDMArray
     // Instance variables
 
     // CDMArry variables
-    protected CDMDataset root = null;
+    protected DataDataset root = null;
+    protected Group cdmroot = null;
     protected DSP dsp = null;
     protected DapVariable template = null;
     protected long bytesize = 0;
     protected DapType basetype = null;
 
-    protected DataCompoundArray d4data = null;
+    protected DataCompoundArray data = null;
     protected long dimsize = 0;
     protected long nmembers = 0;
 
@@ -65,20 +68,20 @@ public class CDMArrayStructure extends ArrayStructure implements CDMArray
      * Constructor
      *
      * @param dsp    the parent DSP
-     * @param root   the parent CDMDataset
-     * @param d4data the structure data
+     * @param cdmroot   the parent CDMDataset
+     * @param data the structure data
      */
-    CDMArrayStructure(DSP dsp, CDMDataset root, DataCompoundArray d4data)
+    CDMArrayStructure(DSP dsp, Group cdmroot, DataCompoundArray data)
     {
-        super(computemembers((DapStructure) d4data.getTemplate()),
-                CDMUtil.computeEffectiveShape(((DapVariable) d4data.getTemplate()).getDimensions()));
+        super(computemembers((DapStructure) data.getTemplate()),
+                CDMUtil.computeEffectiveShape(((DapVariable) data.getTemplate()).getDimensions()));
         this.dsp = dsp;
-        this.root = root;
-        this.template = (DapVariable) d4data.getTemplate();
+        this.cdmroot = cdmroot;
+        this.template = (DapVariable) data.getTemplate();
         this.basetype = this.template.getBaseType();
 
         this.dimsize = DapUtil.dimProduct(template.getDimensions());
-        this.d4data = d4data;
+        this.data = data;
         this.nmembers = ((DapStructure) template).getFields().size();
 
         // Fill in the instances and structdata vectors
@@ -110,7 +113,7 @@ public class CDMArrayStructure extends ArrayStructure implements CDMArray
     }
 
     @Override
-    public CDMDataset getRoot()
+    public DataDataset getRoot()
     {
         return root;
     }
@@ -119,12 +122,6 @@ public class CDMArrayStructure extends ArrayStructure implements CDMArray
     public DapVariable getTemplate()
     {
         return template;
-    }
-
-    @Override
-    public long getByteSize()
-    {
-        return bytesize;
     }
 
     @Override

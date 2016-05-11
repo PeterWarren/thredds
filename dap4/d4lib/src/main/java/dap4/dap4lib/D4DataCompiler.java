@@ -14,7 +14,7 @@ import dap4.core.util.DapSort;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class DataCompiler
+public class D4DataCompiler implements DataCompiler
 {
     static public boolean DEBUG = false;
 
@@ -44,7 +44,7 @@ public class DataCompiler
 
     protected DSP dsp;
 
-    protected DapFactory factory = null;
+    protected DapDataFactory factory = null;
 
     //////////////////////////////////////////////////
     //Constructor(s)
@@ -58,8 +58,8 @@ public class DataCompiler
      * @param factory      for producing data nodes
      */
 
-    public DataCompiler(DSP dsp, ChecksumMode checksummode,
-                        ByteBuffer databuffer, DapFactory factory)
+    public D4DataCompiler(DSP dsp, ChecksumMode checksummode,
+                        ByteBuffer databuffer, DapDataFactory factory)
             throws DapException
     {
         this.dsp = dsp;
@@ -70,14 +70,15 @@ public class DataCompiler
     }
 
     //////////////////////////////////////////////////
-    // Primary entry point
+    // DataCompiler API
 
     /**
      * The goal here is to process the serialized
      * databuffer and locate variable-specific positions
      * in the serialized databuffer. For each DAP4 variable,
-     * D4Array objects are created and linked together.
+     * D4 objects are created and linked together.
      */
+    @Override
     public void
     compile()
             throws DapException
@@ -103,7 +104,7 @@ public class DataCompiler
         DataVariable array = null;
         boolean isscalar = dapvar.getRank() == 0;
         if(dapvar.getSort() == DapSort.ATOMICVARIABLE) {
-            array = compileAtomicVar(dapvar);
+            array = compileAtomicVar((DapAtomicVariable)dapvar);
         } else if(dapvar.getSort() == DapSort.STRUCTURE) {
             if(isscalar)
                 array = compileStructure((DapStructure) dapvar, null, 0);
@@ -125,13 +126,12 @@ public class DataCompiler
     }
 
     protected DataAtomic
-    compileAtomicVar(DapVariable dapvar)
+    compileAtomicVar(DapAtomicVariable atomvar)
             throws DapException
     {
-        DapAtomicVariable atomvar = (DapAtomicVariable) dapvar;
         DapType daptype = atomvar.getBaseType();
-        DataAtomic data = factory.newAtomic(this.dsp, atomvar, databuffer.position());
-        long total;
+        D4DataAtomic data = (D4DataAtomic)factory.newAtomicVariable(this.dsp, atomvar, databuffer.position());
+        long total = 0;
         long dimproduct = data.getCount();
         if(!daptype.isEnumType() && !daptype.isFixedSize()) {
             // this is a string, url, or opaque

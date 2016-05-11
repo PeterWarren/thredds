@@ -4,10 +4,11 @@
 
 package dap4.dap4lib;
 
+import dap4.core.data.DSP;
+import dap4.core.data.DapDataFactory;
+import dap4.core.data.DataCompiler;
 import dap4.core.data.DataDataset;
-import dap4.core.dmr.DapDataset;
-import dap4.core.dmr.DefaultFactory;
-import dap4.core.util.DapDump;
+import dap4.core.dmr.DapFactory;
 import dap4.core.util.DapException;
 
 import java.nio.ByteBuffer;
@@ -90,27 +91,6 @@ abstract public class D4DSP extends AbstractDSP
     public void setChecksumMode(ChecksumMode mode)
     {
         this.checksummode = mode;
-    }
-
-    ////////////////////////////////////////////////
-    // D4DSP specific API
-
-    protected void
-    build(String document, byte[] serialdata, ByteOrder order)
-        throws DapException
-    {
-        build(parseDMR(document), serialdata, order);
-    }
-
-    protected void
-    build(DapDataset dmr, byte[] serialdata, ByteOrder order)
-        throws DapException
-    {
-        this.dmr = dmr;
-        // "Compile" the databuffer section of the server response
-        this.databuffer = ByteBuffer.wrap(serialdata).order(order);
-        DataCompiler compiler = new DataCompiler(this, checksummode, this.databuffer, new DefaultFactory());
-        compiler.compile();
     }
 
 }

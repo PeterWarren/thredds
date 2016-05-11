@@ -16,7 +16,7 @@ import java.util.*;
  * Convert a DSP to corresponding NetcdfFile CDM metadata.
  * Note that we have a problem with <map>.
  */
-public class DSPToCDM
+public class DMRToCDM
 {
     //////////////////////////////////////////////////
     // Instance Variables
@@ -34,7 +34,7 @@ public class DSPToCDM
      * @param dmr   - the DMR
      */
 
-    public DSPToCDM(DapNetcdfFile ncfile, DapDataset dmr)
+    public DMRToCDM(DapNetcdfFile ncfile, DapDataset dmr)
     {
         this.ncfile = ncfile;
         this.dmr = dmr;
@@ -372,4 +372,3 @@ public class DSPToCDM
     }
 
 }
-

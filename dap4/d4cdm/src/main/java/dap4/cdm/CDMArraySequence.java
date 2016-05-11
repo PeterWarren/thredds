@@ -4,6 +4,7 @@
 
 package dap4.cdm;
 
+import dap4.core.data.DataDataset;
 import dap4.core.dmr.DapStructure;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.DapVariable;
@@ -12,6 +13,7 @@ import dap4.core.data.DSP;
 import dap4.core.data.DataSequence;
 import dap4.core.data.DSP;
 import ucar.ma2.*;
+import ucar.nc2.Group;
 
 import java.io.IOException;
 import java.util.List;
@@ -95,7 +97,8 @@ public class CDMArraySequence extends ArraySequence implements CDMArray
     //////////////////////////////////////////////////
     // Instance variables
 
-    protected CDMDataset root = null;
+    protected DataDataset root = null;
+    protected Group cdmroot = null;
     protected DSP dsp = null;
     protected DapVariable template = null;
     protected long bytesize = 0;
@@ -123,15 +126,15 @@ public class CDMArraySequence extends ArraySequence implements CDMArray
      * Constructor
      *
      * @param dsp      the parent DSP
-     * @param root     the parent CDMDataset
+     * @param cdmroot     the parent CDMDataset
      * @param template the structure template
      */
-    CDMArraySequence(DSP dsp, CDMDataset root, DapStructure template, DataSequence d4data)
+    CDMArraySequence(DSP dsp, Group cdmroot, DapStructure template, DataSequence d4data)
     {
         super(CDMArrayStructure.computemembers((DapStructure) d4data.getTemplate()),
                 new SDI(), (int) d4data.getRecordCount());
         this.dsp = dsp;
-        this.root = root;
+        this.cdmroot = cdmroot;
         this.template = (DapVariable) d4data.getTemplate();
         this.d4data = d4data;
         this.nmembers = ((DapStructure) template).getFields().size();
@@ -191,7 +194,7 @@ public class CDMArraySequence extends ArraySequence implements CDMArray
     }
 
     @Override
-    public CDMDataset getRoot()
+    public DataDataset getRoot()
     {
         return root;
     }
@@ -200,12 +203,6 @@ public class CDMArraySequence extends ArraySequence implements CDMArray
     public DapVariable getTemplate()
     {
         return template;
-    }
-
-    @Override
-    public long getByteSize()
-    {
-        return bytesize;
     }
 
     //////////////////////////////////////////////////

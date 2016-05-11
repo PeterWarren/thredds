@@ -45,7 +45,6 @@ public class D4TSServlet extends DapController
             // Register known DSP classes: order is important.
             // Only used in server
             registerDSP(SynDSP.class, true);
-            //registerDSP(NetcdfDSP.class, true);
             registerDSP(FileDSP.class, true);
         }
 

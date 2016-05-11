@@ -4,13 +4,15 @@
 
 package dap4.dap4lib;
 
-import dap4.core.data.*;
+import dap4.core.data.DataAtomic;
+import dap4.core.data.DataException;
 import dap4.core.dmr.*;
-import dap4.core.util.*;
+import dap4.core.util.DapException;
+import dap4.core.util.DapUtil;
+import dap4.core.util.Odometer;
+import dap4.core.util.Slice;
 
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharsetDecoder;
 import java.util.List;
 
 public class D4DataAtomic extends D4DataVariable implements DataAtomic
@@ -77,13 +79,22 @@ public class D4DataAtomic extends D4DataVariable implements DataAtomic
     @Override
     public long getElementSize()
     {
-        return 0;
+        return this.basetype.isFixedSize() ? this.basetype.getSize() : 0;
+    }
+
+    @Override
+    public long getSizeBytes()
+    {
+        if(this.basetype.isFixedSize())
+            return this.getCount()*this.getElementSize();
+        else
+            return this.totalbytestringsize;
     }
 
     @Override
     public void
     read(List<Slice> slices, Object data, long offset)
-        throws DataException
+            throws DataException
     {
         if(slices == null || slices.size() == 0) { // scalar
             extractObjectVector(this.basetype, this.dsp.getData(), 0, 1, data, 0);
@@ -92,8 +103,8 @@ public class D4DataAtomic extends D4DataVariable implements DataAtomic
             Odometer odom;
             try {
                 odom = Odometer.factory(slices,
-                    ((DapVariable) this.getTemplate()).getDimensions(),
-                    contig);
+                        ((DapVariable) this.getTemplate()).getDimensions(),
+                        contig);
             } catch (DapException de) {
                 throw new DataException(de);
             }
@@ -107,7 +118,7 @@ public class D4DataAtomic extends D4DataVariable implements DataAtomic
                 long extent = lastslice.getCount();
                 while(odom.hasNext()) {
                     long index = odom.next();
-                    extractObjectVector(this.basetype, this.dsp.getData(), index+first, extent, data, localoffset);
+                    extractObjectVector(this.basetype, this.dsp.getData(), index + first, extent, data, localoffset);
                     localoffset += extent;
                 }
             } else { // read one by one
@@ -158,7 +169,7 @@ public class D4DataAtomic extends D4DataVariable implements DataAtomic
      * @param basetype type of object to extract
      * @param dataset  ByteBuffer containing databuffer; position assumed correct
      * @return resulting value as an Object; value does not necessarily conform
-     *         to Convert.ValueClass.
+     * to Convert.ValueClass.
      */
 
     protected Object

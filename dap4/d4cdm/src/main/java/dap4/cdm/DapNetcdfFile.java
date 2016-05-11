@@ -5,8 +5,11 @@
 package dap4.cdm;
 
 import dap4.core.data.DSP;
-import dap4.core.util.DapUtil;
-import dap4.dap4shared.*;
+import dap4.core.dmr.DefaultDMRFactory;
+import dap4.dap4lib.DefaultDataFactory;
+import dap4.dap4lib.FileDSP;
+import dap4.dap4lib.HttpDSP;
+import dap4.dap4lib.XURI;
 import ucar.ma2.*;
 import ucar.nc2.ParsedSectionSpec;
 import ucar.nc2.Variable;
@@ -131,7 +134,7 @@ public class DapNetcdfFile extends ucar.nc2.NetcdfFile
 
         // 2. Construct an equivalent CDM tree and populate 
         //    this NetcdfFile object.
-        CDMCompiler compiler = new CDMCompiler(this, this.dsp, new DefaultDataFactory());
+        CDMCompiler compiler = new CDMCompiler(this, this.dsp, new DefaultDMRFactory(), new DefaultDataFactory());
         compiler.compile(arraymap);
         // set the pseudo-location, otherwise we get a name that is full path.
         setLocation(this.dsp.getDMR().getDataset().getShortName());

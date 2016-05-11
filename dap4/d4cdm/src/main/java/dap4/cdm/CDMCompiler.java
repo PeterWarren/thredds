@@ -13,6 +13,7 @@ import dap4.core.util.DapUtil;
 import dap4.core.util.Escape;
 import ucar.ma2.Array;
 import ucar.nc2.Attribute;
+import ucar.nc2.Group;
 import ucar.nc2.Variable;
 
 import java.io.IOException;
@@ -21,11 +22,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The goal for the CDM compiler is two-fold:
+ * The goal for the CDM compiler is produce a NetcdfDatset
+ * whose content comes from a DSP.
+ * This requires two translations/wraps.
  * 1. Create a set of CDMNodes corresponding to the
  * relevant nodes in the DMR.
  * 2. Create a set of CDM ucar.ma2.array objects that wrap the
  * DataDataset object.
+ * Note that this compiler has nothing to do with D4DataCompiler.
  */
 
 public class CDMCompiler
@@ -51,8 +55,9 @@ public class CDMCompiler
     DSP dsp = null;
     DapDataset dmr = null;
     DataDataset d4root = null;
-    CDMDataset cdmroot = null;
-    DapFactory factory = null;
+    Group cdmroot = null;
+    DapFactory dmrfactory = null;
+    DapDataFactory datafactory = null;
 
     NodeMap nodemap = new NodeMap();
 
@@ -64,16 +69,19 @@ public class CDMCompiler
      *
      * @param ncfile  the target NetcdfFile
      * @param dsp     the compiled D4 databuffer
-     * @param factory the node building factory
+     * @param dmrfactory the node building factory
+     * @param datafactory the node building factory
      */
 
-    public CDMCompiler(DapNetcdfFile ncfile, DSP dsp, DapDataFactory factory)
+    public CDMCompiler(DapNetcdfFile ncfile, DSP dsp, DapFactory dmrfactory, DapDataFactory datafactory)
             throws DapException
     {
         this.ncfile = ncfile;
         this.dsp = dsp;
         this.d4root = (DataDataset) dsp.getDataDataset();
         this.dmr = dsp.getDMR();
+        this.datafactory = datafactory;
+        this.dmrfactory = dmrfactory;
     }
 
     //////////////////////////////////////////////////
@@ -100,7 +108,7 @@ public class CDMCompiler
     {
         // Convert the DMR to CDM metadata
         // and return a mapping from DapNode -> CDMNode
-        this.nodemap = new DSPToCDM(this.ncfile, this.dmr).create();
+        this.nodemap = new DMRToCDM(this.ncfile, this.dmr).create();
     }
 
     //////////////////////////////////////////////////
@@ -162,7 +170,7 @@ public class CDMCompiler
     /**
      * Compile an Atomic Valued variable.
      *
-     * @param d4var The D4 databuffer wrapper
+     * @param d4var The D4 datvariable being wrapped
      * @return An Array object wrapping d4var.
      * @throws DapException
      */
@@ -223,7 +231,7 @@ public class CDMCompiler
             assert (d4var.getSort() == DataSort.STRUCTURE);
             DataStructure d4struct = (DataStructure) d4var;
             // Create a 1-element compound array
-            DataCompoundArray dca = new CDMDataCompoundArray((CDMDSP) this.dsp, dapstruct);
+            DataCompoundArray dca = datafactory.newCompoundArray(this.dsp, dapstruct);
             dca.addElement(d4struct);
             d4var = dca;
             dimproduct = 1;

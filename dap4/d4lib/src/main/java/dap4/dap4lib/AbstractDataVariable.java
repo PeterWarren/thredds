@@ -9,7 +9,7 @@ import dap4.core.dmr.DapNode;
 import dap4.core.dmr.DapVariable;
 
 abstract public class AbstractDataVariable extends AbstractData
-    implements DataVariable
+                                           implements DataVariable
 {
     //////////////////////////////////////////////////
     // Constructor(s)

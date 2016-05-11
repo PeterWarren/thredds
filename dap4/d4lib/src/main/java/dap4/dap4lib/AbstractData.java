@@ -24,7 +24,7 @@ abstract public class AbstractData implements Data
         throws DataException
     {
         this.template = template;
-        this.sort = computesort();
+        this.sort = computesort(this);
     }
 
     //////////////////////////////////////////////////
@@ -47,15 +47,15 @@ abstract public class AbstractData implements Data
     //////////////////////////////////////////////////
     // Utilities
 
-    public DataSort
-    computesort()
+    static protected DataSort
+    computesort(Object o)
     {   // order is important
-        if(this instanceof DataAtomic) return DataSort.ATOMIC;
-        if(this instanceof DataRecord) return DataSort.RECORD;
-        if(this instanceof DataSequence) return DataSort.SEQUENCE;
-        if(this instanceof DataStructure) return DataSort.STRUCTURE;
-        if(this instanceof DataDataset) return DataSort.DATASET;
-        if(this instanceof DataCompoundArray) return DataSort.COMPOUNDARRAY;
+        if(o instanceof DataAtomic) return DataSort.ATOMIC;
+        if(o instanceof DataRecord) return DataSort.RECORD;
+        if(o instanceof DataSequence) return DataSort.SEQUENCE;
+        if(o instanceof DataStructure) return DataSort.STRUCTURE;
+        if(o instanceof DataDataset) return DataSort.DATASET;
+        if(o instanceof DataCompoundArray) return DataSort.COMPOUNDARRAY;
         assert false : "Cannot compute sort";
         return null;
     }

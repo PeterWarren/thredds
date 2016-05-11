@@ -4,6 +4,7 @@
 
 package dap4.cdm;
 
+import dap4.core.data.DataDataset;
 import dap4.core.dmr.*;
 import dap4.core.data.DSP;
 
@@ -16,8 +17,8 @@ the CDM array classes
 public interface CDMArray
 {
     public DSP getDSP();
-    public CDMDataset getRoot();
+    public DataDataset getRoot();
     public DapVariable getTemplate();
-    public long getByteSize();
+    public long getSizeBytes(); // In bytes
     public DapType getBaseType();
 }

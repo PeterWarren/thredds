@@ -43,7 +43,7 @@ abstract public class UnitTestCommon
     // Walk around the directory structure to locate
     // the path to the thredds root (which may not
     // be names "thredds").
-    // Same as code in CommonTestUtils, but for
+    // Same as code in UnitTestCommon, but for
     // some reason, Intellij will not let me import it.
 
     static String
@@ -145,7 +145,7 @@ abstract public class UnitTestCommon
         Assert.assertTrue("Cannot locate /thredds parent dir", this.threddsroot != null);
         this.threddsServer = TestDir.remoteTestServer;
         if(DEBUG)
-            System.err.println("CommonTestUtils: threddsServer=" + threddsServer);
+            System.err.println("UnitTestCommon: threddsServer=" + threddsServer);
     }
 
     /**

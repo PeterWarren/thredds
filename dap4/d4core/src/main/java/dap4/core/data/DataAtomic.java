@@ -33,11 +33,20 @@ public interface DataAtomic extends DataVariable
     public long getCount(); // dimension product
 
     /**
-     * Get the s ize of a single element in bytes; 0 => undefined
+     * Get the size of a single element in bytes; 0 => undefined/variable
      *
      * @return size
      */
     public long getElementSize();
+
+    /**
+     * Get the size in bytes of this whole object;
+     * Normally count*element-size, except for variable size elements.
+     *
+     * @return size
+     */
+    public long getSizeBytes();
+
 
     /**
      * Read of multiple values at once.
