@@ -5,14 +5,13 @@
 package dap4.cdm;
 
 import dap4.core.data.DSP;
-import dap4.core.dmr.DefaultDMRFactory;
-import dap4.dap4lib.DefaultDataFactory;
 import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.HttpDSP;
 import dap4.dap4lib.XURI;
 import ucar.ma2.*;
 import ucar.nc2.ParsedSectionSpec;
 import ucar.nc2.Variable;
+import ucar.nc2.dataset.NetcdfDataset;
 import ucar.nc2.iosp.IospHelper;
 import ucar.nc2.util.CancelTask;
 
@@ -21,14 +20,14 @@ import java.net.URISyntaxException;
 import java.nio.channels.WritableByteChannel;
 import java.util.*;
 
-public class DapNetcdfFile extends ucar.nc2.NetcdfFile
+public class DapNetcdfDataset extends NetcdfDataset
 {
     static final boolean DEBUG = false;
     static final boolean PARSEDEBUG = false;
     static final boolean MERGE = false;
 
     // NetcdfDataset enhancement to use: need only coord systems
-    //static Set<NetcdfDataset.Enhance> ENHANCEMENT = EnumSet.of(NetcdfDataset.Enhance.CoordSystems);
+    static Set<NetcdfDataset.Enhance> ENHANCEMENT = EnumSet.of(NetcdfDataset.Enhance.CoordSystems);
 
     //////////////////////////////////////////////////
     // Constants
@@ -93,7 +92,7 @@ public class DapNetcdfFile extends ucar.nc2.NetcdfFile
      * @param cancelTask check if task is cancelled; may be null.
      * @throws IOException
      */
-    public DapNetcdfFile(String url, CancelTask cancelTask)
+    public DapNetcdfDataset(String url, CancelTask cancelTask)
             throws IOException
     {
         super();
@@ -134,8 +133,8 @@ public class DapNetcdfFile extends ucar.nc2.NetcdfFile
 
         // 2. Construct an equivalent CDM tree and populate 
         //    this NetcdfFile object.
-        CDMCompiler compiler = new CDMCompiler(this, this.dsp, new DefaultDMRFactory(), new DefaultDataFactory());
-        compiler.compile(arraymap);
+        CDMCompiler compiler = new CDMCompiler(this, this.dsp);
+        compiler.compile();
         // set the pseudo-location, otherwise we get a name that is full path.
         setLocation(this.dsp.getDMR().getDataset().getShortName());
         finish();
@@ -148,7 +147,7 @@ public class DapNetcdfFile extends ucar.nc2.NetcdfFile
      * @throws IOException
      */
 
-    public DapNetcdfFile(String url)
+    public DapNetcdfDataset(String url)
             throws IOException
     {
         this(url, null);

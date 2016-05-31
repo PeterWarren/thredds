@@ -4,12 +4,11 @@
 
 package dap4.test;
 
-import dap4.cdm.DapNetcdfFile;
+import dap4.cdm.DapNetcdfDataset;
 import dap4.core.dmr.DapDataset;
 import dap4.core.util.*;
 import dap4.core.data.DSP;
 import dap4.servlet.DMRPrint;
-import dap4.core.data.DSP;
 import ucar.nc2.*;
 
 import java.io.IOException;
@@ -82,7 +81,7 @@ public class TestPrinter
         throws DapException
     {
         this.ncfile = ncfile;
-        setDSP(((DapNetcdfFile) this.ncfile).getDSP());
+        setDSP(((DapNetcdfDataset) this.ncfile).getDSP());
     }
 
     public void setDSP(DSP dsp)

@@ -2,15 +2,21 @@
    See the LICENSE file for more information.
 */
 
-package   dap4.cdm;
+package dap4.cdm;
 
+import dap4.core.data.DSP;
 import dap4.core.dmr.*;
-import dap4.core.util.*;
+import dap4.core.util.Convert;
+import dap4.core.util.DapException;
+import dap4.core.util.DapSort;
 import ucar.ma2.DataType;
 import ucar.ma2.ForbiddenConversionException;
 import ucar.nc2.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Convert a DSP to corresponding NetcdfFile CDM metadata.
@@ -21,23 +27,27 @@ public class DMRToCDM
     //////////////////////////////////////////////////
     // Instance Variables
 
-    protected DapNetcdfFile ncfile;
+    protected DapNetcdfDataset ncfile;
+    protected DSP dsp;
     protected DapDataset dmr;
 
-    protected NodeMap nodemap = new NodeMap();
+    protected NodeMap nodemap;
 
     //////////////////////////////////////////////////
     // Constructors
 
     /**
      * @param ncfile - the NetcdfFile object
-     * @param dmr   - the DMR
+     * @param dsp    - the DSP being wrapped
      */
 
-    public DMRToCDM(DapNetcdfFile ncfile, DapDataset dmr)
+    public DMRToCDM(DapNetcdfDataset ncfile, DSP dsp)
+            throws DapException
     {
         this.ncfile = ncfile;
-        this.dmr = dmr;
+        this.dsp = dsp;
+        this.dmr = dsp.getDMR();
+        this.nodemap = new NodeMap();
     }
 
     //////////////////////////////////////////////////
@@ -52,18 +62,18 @@ public class DMRToCDM
 
     public NodeMap
     create()
-        throws DapException
+            throws DapException
     {
-        // Netcdf File will already have a root group
+        // Netcdf Dataset will already have a root group
         Group cdmroot = ncfile.getRootGroup();
-        nodemap.put(dmr, cdmroot);
-        fillGroup(cdmroot, dmr, ncfile, nodemap);
+        nodemap.put(this.dmr, cdmroot);
+        fillGroup(cdmroot, this.dmr, ncfile, nodemap);
         return nodemap;
     }
 
     protected void
     fillGroup(Group cdmparent, DapGroup dapparent, NetcdfFile ncfile, NodeMap nodemap)
-        throws DapException
+            throws DapException
     {
         // Create dimensions in this group
         for(DapDimension dim : dapparent.getDimensions()) {
@@ -109,7 +119,7 @@ public class DMRToCDM
             }
 
             EnumTypedef cdmenum = new EnumTypedef(dapenum.getShortName(),
-                map, cdmbasetype);
+                    map, cdmbasetype);
             nodemap.put(dapenum, cdmenum);
             cdmparent.addEnumeration(cdmenum);
         }
@@ -135,7 +145,7 @@ public class DMRToCDM
     protected void
     createGroup(DapGroup dapgroup, Group cdmparent,
                 NetcdfFile ncfile, NodeMap nodemap)
-        throws DapException
+            throws DapException
     {
         Group cdmgroup = new Group(ncfile, cdmparent, dapgroup.getShortName());
         nodemap.put(dapgroup, cdmgroup);
@@ -156,23 +166,23 @@ public class DMRToCDM
     protected void
     createVar(DapVariable dapvar, NetcdfFile ncfile, NodeMap nodemap,
               Group cdmgroup, Structure cdmparentstruct)
-        throws DapException
+            throws DapException
     {
         Variable cdmvar = null;
         if(dapvar.getSort() == DapSort.ATOMICVARIABLE) {
             DapAtomicVariable atomvar = (DapAtomicVariable) dapvar;
             cdmvar = new Variable(ncfile,
-                cdmgroup,
-                cdmparentstruct,
-                atomvar.getShortName());
+                    cdmgroup,
+                    cdmparentstruct,
+                    atomvar.getShortName());
             DapType basetype = atomvar.getBaseType();
             DataType cdmbasetype;
             if(basetype.isEnumType())
                 cdmbasetype = CDMUtil.enumtypefor(basetype);
             else
-                cdmbasetype =  CDMUtil.daptype2cdmtype(basetype);
+                cdmbasetype = CDMUtil.daptype2cdmtype(basetype);
             if(cdmbasetype == null)
-                throw new DapException("Unknown basetype:"+basetype);
+                throw new DapException("Unknown basetype:" + basetype);
             cdmvar.setDataType(cdmbasetype);
             if(basetype.isEnumType()) {
                 EnumTypedef cdmenum = (EnumTypedef) nodemap.get(basetype);
@@ -184,9 +194,9 @@ public class DMRToCDM
         } else if(dapvar.getSort() == DapSort.STRUCTURE) {
             DapStructure dapstruct = (DapStructure) dapvar;
             Structure cdmstruct = new Structure(ncfile,
-                cdmgroup,
-                cdmparentstruct,
-                dapstruct.getShortName());
+                    cdmgroup,
+                    cdmparentstruct,
+                    dapstruct.getShortName());
             cdmvar = cdmstruct;
             nodemap.put(dapvar, cdmvar);
             // Add the fields
@@ -200,28 +210,28 @@ public class DMRToCDM
             // so Sequence {...} s[d1]...[dn]
             // => Sequence {...} s[d1]...[dn]
             Sequence cdmseq = new Sequence(ncfile,
-                cdmgroup,
-                cdmparentstruct,
-                dapseq.getShortName());
+                    cdmgroup,
+                    cdmparentstruct,
+                    dapseq.getShortName());
             cdmvar = cdmseq;
             nodemap.put(dapvar, cdmvar);
             // Add the fields
             for(DapVariable field : dapseq.getFields()) {
                 createVar(field, ncfile, nodemap, cdmgroup, cdmseq);
             }
-	    // If the rank > 0, then add warning attribute
-	    if(dapvar.getRank() > 0) {
-		List value = new ArrayList();
-		value.add("CDM does not support Sequences with rank > 0");
-		Attribute warning = new Attribute("_WARNING:",value);
-		cdmvar.addAttribute(warning);
-	    }	    
-	 
+            // If the rank > 0, then add warning attribute
+            if(dapvar.getRank() > 0) {
+                List value = new ArrayList();
+                value.add("CDM does not support Sequences with rank > 0");
+                Attribute warning = new Attribute("_WARNING:", value);
+                cdmvar.addAttribute(warning);
+            }
+
         } else
             assert (false) : "Unknown variable sort: " + dapvar.getSort();
         int rank = dapvar.getRank();
         List<Dimension> cdmdims = new ArrayList<Dimension>(rank + 1); // +1 for vlen
-        for(int i = 0;i < rank;i++) {
+        for(int i = 0; i < rank; i++) {
             DapDimension dim = dapvar.getDimension(i);
             Dimension cdmdim = createDimensionRef(dim, cdmgroup, nodemap);
             cdmdims.add(cdmdim);
@@ -246,7 +256,7 @@ public class DMRToCDM
 
     protected void
     createDimension(DapDimension dapdim, Group cdmgroup, NodeMap nodemap)
-        throws DapException
+            throws DapException
     {
         if(dapdim.isVariableLength()) {
             nodemap.put(dapdim, Dimension.VLEN);
@@ -262,7 +272,7 @@ public class DMRToCDM
 
     protected Dimension
     createDimensionRef(DapDimension dim, Group cdmgroup, NodeMap nodemap)
-        throws DapException
+            throws DapException
     {
         Dimension cdmdim = null;
         if(dim.isShared())
@@ -277,7 +287,7 @@ public class DMRToCDM
     protected EnumTypedef
     createEnum(DapEnumeration dapenum, Group cdmparent,
                NodeMap nodemap)
-        throws DapException
+            throws DapException
     {
         DapType basetype = dapenum.getBaseType();
         DataType cdmbasetype;
@@ -310,7 +320,7 @@ public class DMRToCDM
         }
 
         EnumTypedef cdmenum = new EnumTypedef(dapenum.getShortName(),
-            map, cdmbasetype);
+                map, cdmbasetype);
         nodemap.put(dapenum, cdmenum);
         cdmparent.addEnumeration(cdmenum);
         return cdmenum;
@@ -341,10 +351,10 @@ public class DMRToCDM
             if(!(basetype.isNumericType() || basetype.isStringType() || basetype.isCharType()))
                 throw new ForbiddenConversionException("Illegal attribute type:" + basetype.toString());
             DapType uptype = Convert.upcastType(basetype);
-            DataType cdmtype =  CDMUtil.daptype2cdmtype(uptype);
+            DataType cdmtype = CDMUtil.daptype2cdmtype(uptype);
             Object[] dapvalues = dapattr.getValues();
             List cdmvalues = new ArrayList();
-            for(int i = 0;i < dapvalues.length;i++) {
+            for(int i = 0; i < dapvalues.length; i++) {
                 Object o = dapvalues[i];
                 o = Convert.upcast(o, uptype);
                 if(cdmtype == DataType.CHAR)

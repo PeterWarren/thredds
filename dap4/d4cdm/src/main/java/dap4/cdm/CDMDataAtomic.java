@@ -4,6 +4,7 @@
 
 package dap4.cdm;
 
+import dap4.core.data.DSP;
 import dap4.core.data.DataAtomic;
 import dap4.core.data.DataException;
 import dap4.core.dmr.DapAtomicVariable;
@@ -24,9 +25,6 @@ public class CDMDataAtomic extends AbstractDataVariable implements CDMDataVariab
     //////////////////////////////////////////////////
     // Instance variables
 
-    //COVERITY[FB.URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD]
-    protected CDMDSP dsp = null;
-
     protected long product = 0; // dimension cross product; 0 => undefined; scalar=>1
 
     protected DapType basetype = null;
@@ -37,10 +35,10 @@ public class CDMDataAtomic extends AbstractDataVariable implements CDMDataVariab
     //////////////////////////////////////////////////
     // Constructors
 
-    public CDMDataAtomic(CDMDSP dsp, DapAtomicVariable template, Array array)
+    public CDMDataAtomic(DSP dsp, DapAtomicVariable template, Array array)
             throws DataException
     {
-        super(template);
+        super(template,dsp);
         this.basetype = ((DapVariable) template).getBaseType();
         this.atomtype = this.basetype.getTypeSort();
         this.product = DapUtil.dimProduct(template.getDimensions());

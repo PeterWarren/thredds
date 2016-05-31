@@ -5,26 +5,25 @@
 
 package dap4.cdm;
 
-import dap4.core.data.*;
-import dap4.core.dmr.*;
+import com.sun.org.apache.bcel.internal.generic.VariableLengthInstruction;
+import dap4.core.data.DSP;
+import dap4.core.data.DataDataset;
+import dap4.core.data.DataSort;
+import dap4.core.dmr.DapDataset;
 import dap4.core.util.DapException;
-import dap4.core.util.DapSort;
-import dap4.core.util.DapUtil;
-import dap4.core.util.Escape;
 import ucar.ma2.Array;
-import ucar.nc2.Attribute;
 import ucar.nc2.Group;
 import ucar.nc2.Variable;
+import ucar.nc2.dataset.NetcdfDataset;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.Map;
 
 /**
- * The goal for the CDM compiler is produce a NetcdfDatset
- * whose content comes from a DSP.
- * This requires two translations/wraps.
+ * The goal for the CDM compiler is produce a NetcdfDataset
+ * whose content comes from a DSP. In a sense it is the
+ * inverse of CDMDSP.
+ *
+ * Compilation implies two translations/wraps.
  * 1. Create a set of CDMNodes corresponding to the
  * relevant nodes in the DMR.
  * 2. Create a set of CDM ucar.ma2.array objects that wrap the
@@ -39,27 +38,16 @@ public class CDMCompiler
     //////////////////////////////////////////////////
     // Constants
 
-    static final int COUNTSIZE = 8; // databuffer as specified by the DAP4 spec
-
-    static String LBRACE = "{";
-    static String RBRACE = "}";
-
-    static final String CHECKSUMATTRNAME = "_DAP4_Checksum_CRC32";
-
-    static final int CHECKSUMSIZE = 4; // for CRC32
-
     //////////////////////////////////////////////////
     // Instance variables
 
-    DapNetcdfFile ncfile = null;
+    DapNetcdfDataset ncfile = null;
     DSP dsp = null;
     DapDataset dmr = null;
     DataDataset d4root = null;
     Group cdmroot = null;
-    DapFactory dmrfactory = null;
-    DapDataFactory datafactory = null;
-
-    NodeMap nodemap = new NodeMap();
+    NodeMap nodemap = null;
+    Map<Variable, Array> arraymap = null;
 
     //////////////////////////////////////////////////
     //Constructor(s)
@@ -67,21 +55,17 @@ public class CDMCompiler
     /**
      * Constructor
      *
-     * @param ncfile  the target NetcdfFile
-     * @param dsp     the compiled D4 databuffer
-     * @param dmrfactory the node building factory
-     * @param datafactory the node building factory
+     * @param ncfile  the target NetcdfDataset (as yet empty)
+     * @param dsp     the DSP to be wrapped
      */
 
-    public CDMCompiler(DapNetcdfFile ncfile, DSP dsp, DapFactory dmrfactory, DapDataFactory datafactory)
+    public CDMCompiler(DapNetcdfDataset ncfile, DSP dsp)
             throws DapException
     {
         this.ncfile = ncfile;
         this.dsp = dsp;
         this.d4root = (DataDataset) dsp.getDataDataset();
         this.dmr = dsp.getDMR();
-        this.datafactory = datafactory;
-        this.dmrfactory = dmrfactory;
     }
 
     //////////////////////////////////////////////////
@@ -89,15 +73,38 @@ public class CDMCompiler
 
     public NodeMap getNodeMap()
     {
-        return nodemap;
+        return this.nodemap;
     }
+
+    public Map<Variable,Array> getArrayMap()
+    {
+        return this.arraymap;
+    }
+
+    public NetcdfDataset getNetcdfDataset()
+    {
+        return this.ncfile;
+    }
+
+    //////////////////////////////////////////////////
+    // Compile DMR and Data into a NetcdfDataset
+
+    /*Package access*/
+    void
+    compile()
+            throws DapException
+    {
+        assert d4root.getSort() == DataSort.DATASET;
+        compileDMR();
+        compileData();
+    }    
 
     //////////////////////////////////////////////////
     // Compile DMR->set of CDM nodes
 
     /**
      * Convert a DMR to equivalent CDM meta-databuffer
-     * and populate a NetcdfFile with it.
+     * and populate a NetcdfDataset with it.
      *
      * @throws DapException
      */
@@ -108,322 +115,26 @@ public class CDMCompiler
     {
         // Convert the DMR to CDM metadata
         // and return a mapping from DapNode -> CDMNode
-        this.nodemap = new DMRToCDM(this.ncfile, this.dmr).create();
+        this.nodemap = new DMRToCDM(this.ncfile, this.dsp).create();
     }
 
     //////////////////////////////////////////////////
-    // Compile Data objects to ucar.ma2.Array objects
-
-    /* package access*/
-    void
-    compile(Map<Variable, Array> arraymap)
-            throws DapException
-    {
-        assert d4root.getSort() == DataSort.DATASET;
-        //cdmroot = new CDMDataset();
-        compileDMR();
-        // iterate over the variables represented in the databuffer
-        List<DataVariable> vars = this.d4root.getTopVariables();
-        for(DataVariable var : vars) {
-            Variable cdmvar = (Variable) nodemap.get(var.getTemplate());
-            Array array = compileVar(var);
-            arraymap.put(cdmvar, array);
-        }
-    }
-
-    protected Array
-    compileVar(DataVariable d4var)
-            throws DapException
-    {
-        Array array = null;
-        DapVariable dapvar = (DapVariable) d4var.getTemplate();
-        switch (d4var.getSort()) {
-        case ATOMIC:
-            array = compileAtomicVar(d4var);
-            break;
-        case SEQUENCE:
-            array = compileSequenceArray((DataVariable) d4var);
-            break;
-        case STRUCTURE:
-            array = compileStructureArray((DataVariable) d4var);
-            break;
-        case COMPOUNDARRAY:
-            if(dapvar.getSort() == DapSort.STRUCTURE)
-                array = compileStructureArray((DataVariable) d4var);
-            else if(dapvar.getSort() == DapSort.SEQUENCE)
-                array = compileSequenceArray((DataVariable) d4var);
-            break;
-        default:
-            assert false : "Unexpected databuffer sort: " + d4var.getSort();
-        }
-        if(dapvar.isTopLevel()) {
-            // transfer the checksum attribute
-            byte[] csum = dapvar.getChecksum();
-            String scsum = Escape.bytes2hex(csum);
-            Variable cdmvar = (Variable) nodemap.get(dapvar);
-            Attribute acsum = new Attribute(CHECKSUMATTRNAME, scsum);
-            cdmvar.addAttribute(acsum);
-        }
-        return array;
-    }
+    // Compile Data->set of CDM Array objects
 
     /**
-     * Compile an Atomic Valued variable.
+     * Convert a DataDataset to equivalent CDM data (Array objects).
+     * and populate a NetcdfDataset with it.
      *
-     * @param d4var The D4 datvariable being wrapped
-     * @return An Array object wrapping d4var.
-     * @throws DapException
-     */
-    protected Array
-    compileAtomicVar(DataVariable d4var)
-            throws DapException
-    {
-        CDMArrayAtomic array = new CDMArrayAtomic(this.dsp, this.cdmroot, (DataAtomic) d4var);
-        return array;
-    }
-
-    /**
-     * Compile a single structure instance. WARNING: the underlying CDM code
-     * (esp. NetcdfDataset) apparently does not support nested
-     * structure arrays; so this code may throw an exception.
-     *
-     * @param d4var     the data underlying this structure instance
-     * @param recno     the index in the parent compound array.
-     * @param container the parent CDMArrayStructure
-     * @return An Array for this instance
-     * @throws DapException
-     */
-    protected CDMArray
-    compileStructure(DataStructure d4var, int recno, CDMArrayStructure container)
-            throws DapException
-    {
-        assert (d4var.getSort() == DataSort.STRUCTURE);
-        DapStructure dapstruct = (DapStructure) d4var.getTemplate();
-        assert (dapstruct.getRank() > 0 || recno == 0);
-        int nmembers = dapstruct.getFields().size();
-        List<DapVariable> dfields = dapstruct.getFields();
-        assert nmembers == dfields.size();
-        for(int m = 0; m < nmembers; m++) {
-            DataVariable dfield = d4var.readfield(m);
-            Array afield = compileVar(dfield);
-            container.addField(recno, m, afield);
-        }
-        return container;
-    }
-
-    /**
-     * Compile an array of structures. WARNING: the underlying CDM code
-     * (esp. NetcdfDataset) apparently does not support nested
-     * structure arrays; so this code may throw an exception.
-     *
-     * @param d4var The D4 databuffer wrapper
-     * @return A CDMArrayStructure for the databuffer for this struct.
-     * @throws DapException
-     */
-    protected Array
-    compileStructureArray(DataVariable d4var)
-            throws DapException
-    {
-        DapStructure dapstruct = (DapStructure) d4var.getTemplate();
-        List<DapDimension> dimset = dapstruct.getDimensions();
-        long dimproduct;
-        if(dimset == null || dimset.size() == 0) {// scalar
-            assert (d4var.getSort() == DataSort.STRUCTURE);
-            DataStructure d4struct = (DataStructure) d4var;
-            // Create a 1-element compound array
-            DataCompoundArray dca = datafactory.newCompoundArray(this.dsp, dapstruct);
-            dca.addElement(d4struct);
-            d4var = dca;
-            dimproduct = 1;
-        } else
-            dimproduct = DapUtil.dimProduct(dimset);
-        assert (d4var.getSort() == DataSort.COMPOUNDARRAY);
-        DataCompoundArray d4array = (DataCompoundArray) d4var;
-        CDMArrayStructure arraystruct
-                = new CDMArrayStructure(this.dsp, this.cdmroot, d4array);
-        try {
-            for(int i = 0; i < dimproduct; i++) {
-                DataStructure dds = (DataStructure) d4array.read(i);
-                compileStructure(dds, i, arraystruct);
-            }
-            arraystruct.finish();
-            return arraystruct;
-        } catch (IOException ioe) {
-            throw new DapException(ioe);
-        }
-    }
-
-
-    /**
-     * Compile a sequence. WARNING: the underlying CDM code
-     * (esp. NetcdfDataset) apparently does not support nested
-     * sequence arrays.
-     *
-     * @param d4var the data underlying this sequence instance
-     * @return A CDMArraySequence for this instance
      * @throws DapException
      */
 
-    protected CDMArraySequence
-    compileSequence(DataSequence d4var)
+    protected void
+    compileData()
             throws DapException
     {
-        assert (d4var.getSort() == DataSort.SEQUENCE);
-        DapSequence dapseq = (DapSequence) d4var.getTemplate();
-        CDMArraySequence container = new CDMArraySequence(this.dsp, this.cdmroot, dapseq, d4var);
-        long nrecs = d4var.getRecordCount();
-        // Fill in the record fields
-        for(int recno = 0; recno < nrecs; recno++) {
-            DataRecord rec = (DataRecord) d4var.readRecord(recno);
-            for(int fieldno = 0; fieldno < dapseq.getFields().size(); fieldno++) {
-                DataVariable field = (DataVariable) rec.readfield(fieldno);
-                // compile the field to get an array
-                container.addField(recno, fieldno, compileVar(field));
-            }
-        }
-        return container;
+        // Convert the DMR to CDM metadata
+        // and return a mapping from Variable -> Array
+        this.arraymap = new DataToCDM(this.ncfile, this.dsp, this.nodemap).create();
     }
 
-    /**
-     * Compile an array of sequences. WARNING: the underlying CDM code
-     * (esp. NetcdfDataset) apparently does not support sequences
-     * with rank > 0 (ignoring the vlen dimension)
-     * so this code may throw an exception.
-     *
-     * @param d4var The D4 databuffer wrapper
-     * @return A CDMArraySequence for the databuffer for this seq.
-     * @throws DapException
-     * @see CDMArraySequence
-     * to see how a dimensioned Sequence is represented.
-     */
-
-    protected Array
-    compileSequenceArray(DataVariable d4var)
-            throws DapException
-    {
-        Array array = null;
-
-        if(d4var.getSort() == DataSort.SEQUENCE) {// scalar
-            array = compileSequence((DataSequence) d4var);
-        } else if(d4var.getSort() == DataSort.COMPOUNDARRAY) {
-            throw new DapException("Only Sequence{...}(*) supported");
-        } else
-            throw new DapException("CDMCompiler: unexpected data variable type: " + d4var.getSort());
-        return array;
-    }
-
-    static void
-    skip(ByteBuffer data, int count)
-    {
-        data.position(data.position() + count);
-    }
-
-    static int
-    getCount(ByteBuffer data)
-    {
-        long count = data.getLong();
-        return (int) (count & 0xFFFFFFFF);
-    }
-
-    /**
-     * Compute the size in databuffer of the serialized form
-     * <p>
-     * param daptype
-     *
-     * @return type's serialized form size
-     */
-/*    static int
-    computeTypeSize(DapType daptype)
-    {
-        TypeSort atype = daptype.getTypeSort();
-        if(atype == TypeSort.Enum) {
-            DapEnumeration dapenum = (DapEnumeration) daptype;
-            atype = dapenum.getBaseType().getTypeSort();
-        }
-        return Dap4Util.daptypeSize(atype);
-    }
-    */
-    static long
-    walkByteStrings(int[] positions, ByteBuffer databuffer)
-    {
-        int count = positions.length;
-        long total = 0;
-        int savepos = databuffer.position();
-        // Walk each bytestring
-        for(int i = 0; i < count; i++) {
-            int pos = databuffer.position();
-            positions[i] = pos;
-            int size = getCount(databuffer);
-            total += COUNTSIZE;
-            total += size;
-            skip(databuffer, size);
-        }
-        databuffer.position(savepos);// leave position unchanged
-        return total;
-    }
-
-    /*
-    Array
-    compileAtomicVLEN(ViewVariable annotation)
-        throws DapException
-    {
-        DapAtomicVariable atomvar = (DapAtomicVariable) annotation.getVariable();
-        DapType daptype = atomvar.getBaseType();
-        List<DapDimension> dimset = atomvar.getDimensions();
-
-        // For the VLEN case, we need to build a simple Array whose storage
-        // is Object. Each element of the storage will contain
-        // a Dap4AtomicVLENArray pointing to one of the vlen instances.
-
-        // Compute rank upto the VLEN
-        int prefixrank = dimset.size() - 1;
-
-        // Compute product size up to the VLEN
-        int dimproduct = 1;
-        for(int i = 0;i < prefixrank;i++)
-            dimproduct *= dimset.get(i).getSize();
-
-        // Collect the vlen's databuffer arrays
-        Object[] databuffer = new Object[dimproduct];
-        List<Slice> slices = new ArrayList<Slice>(); // reusable
-        for(int i = 0;i < dimproduct;i++) {
-            int savepos = databuffer.position();  // mark the start of this instance
-            // Get the number of elements in this vlen instance
-            int count = getCount(databuffer);
-            slices.clear();
-            slices.add(new Slice(0, count - 1, 1)); // create synthetic slice to cover the vlen count
-            Dap4AtomicVLENArray vlenarray
-                = new Dap4AtomicVLENArray(this.d4dataset, atomvar, slices, databuffer.position());
-            databuffer[i] = vlenarray;
-            vlenarray.setSize(count, databuffer.position());
-            if(!daptype.isEnumType() && !daptype.isFixedSize()) {
-                // this is a string, url, or opaque
-                int[] positions = new int[count];
-                long total = walkByteStrings(positions, databuffer);
-                vlenarray.setByteStrings(positions, total);
-            }
-            vlenarray.computeTotalSize();
-            databuffer.position(savepos);
-            skip(databuffer, (int) vlenarray.getTotalSize());
-        }
-
-        // Construct the return array; code taken from Nc4Iosp
-        if(prefixrank == 0) // if scalar, return just the len Array
-            return (Array) databuffer[0];
-        //if(prefixrank == 1)
-        //    return (Array) new ArrayObject(databuffer[0].getClass(), new int[]{dimproduct}, databuffer);
-
-        // Otherwise create and fill in an n-dimensional Array Of Arrays
-        int[] shape = new int[prefixrank];
-        for(int i = 0;i < prefixrank;i++)
-            shape[i] = (int) dimset.get(i).getSize(); //todo: or do we use the annotation
-        Array ndimarray = Array.factory(Array.class, shape);
-        // Transfer the elements of databuffer into the n-dim arrays
-        IndexIterator iter = ndimarray.getIndexIterator();
-        for(int i = 0;iter.hasNext();i++) {
-            iter.setObjectNext(databuffer[i]);
-        }
-        return ndimarray;
-    }
-    */
 }

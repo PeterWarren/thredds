@@ -16,15 +16,17 @@ abstract public class AbstractData implements Data
 
     protected DataSort sort = null;
     protected DapNode template = null;
+    protected DSP dsp = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
 
-    protected AbstractData(DapNode template)
+    protected AbstractData(DapNode template, DSP dsp)
         throws DataException
     {
         this.template = template;
         this.sort = computesort(this);
+        this.dsp = dsp;
     }
 
     //////////////////////////////////////////////////
@@ -43,6 +45,8 @@ abstract public class AbstractData implements Data
     {
         return template;
     }
+
+    public DSP getDSP() {return this.dsp;}
 
     //////////////////////////////////////////////////
     // Utilities

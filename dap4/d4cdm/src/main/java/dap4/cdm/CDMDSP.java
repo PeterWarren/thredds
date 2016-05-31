@@ -11,7 +11,7 @@ import dap4.core.util.DapException;
 import dap4.core.util.DapSort;
 import dap4.core.util.DapUtil;
 import dap4.dap4lib.AbstractDSP;
-import dap4.dap4lib.DefaultDataFactory;
+import dap4.dap4lib.CDMDataFactory;
 import ucar.ma2.Array;
 import ucar.ma2.ArrayStructure;
 import ucar.ma2.DataType;
@@ -28,7 +28,10 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 /**
- * CDM (NetcdfDataset) -> DSP
+ * Wrap CDM source (NetcdfDataset) to be a DSP
+ * This basically means wrapping various (CDM)Array
+ * object to look like DataVariable objects. This
+ * requires a specific subclass of DataFactory.
  */
 
 public class CDMDSP extends AbstractDSP
@@ -39,10 +42,9 @@ public class CDMDSP extends AbstractDSP
 
     static protected final boolean DEBUG = false;
 
-    static protected final Object FACTORYKEY = DapFactory.class;
-
     static protected final String DAPVERSION = "4.0";
     static protected final String DMRVERSION = "1.0";
+    static protected final String DMRNS = "http://xml.opendap.org/ns/DAP/4.0#";
 
     static protected final Class NC4CLASS = ucar.nc2.jni.netcdf.Nc4Iosp.class;
 
@@ -125,9 +127,8 @@ public class CDMDSP extends AbstractDSP
         if(ncfile == null)
             throw new DapException("CDMDSP: cannot open: " + path);
         setPath(ncfile.getLocation());
-        //if(this.context == null || (this.factory = (DapFactory) this.context.get(FACTORYKEY)) == null)
         this.dmrfactory = new DefaultDMRFactory();
-        this.datafactory = new DefaultDataFactory();
+        this.datafactory = new CDMDataFactory();
         //if(ncfile instanceof NetcdfDataset)
         //   ncdfile = (NetcdfDataset) ncfile;
         //else
@@ -269,7 +270,6 @@ public class CDMDSP extends AbstractDSP
                 ncdfile.writeCDL(System.out, false);
                 System.out.flush();
             }
-
             // Use the file path to define the dataset name
             String name = ncdfile.getLocation();
             // Normalize the name
@@ -286,7 +286,7 @@ public class CDMDSP extends AbstractDSP
             dmr.setDapVersion(DAPVERSION);
             dmr.setDMRVersion(DMRVERSION);
             dmr.setBase(DapUtil.canonicalpath(ncdfile.getLocation()));
-            dmr.setNS("http://xml.opendap.org/ns/DAP/4.0#");
+            dmr.setNS(DMRNS);
 
             // Now recursively build the tree. Start by
             // Filling the dataset with the contents of the ncfile
