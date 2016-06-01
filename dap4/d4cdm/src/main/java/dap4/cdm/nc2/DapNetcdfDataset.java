@@ -2,8 +2,10 @@
    See the LICENSE file for more information.
 */
 
-package dap4.cdm;
+package dap4.cdm.nc2;
 
+import dap4.cdm.CDMUtil;
+import dap4.cdm.NodeMap;
 import dap4.core.data.DSP;
 import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.HttpDSP;

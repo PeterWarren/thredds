@@ -2,7 +2,7 @@
    See the LICENSE file for more information.
 */
 
-package   dap4.cdm;
+package dap4.cdm.dsp;
 
 import ucar.ma2.Array;
 import ucar.nc2.CDMNode;

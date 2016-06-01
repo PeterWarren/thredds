@@ -2,7 +2,7 @@
    See the LICENSE file for more information.
 */
 
-package dap4.cdm;
+package dap4.cdm.dsp;
 
 import dap4.core.data.DataException;
 import dap4.core.data.DataStructure;
@@ -31,8 +31,6 @@ public class CDMDataStructure extends AbstractDataVariable implements DataStruct
 
     protected CDMDSP dsp = null;
     protected CDMDataCompoundArray parent;
-    //Coverity[FB.URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD]
-    protected long recno;
     protected byte[] checksum = null;
     protected DapStructure dapstruct = null;
     StructureData cdmdata = null;
@@ -42,14 +40,12 @@ public class CDMDataStructure extends AbstractDataVariable implements DataStruct
     //////////////////////////////////////////////////
     // Constructors
 
-    public CDMDataStructure(CDMDSP dsp, DapStructure dap, CDMDataCompoundArray cdv, long recno, StructureData data)
+    public CDMDataStructure(CDMDSP dsp, DapStructure dap, CDMDataCompoundArray parent, StructureData data)
             throws DataException
     {
-        super(dap);
+        super(dap,dsp);
         this.dsp = dsp;
-        this.parent = cdv;
-        //Coverity[FB.URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD]
-        this.recno = recno;
+        this.parent = parent;
         this.dapstruct = dap;
         // Locate our Structuredata from our parent
         this.cdmdata = data;

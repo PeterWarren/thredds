@@ -2,7 +2,7 @@
    See the LICENSE file for more information.
 */
 
-package dap4.cdm;
+package dap4.cdm.dsp;
 
 import dap4.core.data.DataException;
 import dap4.core.dmr.DapSequence;
@@ -21,9 +21,9 @@ public class CDMDataRecord extends CDMDataStructure
     //////////////////////////////////////////////////
     // Constructors
 
-    public CDMDataRecord(CDMDSP dsp, DapSequence dap, CDMDataCompoundArray cdv, int index, StructureData data)
+    public CDMDataRecord(CDMDSP dsp, DapSequence dap, CDMDataCompoundArray cdv, StructureData data)
         throws DataException
     {
-        super(dsp,dap,cdv,index,data);
+        super(dsp,dap,cdv,data);
     }
 }

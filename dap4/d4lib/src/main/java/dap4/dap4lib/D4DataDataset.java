@@ -31,7 +31,7 @@ public class D4DataDataset extends AbstractData implements DataDataset
     public D4DataDataset(D4DSP dsp, DapDataset dmr)
         throws DataException
     {
-        super(dmr);
+        super(dmr,dsp);
         this.dsp = dsp;
     }
 

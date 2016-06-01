@@ -4,7 +4,7 @@
 
 package dap4.test;
 
-import dap4.cdm.DapNetcdfDataset;
+import dap4.cdm.nc2.DapNetcdfDataset;
 import dap4.core.dmr.DapDataset;
 import dap4.core.util.*;
 import dap4.core.data.DSP;

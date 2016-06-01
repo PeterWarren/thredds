@@ -4,12 +4,11 @@
 
 package dap4.cdm;
 
-import dap4.cdm.CDMDSP;
-import dap4.cdm.CDMDataAtomic;
-import dap4.cdm.CDMDataDataset;
+import dap4.cdm.dsp.*;
 import dap4.core.data.*;
 import dap4.core.dmr.*;
 import ucar.ma2.Array;
+import ucar.ma2.StructureData;
 
 public class CDMDataFactory implements DapDataFactory
 {
@@ -47,7 +46,7 @@ public class CDMDataFactory implements DapDataFactory
     newSequence(DSP dsp, DapSequence template, DataCompoundArray parent, Object source)
             throws DataException
     {
-        return new CDMDataSequence(dsp, template, (CDMDataCompoundArray)parent, (Integer)source);
+	throw new UnsupportedOperationException();
     }
 
     @Override
@@ -55,7 +54,7 @@ public class CDMDataFactory implements DapDataFactory
     newRecord(DSP dsp, DapSequence template, DataSequence parent, Object source)
             throws DataException
     {
-        return new CDMDataRecord((CDMDSP) dsp, template, (CDMDataSequence)parent, (Integer)source);
+	throw new UnsupportedOperationException();
     }
 
     @Override
@@ -63,7 +62,7 @@ public class CDMDataFactory implements DapDataFactory
     newStructure(DSP dsp, DapStructure dap, DataCompoundArray parent, Object source)
             throws DataException
     {
-        return new CDMDataStructure((CDMDSP) dsp, dap, (CDMDataCompoundArray)parent, (Integer)source);
+        return new CDMDataStructure((CDMDSP) dsp, dap, (CDMDataCompoundArray)parent, (StructureData)source);
     }
 
     @Override

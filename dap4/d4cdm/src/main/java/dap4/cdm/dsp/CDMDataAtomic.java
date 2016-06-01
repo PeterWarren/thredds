@@ -2,8 +2,9 @@
    See the LICENSE file for more information.
 */
 
-package dap4.cdm;
+package dap4.cdm.dsp;
 
+import dap4.cdm.CDMUtil;
 import dap4.core.data.DSP;
 import dap4.core.data.DataAtomic;
 import dap4.core.data.DataException;

@@ -2,8 +2,9 @@
    See the LICENSE file for more information.
 */
 
-package dap4.cdm;
+package dap4.cdm.nc2;
 
+import dap4.cdm.CDMUtil;
 import dap4.core.data.*;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.DapVariable;

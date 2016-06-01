@@ -2,8 +2,10 @@
    See the LICENSE file for more information.
 */
 
-package dap4.cdm;
+package dap4.cdm.dsp;
 
+import dap4.cdm.CDMUtil;
+import dap4.cdm.NodeMap;
 import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.core.util.DapContext;
@@ -11,7 +13,7 @@ import dap4.core.util.DapException;
 import dap4.core.util.DapSort;
 import dap4.core.util.DapUtil;
 import dap4.dap4lib.AbstractDSP;
-import dap4.dap4lib.CDMDataFactory;
+import dap4.cdm.CDMDataFactory;
 import ucar.ma2.Array;
 import ucar.ma2.ArrayStructure;
 import ucar.ma2.DataType;

@@ -2,7 +2,7 @@
    See the LICENSE file for more information.
 */
 
-package dap4.cdm;
+package dap4.cdm.dsp;
 
 import dap4.core.data.*;
 import dap4.core.dmr.DapStructure;
@@ -47,7 +47,7 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
     public CDMDataCompoundArray(CDMDSP dsp, DapVariable dv, ArrayStructure array)
         throws DataException
     {
-        super(dv);
+        super(dv,dsp);
         this.dsp = dsp;
         this.template = dv;
         this.cdmvar = (Variable) dsp.getCDMNode(dv);
@@ -100,7 +100,7 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
         throws DataException
     {
         if(instances[(int) index] == null)
-            instances[(int) index] = new CDMDataStructure(this.dsp, (DapStructure) this.getTemplate(), this, index, array.getStructureData((int) index));
+            instances[(int) index] = new CDMDataStructure(this.dsp, (DapStructure) this.getTemplate(), this, array.getStructureData((int) index));
         return instances[(int) index];
     }
 
@@ -129,7 +129,7 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
             int ioffset = (int)offset;
             if(instances[ioffset] == null) {
                 StructureData data = (StructureData) this.array.getStructureData(ioffset);
-                instances[ioffset] = new CDMDataStructure(this.dsp, (DapStructure) this.getTemplate(), this, offset, data);
+                instances[ioffset] = new CDMDataStructure(this.dsp, (DapStructure) this.getTemplate(), this, data);
             }
             result[i] = instances[ioffset];
         }

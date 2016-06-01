@@ -3,8 +3,11 @@
 */
 
 
-package dap4.cdm;
+package dap4.cdm.nc2;
 
+import dap4.cdm.NodeMap;
+import dap4.cdm.dsp.CDMDSP;
+import dap4.cdm.dsp.CDMDataCompoundArray;
 import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.core.util.DapException;

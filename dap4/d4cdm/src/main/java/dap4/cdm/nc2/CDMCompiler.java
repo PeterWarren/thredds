@@ -3,9 +3,11 @@
 */
 
 
-package dap4.cdm;
+package dap4.cdm.nc2;
 
 import com.sun.org.apache.bcel.internal.generic.VariableLengthInstruction;
+import dap4.cdm.NodeMap;
+import dap4.cdm.dsp.CDMDSP;
 import dap4.core.data.DSP;
 import dap4.core.data.DataDataset;
 import dap4.core.data.DataSort;
@@ -134,7 +136,7 @@ public class CDMCompiler
     {
         // Convert the DMR to CDM metadata
         // and return a mapping from Variable -> Array
-        this.arraymap = new DataToCDM(this.ncfile, this.dsp, this.nodemap).create();
+        this.arraymap = new DataToCDM(this.ncfile, (CDMDSP)this.dsp, this.nodemap).create();
     }
 
 }

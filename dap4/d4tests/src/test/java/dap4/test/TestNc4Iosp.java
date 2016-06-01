@@ -1,6 +1,6 @@
 package dap4.test;
 
-import dap4.cdm.CDMDSP;
+import dap4.cdm.dsp.CDMDSP;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

@@ -2,7 +2,7 @@
    See the LICENSE file for more information.
 */
 
-package dap4.cdm;
+package dap4.cdm.dsp;
 
 import dap4.core.data.DataVariable;
 import dap4.core.util.Slice;

@@ -2,7 +2,7 @@
    See the LICENSE file for more information.
 */
 
-package dap4.cdm;
+package dap4.cdm.nc2;
 
 import dap4.core.data.DataDataset;
 import dap4.core.dmr.*;

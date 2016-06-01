@@ -2,7 +2,7 @@
    See the LICENSE file for more information.
 */
 
-package dap4.cdm;
+package dap4.cdm.dsp;
 
 import dap4.core.data.*;
 import dap4.core.dmr.*;
@@ -25,7 +25,7 @@ public class CDMDataDataset extends AbstractData implements DataDataset
     public CDMDataDataset(CDMDSP dsp, DapDataset dataset)
         throws DataException
     {
-        super(dataset);
+        super(dataset,dsp);
         this.dsp = dsp;
         dsp.setDataDataset(this);
     }

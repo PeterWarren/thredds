@@ -99,7 +99,7 @@ abstract public class StructureData {
   /**
    * Constructor.
    *
-   * @param members    StructureData is always contained in a StructureArray.
+   * @param members    Field metadata.
    */
   protected StructureData(StructureMembers members) {
     this.members = members;

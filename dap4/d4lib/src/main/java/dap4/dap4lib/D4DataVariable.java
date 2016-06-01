@@ -20,7 +20,7 @@ abstract public class D4DataVariable extends AbstractDataVariable
     public D4DataVariable(D4DSP dsp, DapVariable dv)
         throws DataException
     {
-        super(dv);
+        super(dv,dsp);
         this.dsp = dsp;
     }
 

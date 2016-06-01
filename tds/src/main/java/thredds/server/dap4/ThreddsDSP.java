@@ -34,7 +34,7 @@
 package thredds.server.dap4;
 
 import dap4.core.util.*;
-import dap4.cdm.CDMDSP;
+import dap4.cdm.dsp.CDMDSP;
 import thredds.core.TdsRequestedDataset;
 import ucar.nc2.*;
 import ucar.nc2.util.CancelTask;
