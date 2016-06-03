@@ -4,7 +4,7 @@
 
 package dap4.test;
 
-import dap4.cdm.nc2.DapNetcdfDataset;
+import dap4.cdm.nc2.DapNetcdfFile;
 import dap4.core.dmr.DapDataset;
 import dap4.core.util.*;
 import dap4.core.data.DSP;
@@ -81,7 +81,7 @@ public class TestPrinter
         throws DapException
     {
         this.ncfile = ncfile;
-        setDSP(((DapNetcdfDataset) this.ncfile).getDSP());
+        setDSP(((DapNetcdfFile) this.ncfile).getDSP());
     }
 
     public void setDSP(DSP dsp)

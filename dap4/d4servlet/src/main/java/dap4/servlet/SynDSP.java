@@ -24,7 +24,7 @@ import java.nio.ByteOrder;
  * Provide a DSP interface to synthetic data (see Generator.java).
  */
 
-public class SynDSP extends AbstractDSP
+public class SynDSP extends D4DSP
 {
     static final protected boolean DEBUG = false;
 

@@ -30,7 +30,7 @@ import java.nio.ByteBuffer;
  * to a DapDataset from the returned bytes.
  */
 
-public class HttpDSP extends AbstractDSP
+public class HttpDSP extends D4DSP
 {
 
     //////////////////////////////////////////////////

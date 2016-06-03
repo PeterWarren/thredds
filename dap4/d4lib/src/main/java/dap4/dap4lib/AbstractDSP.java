@@ -121,6 +121,11 @@ abstract public class AbstractDSP implements DSP
         this.path = path;
     }
 
+    public ByteBuffer getData()
+    {
+        return this.databuffer;
+    }
+
     public ByteOrder
     getOrder()
     {
@@ -133,32 +138,15 @@ abstract public class AbstractDSP implements DSP
         this.order = order;
     }
 
+    public ChecksumMode getChecksumMode()
+       {
+           return this.checksummode;
+       }
 
-    protected void
-    build(String document, byte[] serialdata, ByteOrder order)
-            throws DapException
-    {
-        build(parseDMR(document), serialdata, order);
-    }
-
-    /**
-     * Build the data from the incoming serial data
-     *
-     * @param dmr
-     * @param serialdata
-     * @param order
-     * @throws DapException
-     */
-    protected void
-    build(DapDataset dmr, byte[] serialdata, ByteOrder order)
-            throws DapException
-    {
-        this.dmr = dmr;
-        // "Compile" the databuffer section of the server response
-        this.databuffer = ByteBuffer.wrap(serialdata).order(order);
-        DataCompiler compiler = new D4DataCompiler(this, checksummode, this.databuffer, new DefaultDataFactory());
-        compiler.compile();
-    }
+       public void setChecksumMode(ChecksumMode mode)
+       {
+           this.checksummode = mode;
+       }
 
     //////////////////////////////////////////////////
     // Utilities

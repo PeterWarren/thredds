@@ -21,4 +21,9 @@ public interface DataStructure extends DataCompound
     // Read named field of the offsetth instance
     public DataVariable readfield(String name) throws DataException;
 
+    // This is a hack to support the problem that CDM has not scalar objects:
+    // only ArrayStrccuture. So provide a mechanism to convert a scalar to a
+    // compound array of rank 0.
+    public DataCompoundArray asCompoundArray() throws DataException;
+
 }

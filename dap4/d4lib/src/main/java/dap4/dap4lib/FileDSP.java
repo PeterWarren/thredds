@@ -22,7 +22,7 @@ import java.nio.ByteOrder;
  * Provide a DSP interface to synthetic data (see Generator.java).
  */
 
-public class FileDSP extends AbstractDSP
+public class FileDSP extends D4DSP
 {
     //////////////////////////////////////////////////
     // Instance variables

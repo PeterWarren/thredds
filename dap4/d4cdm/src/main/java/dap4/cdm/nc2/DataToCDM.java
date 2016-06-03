@@ -6,8 +6,6 @@
 package dap4.cdm.nc2;
 
 import dap4.cdm.NodeMap;
-import dap4.cdm.dsp.CDMDSP;
-import dap4.cdm.dsp.CDMDataCompoundArray;
 import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.core.util.DapException;
@@ -49,8 +47,8 @@ public class DataToCDM
     //////////////////////////////////////////////////
     // Instance variables
 
-    DapNetcdfDataset ncfile = null;
-    CDMDSP dsp = null;
+    DapNetcdfFile ncfile = null;
+    DSP dsp = null;
     DapDataset dmr = null;
     DataDataset d4root = null;
     Group cdmroot = null;
@@ -67,7 +65,7 @@ public class DataToCDM
      * @param dsp    the compiled D4 databuffer
      */
 
-    public DataToCDM(DapNetcdfDataset ncfile, CDMDSP dsp, NodeMap nodemap)
+    public DataToCDM(DapNetcdfFile ncfile, DSP dsp, NodeMap nodemap)
             throws DapException
     {
         this.ncfile = ncfile;
@@ -192,33 +190,28 @@ public class DataToCDM
     {
         DapStructure dapstruct = (DapStructure) d4var.getTemplate();
         List<DapDimension> dimset = dapstruct.getDimensions();
+        CDMArrayStructure arraystruct;
+        DataCompoundArray d4array;
         long dimproduct;
+        try {
         if(dimset == null || dimset.size() == 0) {// scalar
             assert (d4var.getSort() == DataSort.STRUCTURE);
-            DataStructure d4struct = (DataStructure) d4var;
-            // Create a 1-element compound array
-            DataCompoundArray dca = new CDMDataCompoundArray(this.dsp, dapstruct);
-            dca.addElement(d4struct);
-            d4var = dca;
             dimproduct = 1;
-        } else
+            d4array = ((DataStructure)d4var).asCompoundArray();
+        } else {
+            assert (d4var.getSort() == DataSort.COMPOUNDARRAY);
             dimproduct = DapUtil.dimProduct(dimset);
-        assert (d4var.getSort() == DataSort.COMPOUNDARRAY);
-        DataCompoundArray d4array = (DataCompoundArray) d4var;
-        CDMArrayStructure arraystruct
-                = new CDMArrayStructure(this.dsp, this.cdmroot, d4array);
-        try {
-            for(int i = 0; i < dimproduct; i++) {
-                DataStructure dds = (DataStructure) d4array.read(i);
-                createStructure(dds, i, arraystruct);
-            }
-            arraystruct.finish();
-            return arraystruct;
-        } catch (IOException ioe) {
-            throw new DapException(ioe);
-        }
+            d4array = (DataCompoundArray) d4var;
+	}
+        arraystruct = new CDMArrayStructure(this.dsp, this.cdmroot, d4array);
+        for(int i = 0; i < dimproduct; i++) {
+            DataStructure dds = (DataStructure) d4array.read(i);
+            createStructure(dds, i, arraystruct);
+     	}
+        arraystruct.finish();
+        return arraystruct;
+        } catch (IOException ioe) {throw new DapException(ioe); }
     }
-
 
     /**
      * Create a sequence. WARNING: the underlying CDM code

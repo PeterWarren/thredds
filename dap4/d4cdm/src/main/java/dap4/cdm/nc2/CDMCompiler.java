@@ -5,9 +5,7 @@
 
 package dap4.cdm.nc2;
 
-import com.sun.org.apache.bcel.internal.generic.VariableLengthInstruction;
 import dap4.cdm.NodeMap;
-import dap4.cdm.dsp.CDMDSP;
 import dap4.core.data.DSP;
 import dap4.core.data.DataDataset;
 import dap4.core.data.DataSort;
@@ -15,6 +13,7 @@ import dap4.core.dmr.DapDataset;
 import dap4.core.util.DapException;
 import ucar.ma2.Array;
 import ucar.nc2.Group;
+import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 import ucar.nc2.dataset.NetcdfDataset;
 
@@ -43,7 +42,7 @@ public class CDMCompiler
     //////////////////////////////////////////////////
     // Instance variables
 
-    DapNetcdfDataset ncfile = null;
+    DapNetcdfFile ncfile = null;
     DSP dsp = null;
     DapDataset dmr = null;
     DataDataset d4root = null;
@@ -61,7 +60,7 @@ public class CDMCompiler
      * @param dsp     the DSP to be wrapped
      */
 
-    public CDMCompiler(DapNetcdfDataset ncfile, DSP dsp)
+    public CDMCompiler(DapNetcdfFile ncfile, DSP dsp)
             throws DapException
     {
         this.ncfile = ncfile;
@@ -83,7 +82,7 @@ public class CDMCompiler
         return this.arraymap;
     }
 
-    public NetcdfDataset getNetcdfDataset()
+    public NetcdfFile getNetcdfFile()
     {
         return this.ncfile;
     }
@@ -136,7 +135,7 @@ public class CDMCompiler
     {
         // Convert the DMR to CDM metadata
         // and return a mapping from Variable -> Array
-        this.arraymap = new DataToCDM(this.ncfile, (CDMDSP)this.dsp, this.nodemap).create();
+        this.arraymap = new DataToCDM(this.ncfile, this.dsp, this.nodemap).create();
     }
 
 }

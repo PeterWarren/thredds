@@ -28,8 +28,7 @@ public class TestConstraints extends DapTestCommon
     //////////////////////////////////////////////////
     // Constants
 
-    static final String DATADIR = "src/test/data"; // relative to dap4 root
-    static final String TESTDATADIR = DATADIR + "/resources/TestCDMClient";
+    static final String TESTDATADIR = "TestCDMClient";
     static final String BASELINEDIR = TESTDATADIR + "/baseline";
     static final String TESTINPUTDIR = TESTDATADIR + "/testinput";
 

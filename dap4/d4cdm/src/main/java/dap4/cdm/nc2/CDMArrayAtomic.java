@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * CDMArrayAtomic wraps a CDMDataAtomic object to present
+ * CDMArrayAtomic wraps a DataAtomic object to present
  * the ucar.ma2.Array interface.
  * CDMArrayAtomic manages a single CDM atomic variable:
  * either top-level or for a member.

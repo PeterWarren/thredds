@@ -29,7 +29,7 @@ public class DMRToCDM
     //////////////////////////////////////////////////
     // Instance Variables
 
-    protected DapNetcdfDataset ncfile;
+    protected DapNetcdfFile ncfile;
     protected DSP dsp;
     protected DapDataset dmr;
 
@@ -43,7 +43,7 @@ public class DMRToCDM
      * @param dsp    - the DSP being wrapped
      */
 
-    public DMRToCDM(DapNetcdfDataset ncfile, DSP dsp)
+    public DMRToCDM(DapNetcdfFile ncfile, DSP dsp)
             throws DapException
     {
         this.ncfile = ncfile;

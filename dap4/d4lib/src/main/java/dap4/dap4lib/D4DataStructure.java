@@ -77,4 +77,12 @@ public class D4DataStructure extends D4DataVariable implements DataStructure
         return ddv;
     }
 
+    public DataCompoundArray asCompoundArray()
+            throws DataException
+    {
+        D4DataCompoundArray dda = new D4DataCompoundArray(getDSP(),getVariable());
+        dda.addElement(this);
+        return dda;
+    }
+
 }

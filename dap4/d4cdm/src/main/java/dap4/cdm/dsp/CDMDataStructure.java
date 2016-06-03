@@ -4,6 +4,7 @@
 
 package dap4.cdm.dsp;
 
+import dap4.core.data.DataCompoundArray;
 import dap4.core.data.DataException;
 import dap4.core.data.DataStructure;
 import dap4.core.data.DataVariable;
@@ -11,6 +12,7 @@ import dap4.core.dmr.DapAtomicVariable;
 import dap4.core.dmr.DapStructure;
 import dap4.core.dmr.DapVariable;
 import dap4.dap4lib.AbstractDataVariable;
+import dap4.dap4lib.D4DataCompoundArray;
 import ucar.ma2.Array;
 import ucar.ma2.ArrayStructure;
 import ucar.ma2.StructureData;
@@ -43,7 +45,7 @@ public class CDMDataStructure extends AbstractDataVariable implements DataStruct
     public CDMDataStructure(CDMDSP dsp, DapStructure dap, CDMDataCompoundArray parent, StructureData data)
             throws DataException
     {
-        super(dap,dsp);
+        super(dap, dsp);
         this.dsp = dsp;
         this.parent = parent;
         this.dapstruct = dap;
@@ -99,6 +101,14 @@ public class CDMDataStructure extends AbstractDataVariable implements DataStruct
             }
         }
         return fieldcache[index];
+    }
+
+    public DataCompoundArray asCompoundArray()
+            throws DataException
+    {
+        CDMDataCompoundArray dda = new CDMDataCompoundArray((CDMDSP)getDSP(), getVariable());
+        dda.addElement(this);
+        return dda;
     }
 
 }

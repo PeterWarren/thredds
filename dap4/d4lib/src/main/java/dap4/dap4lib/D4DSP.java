@@ -4,11 +4,9 @@
 
 package dap4.dap4lib;
 
-import dap4.core.data.DSP;
-import dap4.core.data.DapDataFactory;
 import dap4.core.data.DataCompiler;
 import dap4.core.data.DataDataset;
-import dap4.core.dmr.DapFactory;
+import dap4.core.dmr.DapDataset;
 import dap4.core.util.DapException;
 
 import java.nio.ByteBuffer;
@@ -34,14 +32,6 @@ abstract public class D4DSP extends AbstractDSP
     static protected final String DMRVERSION = "1.0";
 
     //////////////////////////////////////////////////
-    // Instance variables
-
-    protected D4DataDataset d4data = null; // root of the DataXXX tree
-    protected ByteBuffer databuffer = null;
-    protected ByteOrder order = null;
-    protected ChecksumMode checksummode = ChecksumMode.DAP;
-
-    //////////////////////////////////////////////////
     // Constructor(s)
 
     public D4DSP()
@@ -57,40 +47,42 @@ abstract public class D4DSP extends AbstractDSP
     public DataDataset
     getDataDataset()
     {
-        return d4data;
+        return super.getDataDataset();
     }
 
     //////////////////////////////////////////////////
     // (Other) Accessors
 
-    public ByteBuffer getData()
-    {
-        return this.databuffer;
-    }
-
     public void setDataDataset(D4DataDataset data)
     {
-        this.d4data = data;
+        super.setDataDataset(data);
     }
 
-    public ByteOrder getOrder()
+    protected void
+    build(String document, byte[] serialdata, ByteOrder order)
+            throws DapException
     {
-        return this.order;
+        build(parseDMR(document), serialdata, order);
     }
 
-    public void setOrder(ByteOrder order)
+    /**
+     * Build the data from the incoming serial data
+     * Note that some DSP's will not use
+     *
+     * @param dmr
+     * @param serialdata
+     * @param order
+     * @throws DapException
+     */
+    protected void
+    build(DapDataset dmr, byte[] serialdata, ByteOrder order)
+            throws DapException
     {
-        this.order = order;
-    }
-
-    public ChecksumMode getChecksumMode()
-    {
-        return this.checksummode;
-    }
-
-    public void setChecksumMode(ChecksumMode mode)
-    {
-        this.checksummode = mode;
+        this.dmr = dmr;
+        // "Compile" the databuffer section of the server response
+        this.databuffer = ByteBuffer.wrap(serialdata).order(order);
+        DataCompiler compiler = new D4DataCompiler(this, checksummode, this.databuffer, new DefaultDataFactory());
+        compiler.compile();
     }
 
 }

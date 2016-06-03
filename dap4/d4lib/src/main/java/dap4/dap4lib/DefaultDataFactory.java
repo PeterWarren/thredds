@@ -30,7 +30,7 @@ public class DefaultDataFactory implements DapDataFactory
     newDataset(DSP dsp, DapDataset template)
             throws DataException
     {
-        return new D4DataDataset((D4DSP) dsp, template);
+        return new D4DataDataset((D4DSP)dsp, template);
     }
 
     @Override

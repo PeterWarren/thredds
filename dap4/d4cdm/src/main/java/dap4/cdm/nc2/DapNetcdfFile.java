@@ -11,6 +11,7 @@ import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.HttpDSP;
 import dap4.dap4lib.XURI;
 import ucar.ma2.*;
+import ucar.nc2.NetcdfFile;
 import ucar.nc2.ParsedSectionSpec;
 import ucar.nc2.Variable;
 import ucar.nc2.dataset.NetcdfDataset;
@@ -22,7 +23,7 @@ import java.net.URISyntaxException;
 import java.nio.channels.WritableByteChannel;
 import java.util.*;
 
-public class DapNetcdfDataset extends NetcdfDataset
+public class DapNetcdfFile extends NetcdfFile
 {
     static final boolean DEBUG = false;
     static final boolean PARSEDEBUG = false;
@@ -94,7 +95,7 @@ public class DapNetcdfDataset extends NetcdfDataset
      * @param cancelTask check if task is cancelled; may be null.
      * @throws IOException
      */
-    public DapNetcdfDataset(String url, CancelTask cancelTask)
+    public DapNetcdfFile(String url, CancelTask cancelTask)
             throws IOException
     {
         super();
@@ -149,7 +150,7 @@ public class DapNetcdfDataset extends NetcdfDataset
      * @throws IOException
      */
 
-    public DapNetcdfDataset(String url)
+    public DapNetcdfFile(String url)
             throws IOException
     {
         this(url, null);

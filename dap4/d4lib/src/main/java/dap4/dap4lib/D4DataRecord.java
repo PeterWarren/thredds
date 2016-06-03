@@ -4,9 +4,11 @@
 
 package dap4.dap4lib;
 
-import dap4.core.data.*;
+import dap4.core.data.DataCompoundArray;
+import dap4.core.data.DataException;
+import dap4.core.data.DataRecord;
+import dap4.core.data.DataVariable;
 import dap4.core.dmr.DapSequence;
-import dap4.core.dmr.DapStructure;
 
 import java.util.Arrays;
 
@@ -31,7 +33,7 @@ public class D4DataRecord extends D4DataVariable implements DataRecord
     // Constructors
 
     public D4DataRecord(D4DSP dsp, DapSequence dap, D4DataSequence parent, int recno)
-        throws DataException
+            throws DataException
     {
         super(dsp, dap);
         this.dsp = dsp;
@@ -47,7 +49,7 @@ public class D4DataRecord extends D4DataVariable implements DataRecord
     @Override
     public void
     addField(int fieldno, DataVariable ddv)
-        throws DataException
+            throws DataException
     {
         if(fieldno < 0 || fieldno >= fields.length)
             throw new DataException("Illegal field index: " + fieldno);
@@ -70,9 +72,17 @@ public class D4DataRecord extends D4DataVariable implements DataRecord
     @Override
     public DataVariable readfield(String shortname) throws DataException
     {
-        for(int i = 0;i < fields.length;i++)
+        for(int i = 0; i < fields.length; i++) {
             if(fields[i].getTemplate().getShortName().equals(shortname))
                 return fields[i];
+        }
         return null;
     }
+
+    public DataCompoundArray asCompoundArray()
+            throws DataException
+    {
+        throw new UnsupportedOperationException();
+    }
+
 }
