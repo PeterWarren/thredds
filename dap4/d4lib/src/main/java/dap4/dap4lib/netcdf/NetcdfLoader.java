@@ -62,6 +62,7 @@ abstract public class NetcdfLoader
                 // jna_path may still be null (the user didn't specify a "jna.library.path"), but try to load anyway;
                 // the necessary libs may be on the system PATH.
                 nc4 = (DapNetcdf) Native.loadLibrary(libName, DapNetcdf.class);
+                nc4 = (DapNetcdf) Native.synchronizedLibrary(nc4);
                 String message = String.format("NetCDF-4 C library loaded (jna_path='%s', libname='%s').", jnaPath, libName);
                 if(DEBUG) {
                     System.out.println(message);

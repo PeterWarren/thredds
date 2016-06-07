@@ -65,6 +65,22 @@ public class NetcdfDSP extends AbstractDSP
     static int NC_SIZET_BYTES = (Native.SIZE_T_SIZE);
 
     //////////////////////////////////////////////////
+    // com.sun.jna.Memory control
+
+    static abstract protected class Mem
+    {
+        static Memory
+        allocate(long size)
+        {
+            if(size == 0)
+                throw new IllegalArgumentException("Attempt to allocate zero bytes");
+            Memory m = new Memory(size);
+            return m;
+        }
+    }
+
+
+    //////////////////////////////////////////////////
     // Type decls
 
     static protected class Groupinfo
@@ -236,7 +252,7 @@ public class NetcdfDSP extends AbstractDSP
         if(nc4 == null) {
             try {
                 nc4 = NetcdfLoader.load();
-            } catch(IOException ioe) {
+            } catch (IOException ioe) {
                 throw new DapException(ioe);
             }
             if(nc4 == null)
@@ -510,7 +526,7 @@ public class NetcdfDSP extends AbstractDSP
             field = factory.newSequence(name, index);
             break;
         default:
-            field = factory.newAtomicVariable(name, (DapType)baset.type, index);
+            field = factory.newAtomicVariable(name, (DapType) baset.type, index);
             break;
         }
         // set dimsizes
@@ -537,8 +553,8 @@ public class NetcdfDSP extends AbstractDSP
         allvars.add(vi);
         Typeinfo ti = findtype(xtype);
         if(ti == null)
-            throw new DapException("Unknown type id: "+xtype);
-        DapVariable var = factory.newVariable(makeString(namep), (DapType)ti.type, gid, vid);
+            throw new DapException("Unknown type id: " + xtype);
+        DapVariable var = factory.newVariable(makeString(namep), (DapType) ti.type, gid, vid);
         int[] dimids = getVardims(gid, vid, ndimsp.getValue());
         for(int i = 0; i < dimids.length; i++) {
             Diminfo di = finddim(dimids[i]);
@@ -597,7 +613,7 @@ public class NetcdfDSP extends AbstractDSP
         // Get the values of the attribute
         Object[] values = getAttributeValues(gid, vid, name, basetype, countp.intValue());
         Typeinfo ti = findtype(basetype);
-        DapAttribute da = factory.newAttribute(name,(DapType)ti.type);
+        DapAttribute da = factory.newAttribute(name, (DapType) ti.type);
         da.setValues(values);
 
         if(isglobal) {
@@ -620,7 +636,7 @@ public class NetcdfDSP extends AbstractDSP
         n = ip.getValue();
         int[] grpids;
         if(n > 0) {
-            Memory mem = new Memory(NC_INT_BYTES * n);
+            Memory mem = Mem.allocate(NC_INT_BYTES * n);
             errcheck(ret = nc4.nc_inq_grps(gid, ip, mem));
             grpids = mem.getIntArray(0, n);
         } else
@@ -638,7 +654,7 @@ public class NetcdfDSP extends AbstractDSP
         n = ip.getValue();
         int[] dimids;
         if(n > 0) {
-            Memory mem = new Memory(NC_INT_BYTES * n);
+            Memory mem = Mem.allocate(NC_INT_BYTES * n);
             errcheck(ret = nc4.nc_inq_dimids(gid, ip, mem, NC_FALSE));
             dimids = mem.getIntArray(0, n);
         } else
@@ -658,7 +674,7 @@ public class NetcdfDSP extends AbstractDSP
         if(n == 0)
             dimids = new int[0];
         else {
-            Memory mem = new Memory(NC_INT_BYTES * n);
+            Memory mem = Mem.allocate(NC_INT_BYTES * n);
             errcheck(ret = nc4.nc_inq_unlimdims(gid, ip, mem));
             dimids = mem.getIntArray(0, n);
         }
@@ -675,7 +691,7 @@ public class NetcdfDSP extends AbstractDSP
         n = ip.getValue();
         int[] typeids;
         if(n > 0) {
-            Memory mem = new Memory(NC_INT_BYTES * n);
+            Memory mem = Mem.allocate(NC_INT_BYTES * n);
             errcheck(ret = nc4.nc_inq_typeids(gid, ip, mem));
             typeids = mem.getIntArray(0, n);
         } else
@@ -693,7 +709,7 @@ public class NetcdfDSP extends AbstractDSP
         n = ip.getValue();
         int[] ids;
         if(n > 0) {
-            Memory mem = new Memory(NC_INT_BYTES * n);
+            Memory mem = Mem.allocate(NC_INT_BYTES * n);
             errcheck(ret = nc4.nc_inq_varids(gid, ip, mem));
             ids = mem.getIntArray(0, n);
         } else
@@ -713,7 +729,7 @@ public class NetcdfDSP extends AbstractDSP
             IntByReference ndimsp = new IntByReference();
             IntByReference xtypep = new IntByReference();
             IntByReference nattsp = new IntByReference();
-            Memory mem = new Memory(NC_INT_BYTES * ndims);
+            Memory mem = Mem.allocate(NC_INT_BYTES * ndims);
             errcheck(ret = nc4.nc_inq_var(gid, vid, namep, xtypep, ndimsp, mem, nattsp));
             dimids = mem.getIntArray(0, ndims);
         } else
@@ -732,7 +748,7 @@ public class NetcdfDSP extends AbstractDSP
             SizeTByReference offsetp = new SizeTByReference();
             IntByReference fieldtypep = new IntByReference();
             IntByReference ndimsp = new IntByReference();
-            Memory mem = new Memory(NC_INT_BYTES * ndims);
+            Memory mem = Mem.allocate(NC_INT_BYTES * ndims);
             errcheck(ret = nc4.nc_inq_compound_field(gid, tid, fid, name,
                     offsetp, fieldtypep, ndimsp, mem));
             dimsizes = mem.getIntArray(0, ndims);
@@ -797,7 +813,7 @@ public class NetcdfDSP extends AbstractDSP
         Object values = null;
         if(count > 0) {
             long totalsize = nativetypesize * count;
-            Memory mem = new Memory(totalsize);
+            Memory mem = Mem.allocate(totalsize);
             errcheck(ret = nc4.nc_get_att(gid, vid, name, mem));
             if(isopaquetype(basetype)) {
                 values = mem.getByteArray(0, (int) totalsize);
