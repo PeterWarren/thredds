@@ -1,3 +1,7 @@
+/* Copyright 2012, UCAR/Unidata.
+   See the LICENSE file for more information.
+*/
+
 /*
 WARNING: The following files are taken
 directly from netcdf4/src/main/java/ucar/nc2/jni/netcdf/
@@ -10,38 +14,6 @@ netcdf4/src/main/java/ucar/nc2/jni/netcdf/
 are updated, then the copies here need to be updated as well.
 */
 
-/*
- * Copyright 1998-2009 University Corporation for Atmospheric Research/Unidata
- *
- * Portions of this software were developed by the Unidata Program at the
- * University Corporation for Atmospheric Research.
- *
- * Access and use of this software shall impose the following obligations
- * and understandings on the user. The user is granted the right, without
- * any fee or cost, to use, copy, modify, alter, enhance and distribute
- * this software, and any derivative works thereof, and its supporting
- * documentation for any purpose whatsoever, provided that this entire
- * notice appears in all copies of the software, derivative works and
- * supporting documentation.  Further, UCAR requests that the user credit
- * UCAR/Unidata in any publications that result from the use of this
- * software or in any product that includes this software. The names UCAR
- * and/or Unidata, however, may not be used in any advertising or publicity
- * to endorse or promote any products or commercial entity unless specific
- * written permission is obtained from UCAR/Unidata. The user also
- * understands that UCAR/Unidata is not obligated to provide the user with
- * any support, consulting, training or assistance of any kind with regard
- * to the use, operation and performance of this software nor to provide
- * the user with any updates, revisions, new versions or "bug fixes."
- *
- * THIS SOFTWARE IS PROVIDED BY UCAR/UNIDATA "AS IS" AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL UCAR/UNIDATA BE LIABLE FOR ANY SPECIAL,
- * INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
- * FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
- * NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
- * WITH THE ACCESS, USE OR PERFORMANCE OF THIS SOFTWARE.
- */
 
 package dap4.dap4lib.netcdf;
 
@@ -63,79 +35,79 @@ import java.util.ArrayList;
  * @since Oct 30, 2008
  */
 public interface DapNetcdf extends Library {
-  int NC_MAX_DIMS = 1024;   /* max dimensions per file */
-  int NC_MAX_ATTRS = 8192;   /* max global or per variable attributes */
-  int NC_MAX_VARS = 8192;   /* max variables per file */
-  int NC_MAX_NAME = 256;   /* max length of a name */
-  int NC_MAX_VAR_DIMS = NC_MAX_DIMS; /* max per variable dimensions */
+  static final int NC_MAX_DIMS = 1024;   /* max dimensions per file */
+  static final int NC_MAX_ATTRS = 8192;   /* max global or per variable attributes */
+  static final int NC_MAX_VARS = 8192;   /* max variables per file */
+  static final int NC_MAX_NAME = 256;   /* max length of a name */
+  static final int NC_MAX_VAR_DIMS = NC_MAX_DIMS; /* max per variable dimensions */
 
-  int NC_GLOBAL = -1;
-  int NC_UNLIMITED = 0;
+  static final int NC_GLOBAL = -1;
+  static final int NC_UNLIMITED = 0;
 
-  int NC_NOWRITE = 0;
-  int NC_WRITE = 1;
+  static final int NC_NOWRITE = 0;
+  static final int NC_WRITE = 1;
 
-  int NC_NAT = 0;	/* Not-A-Type */
-  int NC_BYTE = 1;	/* signed 1 byte integer */
-  int NC_CHAR =	2;	/* ISO/ASCII character */
-  int NC_SHORT =	3;	/* signed 2 byte integer */
-  int NC_INT = 4;	/* signed 4 byte integer */
-  int NC_FLOAT =	5;	/* single precision floating point number */
-  int NC_DOUBLE =	6;	/* double precision floating point number */
-  int NC_UBYTE =	7;	/* unsigned 1 byte int */
-  int NC_USHORT =	8;	/* unsigned 2-byte int */
-  int NC_UINT =	9;	/* unsigned 4-byte int */
-  int NC_INT64 =	10;	/* signed 8-byte int */
-  int NC_UINT64 =	11;/* unsigned 8-byte int */
-  int NC_STRING =	12;	/* string */
-  int NC_MAX_ATOMIC_TYPE = NC_STRING;
+  static final int NC_NAT = 0;	/* Not-A-Type */
+  static final int NC_BYTE = 1;	/* signed 1 byte integer */
+  static final int NC_CHAR =	2;	/* ISO/ASCII character */
+  static final int NC_SHORT =	3;	/* signed 2 byte integer */
+  static final int NC_INT = 4;	/* signed 4 byte integer */
+  static final int NC_FLOAT =	5;	/* single precision floating point number */
+  static final int NC_DOUBLE =	6;	/* double precision floating point number */
+  static final int NC_UBYTE =	7;	/* unsigned 1 byte int */
+  static final int NC_USHORT =	8;	/* unsigned 2-byte int */
+  static final int NC_UINT =	9;	/* unsigned 4-byte int */
+  static final int NC_INT64 =	10;	/* signed 8-byte int */
+  static final int NC_UINT64 =	11;/* unsigned 8-byte int */
+  static final int NC_STRING =	12;	/* string */
+  static final int NC_MAX_ATOMIC_TYPE = NC_STRING;
 
   /* The following are use internally in support of user-defines
    * types. They are also the class returned by nc_inq_user_type. */
-  int NC_VLEN =	13;	/* used internally for vlen types */
-  int NC_OPAQUE =	14;	/* used internally for opaque types */
-  int NC_ENUM =	15;	/* used internally for enum types */
-  int NC_COMPOUND =	16;	/* used internally for compound types */
+  static final int NC_VLEN =	13;	/* used internally for vlen types */
+  static final int NC_OPAQUE =	14;	/* used internally for opaque types */
+  static final int NC_ENUM =	15;	/* used internally for enum types */
+  static final int NC_COMPOUND =	16;	/* used internally for compound types */
 
-  int NC_CLOBBER	     = 0;       /**< Destroy existing file. Mode flag for nc_create(). */
-  int NC_NOCLOBBER	   = 0x0004;	/**< Don't destroy existing file. Mode flag for nc_create(). */
-  int NC_DISKLESS      = 0x0008;  /**< Create a diskless file. Mode flag for nc_create(). */
-  int NC_MMAP          = 0x0010;  /**< Use diskless file with mmap. Mode flag for nc_open() or nc_create(). */
-  int NC_CLASSIC_MODEL = 0x0100; /**< Enforce classic model. Mode flag for nc_create(). */
-  int NC_64BIT_OFFSET  = 0x0200;  /**< Use large (64-bit) file offsets. Mode flag for nc_create(). */
-  int NC_NETCDF4       = 0x1000;  /**< Use netCDF-4/HDF5 format. Mode flag for nc_create(). */
+  static final int NC_CLOBBER	     = 0;       /**< Destroy existing file. Mode flag for nc_create(). */
+  static final int NC_NOCLOBBER	   = 0x0004;	/**< Don't destroy existing file. Mode flag for nc_create(). */
+  static final int NC_DISKLESS      = 0x0008;  /**< Create a diskless file. Mode flag for nc_create(). */
+  static final int NC_MMAP          = 0x0010;  /**< Use diskless file with mmap. Mode flag for nc_open() or nc_create(). */
+  static final int NC_CLASSIC_MODEL = 0x0100; /**< Enforce classic model. Mode flag for nc_create(). */
+  static final int NC_64BIT_OFFSET  = 0x0200;  /**< Use large (64-bit) file offsets. Mode flag for nc_create(). */
+  static final int NC_NETCDF4       = 0x1000;  /**< Use netCDF-4/HDF5 format. Mode flag for nc_create(). */
   /** Turn on MPI I/O.
       Use this in mode flags for both nc_create() and nc_open(). */
-  int NC_MPIIO =         0x2000;
+  static final int NC_MPIIO =         0x2000;
   /** Turn on MPI POSIX I/O.
       Use this in mode flags for both nc_create() and nc_open(). */
-  int NC_MPIPOSIX =      0x4000;
-  int NC_PNETCDF =       0x8000;	/**< Use parallel-netcdf library. Mode flag for nc_open(). */
+  static final int NC_MPIPOSIX =      0x4000;
+  static final int NC_PNETCDF =       0x8000;	/**< Use parallel-netcdf library. Mode flag for nc_open(). */
 
 /** Format specifier for nc_set_default_format() and returned
  *  by nc_inq_format. 
  */
-  int NC_FORMAT_CLASSIC = (1);
-  int NC_FORMAT_64BIT = (2);
-  int NC_FORMAT_NETCDF4 = (3);
-  int NC_FORMAT_NETCDF4_CLASSIC = (4);
+  static final int NC_FORMAT_CLASSIC = (1);
+  static final int NC_FORMAT_64BIT = (2);
+  static final int NC_FORMAT_NETCDF4 = (3);
+  static final int NC_FORMAT_NETCDF4_CLASSIC = (4);
 
 /** Extended format specifier returned by  nc_inq_format_extended() 
  *  Added in version 4.3.1. This returns the true format of the
  *  underlying data.
  */
 
-  int NC_FORMAT_NC3 = (1);
-  int NC_FORMAT_NC_HDF5 = (2) /*cdf 4 subset of HDF5 */;
-  int NC_FORMAT_NC_HDF4 = (3) /* netcdf 4 subset of HDF4 */;
-  int NC_FORMAT_PNETCDF = (4);
-  int NC_FORMAT_DAP2 = (5);
-  int NC_FORMAT_DAP4 = (6);
-  int NC_FORMAT_UNDEFINED = (0);
+  static final int NC_FORMAT_NC3 = (1);
+  static final int NC_FORMAT_NC_HDF5 = (2) /*cdf 4 subset of HDF5 */;
+  static final int NC_FORMAT_NC_HDF4 = (3) /* netcdf 4 subset of HDF4 */;
+  static final int NC_FORMAT_PNETCDF = (4);
+  static final int NC_FORMAT_DAP2 = (5);
+  static final int NC_FORMAT_DAP4 = (6);
+  static final int NC_FORMAT_UNDEFINED = (0);
 
   //  nc_def_var_chunking()
-  int NC_CHUNKED    = 0;
-  int NC_CONTIGUOUS = 1;
+  static final int NC_CHUNKED    = 0;
+  static final int NC_CONTIGUOUS = 1;
 
   static public class Vlen_t extends Structure {
     public static class ByValue extends Vlen_t implements Structure.ByValue { }
@@ -164,16 +136,12 @@ public interface DapNetcdf extends Library {
   int nc_inq_format_extended(int ncid, IntByReference formatp, IntByReference modep);
 
   // groups
-  int nc_inq_grps(int ncid, IntByReference numgrps, int[] ncids);
-      // get only numgrps
-      int nc_inq_grps(int ncid, IntByReference numgrps, Pointer np);
+  int nc_inq_grps(int ncid, IntByReference numgrps, Pointer np);
   int nc_inq_grpname(int ncid, byte[] name);
 
   // dimension info
   int nc_inq_ndims(int ncid, IntByReference ndimsp);
-  int nc_inq_unlimdims(int ncid, IntByReference nunlimdimsp, int[] unlimdimidsp);
-    // Get ndims only
-    int nc_inq_unlimdims(int ncid, IntByReference nunlimdimsp, Pointer p);
+  int nc_inq_unlimdims(int ncid, IntByReference nunlimdimsp, Pointer np);
   int nc_inq_dimids(int ncid, IntByReference ndims, Pointer dimids, int include_parents);
   int nc_inq_dim(int ncid, int dimid, byte[] name, SizeTByReference lenp);
   int nc_inq_dimname(int ncid, int dimid, byte[] name);
@@ -204,29 +172,21 @@ public interface DapNetcdf extends Library {
   // variable info
   int nc_inq_nvars(int ncid, IntByReference nvarsp);
   int nc_inq_varids(int ncid, IntByReference nvars, Pointer varids);
-  int nc_inq_var(int ncid, int varid, byte[] name, IntByReference xtypep, IntByReference ndimsp, int[] dimidsp, IntByReference nattsp);
-    // Get all but dimids
-    int nc_inq_var(int ncid, int varid, byte[] name, IntByReference xtypep, IntByReference ndimsp, Pointer p, IntByReference nattsp);
-    // Get natts only  
-    int nc_inq_var(int ncid, int varid, Pointer p1, Pointer p2, Pointer p3, Pointer p4, IntByReference nattsp);
+  int nc_inq_var(int ncid, int varid, byte[] name, IntByReference xtypep, IntByReference ndimsp, Pointer dimidsp, IntByReference nattsp);
+  int nc_inq_varid(int ncid, byte[] name, IntByReference varidp);
 
   // user types
-  int nc_inq_typeids(int ncid, IntByReference ntypes, int[] typeids);
-    // Get ntypes only
-    int nc_inq_typeids(int ncid, IntByReference ntypes, Pointer np);
+  int nc_inq_typeids(int ncid, IntByReference ntypes, Pointer typeids);
   int nc_inq_type(int ncid, int xtype, byte[] name, SizeTByReference sizep);
   int nc_inq_user_type(int ncid, int xtype, byte[] name, SizeTByReference sizep, IntByReference baseType, SizeTByReference nfieldsp, IntByReference classp);
   int nc_inq_enum(int ncid, int xtype, byte[] name, IntByReference baseType, SizeTByReference base_sizep, SizeTByReference num_membersp);
-    // Get num_members only
-    int nc_inq_enum(int ncid, int xtype, Pointer p1, Pointer p2, Pointer p3, SizeTByReference num_membersp);
   int nc_inq_enum_member(int ncid, int xtype, int idx, byte[] name, IntByReference value); // void *
+
   int nc_inq_opaque(int ncid, int xtype, byte[] name, SizeTByReference sizep);
 
   // compound user type
   int nc_inq_compound(int ncid, int xtype, byte[] name, SizeTByReference sizep, SizeTByReference nfieldsp);
-  int nc_inq_compound_field(int ncid, int xtype, int fieldid, byte[] name, SizeTByReference offsetp, IntByReference field_typeidp, IntByReference ndimsp, int[] dims);
-    // Call for all but dims
-    int nc_inq_compound_field(int ncid, int xtype, int fieldid, byte[] name, SizeTByReference offsetp, IntByReference field_typeidp, IntByReference ndimsp, Pointer p);
+  int nc_inq_compound_field(int ncid, int xtype, int fieldid, byte[] name, SizeTByReference offsetp, IntByReference field_typeidp, IntByReference ndimsp, Pointer dims);
 
   // vlen user type
   int nc_inq_vlen(int ncid, int xtype, byte[] name, SizeTByReference datum_sizep, IntByReference base_nc_typep);

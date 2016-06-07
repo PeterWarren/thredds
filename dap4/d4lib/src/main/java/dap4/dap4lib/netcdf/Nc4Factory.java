@@ -14,7 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-public class Nc4Factory extends DefaultFactory
+import static dap4.dap4lib.netcdf.NetcdfDSP.*;
+
+public class Nc4Factory extends DefaultDMRFactory
 {
 
     // Nc4DSP Uses two annotations keys: one to track ids
@@ -22,9 +24,39 @@ public class Nc4Factory extends DefaultFactory
     static public final int NC4DSPKEY = "NC4DSPKEY".hashCode();
 
     //////////////////////////////////////////////////
+    // Type Decls
+
+    static protected class ID
+    {
+        public int gid; // might also be root ncid
+        public int id;  // dimension|type|variable id
+
+        // Other kinds of nodes are not annotated
+        public ID()
+        {
+            this(NC_GRPNULL, NC_IDNULL);
+        }
+
+        public ID(int gid)
+        {
+            this(gid, NC_IDNULL);
+        }
+
+        public ID(int grpid, int id)
+        {
+            this.gid = grpid;
+            this.id = id;
+        }
+    }
+
+    //////////////////////////////////////////////////
 
     protected Stack<DapNode> scope = new Stack<>();
-    protected DapNode top() {return scope.empty() ? null : scope.peek();}
+
+    protected DapNode top()
+    {
+        return scope.empty() ? null : scope.peek();
+    }
 
     // Collect all created nodes
     protected List<DapNode> allnodes = new ArrayList<>();
@@ -63,7 +95,13 @@ public class Nc4Factory extends DefaultFactory
     protected DapNode
     tag(DapNode container, DapNode annotatednode, int id)
     {
-        DapNode n = tag(annotatednode, id);
+        return tag(container, annotatednode, id, NetcdfDSP.NC_GRPNULL);
+    }
+
+    protected DapNode
+    tag(DapNode container, DapNode annotatednode, int id, int gid)
+    {
+        DapNode n = tag(annotatednode, id, gid);
         if(container != null) try {
             switch (container.getSort()) {
             case GROUP:
@@ -85,10 +123,14 @@ public class Nc4Factory extends DefaultFactory
     protected DapNode
     tag(DapNode annotatednode, int id)
     {
+        return tag(annotatednode, id, NetcdfDSP.NC_GRPNULL);
+    }
+
+    protected DapNode
+    tag(DapNode annotatednode, int id, int gid)
+    {
         DapNode parent = top();
-        int gid = (parent == null ? -1
-                : ((NetcdfDSP.Nc4ID) parent.annotation(NC4DSPKEY)).gid);
-        NetcdfDSP.Nc4ID nid = new NetcdfDSP.Nc4ID(gid, id);
+        ID nid = new ID(gid, id);
         annotatednode.annotate(NC4DSPKEY, nid);
         allnodes.add(annotatednode);
         return annotatednode;
@@ -100,7 +142,7 @@ public class Nc4Factory extends DefaultFactory
     public int
     getGID(DapNode node)
     {
-        NetcdfDSP.Nc4ID id = (NetcdfDSP.Nc4ID) node.annotation(NC4DSPKEY);
+        ID id = (ID) node.annotation(NC4DSPKEY);
         return id.gid;
     }
 
@@ -110,7 +152,7 @@ public class Nc4Factory extends DefaultFactory
     public int
     getID(DapNode node)
     {
-        NetcdfDSP.Nc4ID id = (NetcdfDSP.Nc4ID) node.annotation(NC4DSPKEY);
+        ID id = (ID) node.annotation(NC4DSPKEY);
         return id.id;
     }
 
@@ -150,9 +192,9 @@ public class Nc4Factory extends DefaultFactory
         return (DapVariable) tag(scope.peek(), super.newAtomicVariable(name, t), id);
     }
 
-    public DapVariable newVariable(String name, DapType t, int id)
+    public DapVariable newVariable(String name, DapType t, int gid, int id)
     {
-        return (DapVariable) tag(top(), super.newVariable(name, t), id);
+        return (DapVariable) tag(top(), super.newVariable(name, t), id, gid);
     }
 
     public DapGroup newGroup(String name, int id)
@@ -184,6 +226,5 @@ public class Nc4Factory extends DefaultFactory
     {
         return (DapSequence) tag(top(), super.newSequence(name), id);
     }
-
 }
 

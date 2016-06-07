@@ -5,12 +5,11 @@
 package dap4.test;
 
 
-import dap4.ce.CEConstraint;
 import dap4.ce.CECompiler;
+import dap4.ce.CEConstraint;
 import dap4.ce.parser.CEParserImpl;
 import dap4.core.dmr.DapDataset;
 import dap4.core.dmr.DefaultDMRFactory;
-import dap4.core.dmr.parser.DOM4Parser;
 import dap4.core.dmr.parser.Dap4Parser;
 import dap4.core.dmr.parser.Dap4ParserImpl;
 import org.junit.Assert;
@@ -81,7 +80,8 @@ public class TestParserCE extends DapTestCommon
 
     //////////////////////////////////////////////////
     @Before
-    public void setup() {
+    public void setup()
+    {
         try {
             defineAllTestCases();
             chooseTestcases();
@@ -162,10 +162,8 @@ public class TestParserCE extends DapTestCommon
         // Create the DMR tree
         System.out.println("Parsing DMR");
         Dap4Parser parser;
-        if(USEDOM)
-            parser = new DOM4Parser(new DefaultDMRFactory());
-        else
-        parser = new Dap4ParserImpl(new DefaultDMRFactory());
+        if(!USEDOM)
+            parser = new Dap4ParserImpl(new DefaultDMRFactory());
         if(DMRPARSEDEBUG)
             parser.setDebugLevel(1);
         boolean parseok = parser.parse(testset.dmr);
@@ -208,7 +206,7 @@ public class TestParserCE extends DapTestCommon
         if(prop_diff) { //compare with baseline
             // Read the baseline file
             String baselinecontent = testset.expected;
-            pass = same(getTitle(),baselinecontent, results);
+            pass = same(getTitle(), baselinecontent, results);
         }
         return pass;
     }
