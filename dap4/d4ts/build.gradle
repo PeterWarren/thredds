@@ -17,7 +17,7 @@ war {
         into('WEB-INF/')
     }
     from (new File(d4testsResourcesDir, "testfiles/")) {
-        into('WEB-INF/resources/testfiles/')
+        into('WEB-INF/resources/')
         include('*.syn')
         include('*.nc')
         include('*.hdf5')

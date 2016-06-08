@@ -15,6 +15,7 @@ import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.core.util.ResponseFormat;
 import dap4.core.data.DSP;
+import dap4.dap4lib.DapCodes;
 import dap4.dap4lib.DapLog;
 import dap4.dap4lib.DapProtocol;
 import dap4.dap4lib.RequestMode;
@@ -241,20 +242,22 @@ abstract public class DapController extends HttpServlet
         } catch (Throwable t) {
             t.printStackTrace();
             int code = HttpServletResponse.SC_BAD_REQUEST;
-            if(t instanceof FileNotFoundException)
-                code = HttpServletResponse.SC_NOT_FOUND;
+            if(t instanceof DapException) {
+                DapException e = (DapException)t;
+                code = e.getCode();
+                if(code <= 0)
+                    code = DapCodes.SC_BAD_REQUEST;
+                e.setCode(code);
+            } else if(t instanceof FileNotFoundException)
+                code = DapCodes.SC_NOT_FOUND;
             else if(t instanceof UnsupportedOperationException)
-                code = HttpServletResponse.SC_FORBIDDEN;
+                code = DapCodes.SC_FORBIDDEN;
             else if(t instanceof MalformedURLException)
-                code = HttpServletResponse.SC_NOT_FOUND;
-            else if(t instanceof IOException) {
-                code = HttpServletResponse.SC_BAD_REQUEST;
-            } else if(t instanceof DapException) {
-                code = ((DapException) t).getCode();
-                if(code <= 0) // not http code
-                    code = HttpServletResponse.SC_BAD_REQUEST;
-            } else
-                code = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+                code = DapCodes.SC_NOT_FOUND;
+            else if(t instanceof IOException)
+                code = DapCodes.SC_BAD_REQUEST;
+            else
+                code = DapCodes.SC_INTERNAL_SERVER_ERROR;
             senderror(drq, code, t);
         }//catch
     }
