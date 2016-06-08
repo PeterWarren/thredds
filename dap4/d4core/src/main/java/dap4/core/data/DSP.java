@@ -19,11 +19,11 @@ public interface DSP
        that this DSP is likely to be able to process this file.
      */
     /* All implementing classes must implement:
-       1. a static match() function
+       1. a static dspMatch() function
        2. A parameterless constructor
      */
 
-    // static public boolean match(String path, DapContext context);
+    // static public boolean dspMatch(String path, DapContext context);
 
     public DSP open(String path, DapContext context) throws DapException;
     public DSP open(String path) throws DapException;

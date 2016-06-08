@@ -3,9 +3,9 @@
 
 package dap4.servlet;
 
+import dap4.core.data.DSP;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
-import dap4.core.data.DSP;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -17,6 +17,7 @@ import java.util.List;
 
 abstract public class DSPFactory
 {
+    static public final String MATCHMETHOD = "dspMatch";
 
     //////////////////////////////////////////////////
     // Type decls
@@ -30,9 +31,9 @@ abstract public class DSPFactory
         {
             this.dspclass = dspclass;
             try {
-                this.matcher = dspclass.getMethod("match", String.class, DapContext.class);
+                this.matcher = dspclass.getMethod(MATCHMETHOD, String.class, DapContext.class);
             } catch (NoSuchMethodException e) {
-                throw new IllegalArgumentException("DSPFactory: no match method for DSP: " + dspclass.getName());
+                throw new IllegalArgumentException("DSPFactory: no " + MATCHMETHOD + " method for DSP: " + dspclass.getName());
             }
         }
     }
@@ -50,9 +51,10 @@ abstract public class DSPFactory
 
     public DSPFactory()
     {
-        // Register known DSP classes: order is important.
+        // Subclasses should Register known DSP classes: order is important
+        // in event that two or more dsps can match a given file
+        // (e.q. FileDSP vs NetcdfDSP).
         // Only used in server
-        registerDSP(SynDSP.class, true);
     }
 
     //////////////////////////////////////////////////
@@ -149,7 +151,7 @@ abstract public class DSPFactory
      */
 
     synchronized public DSP
-    create(String path)
+    findMatchingDSP(String path)
             throws DapException
     {
         for(int i = 0; i < dspRegistry.size(); i++) {
@@ -158,7 +160,7 @@ abstract public class DSPFactory
                 boolean ismatch = (Boolean) tester.matcher.invoke(null, path, (DapContext) null);
                 if(ismatch) {
                     DSP dsp = (DSP) tester.dspclass.newInstance();
-                    return dsp.open(path);
+                    return dsp;
                 }
             } catch (Exception e) {
                 throw new DapException(e);

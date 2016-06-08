@@ -4,8 +4,10 @@
 package dap4.servlet;
 
 import dap4.ce.CEConstraint;
-import dap4.core.util.DapException;
 import dap4.core.data.DSP;
+import dap4.core.util.DapContext;
+import dap4.core.util.DapException;
+import dap4.dap4lib.DapCodes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,7 +76,11 @@ abstract public class DapCache
             CEConstraint.release(lru.get(0).getDMR());
         }
         // Find dsp that can process this path
-        DSP dsp = factory.create(path);
+        DSP dsp = factory.findMatchingDSP(path);
+        if(dsp == null)
+            throw new DapException("Resource has no matching DSP: "+path)
+                        .setCode(DapCodes.SC_FORBIDDEN);
+        dsp.open(path);
         lru.add(dsp);
         return dsp;
     }

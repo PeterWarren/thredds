@@ -51,7 +51,7 @@ public class FileDSP extends D4DSP
      * @param context Any parameters that may help to decide.
      * @return true if this path appears to be processible by this DSP
      */
-    static public boolean match(String path, DapContext context)
+    static public boolean dspMatch(String path, DapContext context)
     {
         try {
             XURI xuri = new XURI(path);

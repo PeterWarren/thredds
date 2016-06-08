@@ -72,7 +72,9 @@ public class Dap4Controller extends DapController
 
         public Dap4Factory()
         {
-            // Register known DSP classes: order is important.
+            // For TDS, we only need to register one DSP type: ThreddsDSP.
+            // This is because we will always serve only NetcdfFile objects.
+            // See D4TSServlet for a multiple registration case.
             registerDSP(ThreddsDSP.class, true);
         }
 

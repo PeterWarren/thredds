@@ -95,7 +95,7 @@ public class HttpDSP extends D4DSP
      * @param context Any parameters that may help to decide.
      * @return true if this url appears to be processible by this DSP
      */
-    static public boolean match(String url, DapContext context)
+    static public boolean dspMatch(String url, DapContext context)
     {
         try {
             XURI xuri = new XURI(url);

@@ -8,6 +8,7 @@ import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.dap4lib.DapLog;
 import dap4.dap4lib.FileDSP;
+import dap4.dap4lib.netcdf.NetcdfDSP;
 import dap4.servlet.*;
 import ucar.httpservices.HTTPUtil;
 
@@ -42,8 +43,11 @@ public class D4TSServlet extends DapController
 
         public D4TSFactory()
         {
-            // Register known DSP classes: order is important.
+            // Register known DSP classes: order is important
+            // in event that two or more dsps can match a given file
+            // (e.q. FileDSP vs NetcdfDSP).
             // Only used in server
+            registerDSP(NetcdfDSP.class, true);
             registerDSP(SynDSP.class, true);
             registerDSP(FileDSP.class, true);
         }

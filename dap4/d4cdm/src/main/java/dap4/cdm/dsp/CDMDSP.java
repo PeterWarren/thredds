@@ -156,7 +156,7 @@ public class CDMDSP extends AbstractDSP
     // DSP Interface
 
     // This is intended to be the last DSP checked
-    static public boolean match(String path, DapContext context)
+    static public boolean dspMatch(String path, DapContext context)
     {
         return true;
     }

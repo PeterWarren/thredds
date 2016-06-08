@@ -243,19 +243,13 @@ public class NetcdfDSP extends AbstractDSP
     public NetcdfDSP()
             throws DapException
     {
-        this(null);
-    }
-
-    public NetcdfDSP(DapNetcdf nc4)
-            throws DapException
-    {
-        if(nc4 == null) {
+        if(this.nc4 == null) {
             try {
-                nc4 = NetcdfLoader.load();
+                this.nc4 = NetcdfLoader.load();
             } catch (IOException ioe) {
                 throw new DapException(ioe);
             }
-            if(nc4 == null)
+            if(this.nc4 == null)
                 throw new DapException("Could not load libnetcdf");
         }
         factory = new Nc4Factory();
