@@ -95,6 +95,12 @@ abstract public class AbstractDSP implements DSP
         return this.dmr;
     }
 
+    public void
+    setDMR(DapDataset dmr)
+    {
+        this.dmr = dmr;
+    }
+
     // DSP Extensions
 
     protected void setContext(DapContext context)

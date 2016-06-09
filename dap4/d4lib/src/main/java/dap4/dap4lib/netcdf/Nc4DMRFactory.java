@@ -104,6 +104,7 @@ public class Nc4Factory extends DefaultDMRFactory
         DapNode n = tag(annotatednode, id, gid);
         if(container != null) try {
             switch (container.getSort()) {
+            case DATASET:
             case GROUP:
                 ((DapGroup) container).addDecl(n);
                 break;

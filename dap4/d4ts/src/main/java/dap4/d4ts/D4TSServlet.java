@@ -33,7 +33,9 @@ public class D4TSServlet extends DapController
 
     static final boolean PARSEDEBUG = false;
 
-    static final String TESTDATADIR = "/WEB-INF/resources/testfiles"; // relative to resource path
+    // Intellij refuses to place this correctly
+    // static final String TESTDATADIR = "/WEB-INF/resources/testfiles"; // relative to resource path
+    static final String TESTDATADIR = "/WEB-INF/testfiles"; // relative to resource path
 
     //////////////////////////////////////////////////
     // Type Decls

@@ -15,6 +15,7 @@ import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 import dap4.core.data.DSP;
+import dap4.core.data.DapDataFactory;
 import dap4.core.dmr.*;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
@@ -136,7 +137,7 @@ public class NetcdfDSP extends AbstractDSP
         int basetype = NC_NAT;
         int opaquelen = 0;
         TypeSort sort = null;
-        DapNode type = null; // use Dapnode to handle compount->DapStructure
+        DapDecl type = null; // use DapDecl to handle compount->DapStructure
 
         Typeinfo(int g, int t)
         {
@@ -164,7 +165,7 @@ public class NetcdfDSP extends AbstractDSP
             return this;
         }
 
-        Typeinfo setType(DapNode t)
+        Typeinfo setType(DapDecl t)
         {
             this.type = t;
             return this;
@@ -228,14 +229,13 @@ public class NetcdfDSP extends AbstractDSP
 
     String pathprefix = null;
 
-    Nc4Factory factory = null;
+    Nc4DapFactory dmrfactory = null;
+    Nc4DataFactory datafactory = null;
 
     Map<Integer, Groupinfo> allgroups = new HashMap<>();
     Map<Integer, Diminfo> alldims = new HashMap<>();
     Map<Integer, Typeinfo> alltypes = new HashMap<>();
     List<Varinfo> allvars = new ArrayList<>();
-
-    DapGroup rootgroup = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -252,25 +252,50 @@ public class NetcdfDSP extends AbstractDSP
             if(this.nc4 == null)
                 throw new DapException("Could not load libnetcdf");
         }
-        factory = new Nc4Factory();
+        dmrfactory = new Nc4DMRFactory();
+        datafactory = new Nc4DataFactory();
         defineatomictypes();
     }
 
     void
     defineatomictypes()
     {
-        alltypes.put(NC_BYTE, new Typeinfo(0, NC_BYTE).setSort(TypeSort.Int8));
-        alltypes.put(NC_CHAR, new Typeinfo(0, NC_CHAR).setSort(TypeSort.Char));
-        alltypes.put(NC_SHORT, new Typeinfo(0, NC_SHORT).setSort(TypeSort.Int16));
-        alltypes.put(NC_INT, new Typeinfo(0, NC_INT).setSort(TypeSort.Int32));
-        alltypes.put(NC_FLOAT, new Typeinfo(0, NC_FLOAT).setSort(TypeSort.Float32));
-        alltypes.put(NC_DOUBLE, new Typeinfo(0, NC_DOUBLE).setSort(TypeSort.Float64));
-        alltypes.put(NC_UBYTE, new Typeinfo(0, NC_UBYTE).setSort(TypeSort.UInt8));
-        alltypes.put(NC_USHORT, new Typeinfo(0, NC_USHORT).setSort(TypeSort.UInt16));
-        alltypes.put(NC_UINT, new Typeinfo(0, NC_UINT).setSort(TypeSort.UInt32));
-        alltypes.put(NC_INT64, new Typeinfo(0, NC_INT64).setSort(TypeSort.Int64));
-        alltypes.put(NC_UINT64, new Typeinfo(0, NC_UINT64).setSort(TypeSort.UInt64));
-        alltypes.put(NC_STRING, new Typeinfo(0, NC_STRING).setSort(TypeSort.String));
+        alltypes.put(NC_BYTE, new Typeinfo(0, NC_BYTE)
+		.setSort(TypeSort.Int8)
+		.setType(DapType.INT8));
+        alltypes.put(NC_CHAR, new Typeinfo(0, NC_CHAR)
+		.setSort(TypeSort.Char)
+		.setType(DapType.CHAR));
+        alltypes.put(NC_SHORT, new Typeinfo(0, NC_SHORT)
+		.setSort(TypeSort.Int16)
+		.setType(DapType.INT16));
+        alltypes.put(NC_INT, new Typeinfo(0, NC_INT)
+		.setSort(TypeSort.Int32)
+		.setType(DapType.INT32));
+        alltypes.put(NC_FLOAT, new Typeinfo(0, NC_FLOAT)
+		.setSort(TypeSort.Float32)
+		.setType(DapType.FLOAT32));
+        alltypes.put(NC_DOUBLE, new Typeinfo(0, NC_DOUBLE)
+		.setSort(TypeSort.Float64)
+		.setType(DapType.FLOAT64));
+        alltypes.put(NC_UBYTE, new Typeinfo(0, NC_UBYTE)
+		.setSort(TypeSort.UInt8)
+		.setType(DapType.UINT8));
+        alltypes.put(NC_USHORT, new Typeinfo(0, NC_USHORT)
+		.setSort(TypeSort.UInt16)
+		.setType(DapType.UINT16));
+        alltypes.put(NC_UINT, new Typeinfo(0, NC_UINT)
+		.setSort(TypeSort.UInt32)
+		.setType(DapType.UINT32));
+        alltypes.put(NC_INT64, new Typeinfo(0, NC_INT64)
+		.setSort(TypeSort.Int64)
+		.setType(DapType.INT64));
+        alltypes.put(NC_UINT64, new Typeinfo(0, NC_UINT64)
+		.setSort(TypeSort.UInt64)
+		.setType(DapType.UINT64));
+        alltypes.put(NC_STRING, new Typeinfo(0, NC_STRING)
+		.setSort(TypeSort.String)
+		.setType(DapType.STRING));
     }
 
     @Override
@@ -293,8 +318,8 @@ public class NetcdfDSP extends AbstractDSP
                         path, ncid, this.format);
             // create and fill the root group
             buildrootgroup(ncid);
-            // save the set of all nodes
-            this.rootgroup.annotate(NC4DSPNODES, factory.getAllNodes());
+            getDMR().finish();
+            buildDataDataset();
             return this;
         } catch (Exception t) {
             t.printStackTrace();
@@ -316,6 +341,7 @@ public class NetcdfDSP extends AbstractDSP
     }
 
     //////////////////////////////////////////////////
+    // Accessors
 
     //////////////////////////////////////////////////
 
@@ -327,12 +353,12 @@ public class NetcdfDSP extends AbstractDSP
         byte[] namep = new byte[NC_MAX_NAME + 1];
         errcheck(ret = nc4.nc_inq_grpname(ncid, namep));
         Groupinfo gi = new Groupinfo(ncid, ncid);
-        DapGroup g = factory.newGroup(makeString(namep), ncid);
+        DapDataset g = dmrfactory.newDataset(makeString(namep), ncid);
         gi.setGroup(g);
-        this.rootgroup = g;
-        factory.enterContainer(g);
+        setDMR(g);
+        dmrfactory.enterContainer(g);
         fillgroup(ncid);
-        factory.leaveContainer();
+        dmrfactory.leaveContainer();
     }
 
     protected void
@@ -372,9 +398,9 @@ public class NetcdfDSP extends AbstractDSP
         byte[] namep = new byte[NC_MAX_NAME + 1];
         errcheck(ret = nc4.nc_inq_grpname(gid, namep));
         Groupinfo gi = new Groupinfo(parent, gid);
-        DapGroup g = factory.newGroup(makeString(namep), gid);
+        DapGroup g = dmrfactory.newGroup(makeString(namep), gid);
         gi.setGroup(g);
-        factory.enterContainer(g);
+        dmrfactory.enterContainer(g);
         fillgroup(gid);
     }
 
@@ -391,10 +417,10 @@ public class NetcdfDSP extends AbstractDSP
         boolean isunlimited = contains(udims, did);
         Diminfo di = new Diminfo(gid, did);
         alldims.put(did, di);
-        DapDimension dim = factory.newDimension(name, lenp.longValue(), did);
+        DapDimension dim = dmrfactory.newDimension(name, lenp.longValue(), did);
         di.setDim(dim);
         if(isunlimited) {
-            DapAttribute ultag = factory.newAttribute(UCARTAGUNLIM, DapType.INT8);
+            DapAttribute ultag = dmrfactory.newAttribute(UCARTAGUNLIM, DapType.INT8);
             ultag.setValues(new Object[]{(Byte) (byte) 1});
             dim.addAttribute(ultag);
         }
@@ -463,7 +489,7 @@ public class NetcdfDSP extends AbstractDSP
         errcheck(ret = nc4.nc_inq_enum(ti.gid, ti.tid, namep, basetypep, sizep, nmembersp));
 
         Typeinfo bt = findtype(basetype);
-        DapEnumeration de = factory.newEnumeration(name, DapType.lookup(bt.sort), ti.tid);
+        DapEnumeration de = dmrfactory.newEnumeration(name, DapType.lookup(bt.sort), ti.tid);
         ti.setType(de);
 
         // build list of enum consts
@@ -471,7 +497,7 @@ public class NetcdfDSP extends AbstractDSP
         for(int i = 0; i < nconsts; i++) {
             // Get info about the ith const
             errcheck(ret = nc4.nc_inq_enum_member(ti.gid, ti.tid, i, namep, valuep));
-            de.addEnumConst(factory.newEnumConst(makeString(namep), (long) valuep.getValue()));
+            de.addEnumConst(dmrfactory.newEnumConst(makeString(namep), (long) valuep.getValue()));
         }
     }
 
@@ -479,7 +505,7 @@ public class NetcdfDSP extends AbstractDSP
     buildcompoundtype(Typeinfo ti, String name, long nfields)
             throws DapException
     {
-        DapStructure ds = factory.newStructure(name, ti.tid);
+        DapStructure ds = dmrfactory.newStructure(name, ti.tid);
         ti.setType(ds);
         for(int i = 0; i < nfields; i++) {
             buildfield(ti, i);
@@ -514,19 +540,19 @@ public class NetcdfDSP extends AbstractDSP
         DapVariable field;
         switch (baset.sort) {
         case Struct:
-            field = factory.newStructure(name, index);
+            field = dmrfactory.newStructure(name, index);
             break;
         case Seq:
-            field = factory.newSequence(name, index);
+            field = dmrfactory.newSequence(name, index);
             break;
         default:
-            field = factory.newAtomicVariable(name, (DapType) baset.type, index);
+            field = dmrfactory.newAtomicVariable(name, (DapType) baset.type, index);
             break;
         }
         // set dimsizes
         if(dimsizes.length > 0) {
             for(int i = 0; i < dimsizes.length; i++) {
-                DapDimension dim = factory.newDimension(null, dimsizes[i], NC_IDNULL);
+                DapDimension dim = dmrfactory.newDimension(null, dimsizes[i], NC_IDNULL);
                 field.addDimension(dim);
             }
         }
@@ -548,7 +574,8 @@ public class NetcdfDSP extends AbstractDSP
         Typeinfo ti = findtype(xtype);
         if(ti == null)
             throw new DapException("Unknown type id: " + xtype);
-        DapVariable var = factory.newVariable(makeString(namep), (DapType) ti.type, gid, vid);
+        DapVariable var = dmrfactory.newVariable(makeString(namep), (DapType) ti.type, gid, vid);
+        vi.setVar(var);
         int[] dimids = getVardims(gid, vid, ndimsp.getValue());
         for(int i = 0; i < dimids.length; i++) {
             Diminfo di = finddim(dimids[i]);
@@ -561,7 +588,7 @@ public class NetcdfDSP extends AbstractDSP
         if(bti == null)
             throw new DapException("Undefined variable basetype: " + xtype);
         if(bti.isenum) {
-            DapAttribute sizetag = factory.newAttribute(UCARTAGOPAQUE, DapType.INT64);
+            DapAttribute sizetag = dmrfactory.newAttribute(UCARTAGOPAQUE, DapType.INT64);
             sizetag.setValues(new Object[]{(long) bti.opaquelen});
             var.addAttribute(sizetag);
         }
@@ -579,14 +606,14 @@ public class NetcdfDSP extends AbstractDSP
         int ref;
         // We map vlen to a sequence with a single field
         // of the basetype. Field name is same as the vlen type
-        DapSequence ds = factory.newSequence(vname, ti.tid);
+        DapSequence ds = dmrfactory.newSequence(vname, ti.tid);
         ti.setType(ds);
         Typeinfo baset = findtype(basetype);
         if(baset == null)
             throw new DapException("Undefined vlen basetype: " + basetype);
         makeField(ti, 0, vname, baset, 0, new int[0]);
         // Annotate to indicate that this came from a vlen
-        DapAttribute tag = factory.newAttribute(UCARTAGVLEN, DapType.INT8);
+        DapAttribute tag = dmrfactory.newAttribute(UCARTAGVLEN, DapType.INT8);
         tag.setValues(new Object[]{(Byte) (byte) 1});
         ds.addAttribute(tag);
     }
@@ -607,7 +634,7 @@ public class NetcdfDSP extends AbstractDSP
         // Get the values of the attribute
         Object[] values = getAttributeValues(gid, vid, name, basetype, countp.intValue());
         Typeinfo ti = findtype(basetype);
-        DapAttribute da = factory.newAttribute(name, (DapType) ti.type);
+        DapAttribute da = dmrfactory.newAttribute(name, (DapType) ti.type);
         da.setValues(values);
 
         if(isglobal) {
@@ -1019,7 +1046,7 @@ public class NetcdfDSP extends AbstractDSP
     typenamefor(int id)
     {
         Typeinfo ti = findtype(id);
-        return (ti == null ? null : ti.type.getShortName());
+        return (ti == null ? null : ((DapNode)ti.type).getShortName());
     }
 
     Diminfo
@@ -1053,5 +1080,238 @@ public class NetcdfDSP extends AbstractDSP
         return allgroups.get(gid);
     }
 
+    //////////////////////////////////////////////////
+    // Data Build
+
+    protected void
+    buildDataDataset()
+    {
+    }
+
+    @Override
+    public void
+    compile()
+            throws DapException
+    {
+        assert (this.dataset != null && this.databuffer != null);
+        if(DEBUG) {
+            DapDump.dumpbytes(this.databuffer, false);
+        }
+        this.datadataset = factory.newDataset(this.dsp, this.dataset);
+        this.dsp.setDataDataset(this.datadataset);
+
+        // iterate over the variables represented in the databuffer
+        for(DapVariable vv : this.dataset.getTopVariables()) {
+            DataVariable array = compileVar(vv);
+            this.datadataset.addVariable(array);
+        }
+    }
+
+    protected DataVariable
+    compileVar(DapVariable dapvar)
+            throws DapException
+    {
+        DataVariable array = null;
+        boolean isscalar = dapvar.getRank() == 0;
+        if(dapvar.getSort() == DapSort.ATOMICVARIABLE) {
+            array = compileAtomicVar((DapAtomicVariable)dapvar);
+        } else if(dapvar.getSort() == DapSort.STRUCTURE) {
+            if(isscalar)
+                array = compileStructure((DapStructure) dapvar, null, 0);
+            else
+                array = compileStructureArray(dapvar);
+        } else if(dapvar.getSort() == DapSort.SEQUENCE) {
+            if(isscalar)
+                array = compileSequence((DapSequence) dapvar, null, 0);
+            else
+                array = compileSequenceArray(dapvar);
+        }
+        if(dapvar.isTopLevel()) {
+            // extract the checksum from databuffer src,
+            // attach to the array, and make into an attribute
+            byte[] checksum = getChecksum(databuffer);
+            dapvar.setChecksum(checksum);
+        }
+        return array;
+    }
+
+    protected DataAtomic
+    compileAtomicVar(DapAtomicVariable atomvar)
+            throws DapException
+    {
+        DapType daptype = atomvar.getBaseType();
+        D4DataAtomic data = (D4DataAtomic)factory.newAtomicVariable(this.dsp, atomvar, databuffer.position());
+        long total = 0;
+        long dimproduct = data.getCount();
+        if(!daptype.isEnumType() && !daptype.isFixedSize()) {
+            // this is a string, url, or opaque
+            int[] positions = new int[(int) dimproduct];
+            int savepos = databuffer.position();
+            // Walk the bytestring and return the instance count (in databuffer)
+            total = walkByteStrings(positions, databuffer);
+            databuffer.position(savepos);// leave position unchanged
+            data.setByteStringOffsets(total, positions);
+        } else {
+            total = dimproduct * daptype.getSize();
+        }
+        skip(databuffer, (int) total);
+        return data;
+    }
+
+    /**
+     * Compile a structure array.
+     *
+     * @param dapvar the template
+     * @return A DataCompoundArray for the databuffer for this struct.
+     * @throws DapException
+     */
+    DataCompoundArray
+    compileStructureArray(DapVariable dapvar)
+            throws DapException
+    {
+        DataCompoundArray structarray
+                = factory.newCompoundArray(this.dsp, dapvar);
+        DapStructure struct = (DapStructure) dapvar;
+        long dimproduct = structarray.getCount();
+        for(int i = 0; i < dimproduct; i++) {
+            DataStructure instance = compileStructure(struct, structarray, i);
+            structarray.addElement(instance);
+        }
+        return structarray;
+    }
+
+
+    /**
+     * Compile a structure instance.
+     *
+     * @param dapstruct The template
+     * @return A DataStructure for the databuffer for this struct.
+     * @throws DapException
+     */
+    DataStructure
+    compileStructure(DapStructure dapstruct, DataCompoundArray array, int index)
+            throws DapException
+    {
+        DataStructure d4ds = factory.newStructure(dsp, dapstruct, array, index);
+        List<DapVariable> dfields = dapstruct.getFields();
+        for(int m = 0; m < dfields.size(); m++) {
+            DapVariable dfield = dfields.get(m);
+            DataVariable dvfield = compileVar(dfield);
+            d4ds.addField(m, dvfield);
+        }
+        return d4ds;
+    }
+
+    /**
+     * Compile a sequence array.
+     *
+     * @param dapvar the template
+     * @return A DataCompoundArray for the databuffer for this sequence.
+     * @throws DapException
+     */
+    DataCompoundArray
+    compileSequenceArray(DapVariable dapvar)
+            throws DapException
+    {
+        DapSequence dapseq = (DapSequence) dapvar;
+        DataCompoundArray seqarray
+                = factory.newCompoundArray(this.dsp, dapseq);
+        long dimproduct = seqarray.getCount();
+        for(int i = 0; i < dimproduct; i++) {
+            DataSequence dseq = compileSequence(dapseq, seqarray, i);
+            seqarray.addElement(dseq);
+        }
+        return seqarray;
+    }
+
+    /**
+     * Compile a sequence from a set of records.
+     *
+     * @param dapseq The template for this sequence
+     * @param array  the parent compound array
+     * @param index  within the parent compound array
+     * @return A DataSequence for the records for this sequence.
+     * @throws DapException
+     */
+    DataSequence
+    compileSequence(DapSequence dapseq, DataCompoundArray array, int index)
+            throws DapException
+    {
+        List<DapVariable> dfields = dapseq.getFields();
+        // Get the count of the number of records
+        long nrecs = getCount(databuffer);
+        DataSequence seq = factory.newSequence(this.dsp, dapseq, array, index);
+        for(int r = 0; r < nrecs; r++) {
+            DataRecord rec = factory.newRecord(this.dsp, dapseq, seq, r);
+            for(int m = 0; m < dfields.size(); m++) {
+                DapVariable dfield = dfields.get(m);
+                DataVariable dvfield = compileVar(dfield);
+                rec.addField(m, dvfield);
+            }
+            seq.addRecord(rec);
+        }
+        return seq;
+    }
+
+    //////////////////////////////////////////////////
+    // Utilities
+
+    protected byte[]
+    getChecksum(ByteBuffer data)
+            throws DapException
+    {
+        if(!ChecksumMode.enabled(RequestMode.DAP, checksummode)) return null;
+        if(data.remaining() < CHECKSUMSIZE)
+            throw new DapException("Short serialization: missing checksum");
+        byte[] checksum = new byte[CHECKSUMSIZE];
+        data.get(checksum);
+        return checksum;
+    }
+
+    static protected void
+    skip(ByteBuffer data, int count)
+    {
+        data.position(data.position() + count);
+    }
+
+    static protected int
+    getCount(ByteBuffer data)
+    {
+        long count = data.getLong();
+        count = (count & 0xFFFFFFFF);
+        return (int) count;
+    }
+
+    /**
+     * Compute the size in databuffer of the serialized form
+     *
+     * @param daptype
+     * @return type's serialized form size
+     */
+    static protected int
+    computeTypeSize(DapType daptype)
+    {
+        TypeSort atype = daptype.getAtomicType();
+        return Dap4Util.daptypeSize(atype);
+    }
+
+    static protected long
+    walkByteStrings(int[] positions, ByteBuffer databuffer)
+    {
+        int count = positions.length;
+        long total = 0;
+        int savepos = databuffer.position();
+        // Walk each bytestring
+        for(int i = 0; i < count; i++) {
+            int pos = databuffer.position();
+            positions[i] = pos;
+            int size = getCount(databuffer);
+            total += COUNTSIZE;
+            total += size;
+            skip(databuffer, size);
+        }
+        databuffer.position(savepos);// leave position unchanged
+        return total;
+    }
 
 }

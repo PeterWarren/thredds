@@ -451,7 +451,16 @@ abstract public class DapController extends HttpServlet
         if(httpcode == 0) httpcode = HttpServletResponse.SC_BAD_REQUEST;
         ErrorResponse err = new ErrorResponse();
         err.setCode(httpcode);
-        err.setMessage(t == null ? "Servlet Error" : t.getMessage());
+        if(t == null) {
+            err.setMessage("Servlet error: "+drq.getURL());
+        } else {
+            StringWriter sw = new StringWriter();
+            PrintWriter p = new PrintWriter(sw);
+            t.printStackTrace(p);
+            p.close();
+            sw.close();
+            err.setMessage(sw.toString());
+        }
         err.setContext(drq.getURL());
         String errormsg = err.buildXML();
         drq.getResponse().sendError(httpcode, errormsg);
