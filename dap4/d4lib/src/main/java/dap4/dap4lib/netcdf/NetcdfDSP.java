@@ -232,6 +232,8 @@ public class NetcdfDSP extends AbstractDSP
     Nc4DapFactory dmrfactory = null;
     Nc4DataFactory datafactory = null;
 
+    DapDataDataset datadataset = null;
+
     Map<Integer, Groupinfo> allgroups = new HashMap<>();
     Map<Integer, Diminfo> alldims = new HashMap<>();
     Map<Integer, Typeinfo> alltypes = new HashMap<>();
@@ -1084,47 +1086,40 @@ public class NetcdfDSP extends AbstractDSP
     // Data Build
 
     protected void
-    buildDataDataset()
+    databuild()
+	throws DapException
     {
-    }
-
-    @Override
-    public void
-    compile()
-            throws DapException
-    {
-        assert (this.dataset != null && this.databuffer != null);
         if(DEBUG) {
             DapDump.dumpbytes(this.databuffer, false);
         }
-        this.datadataset = factory.newDataset(this.dsp, this.dataset);
-        this.dsp.setDataDataset(this.datadataset);
+        this.datadataset = datafactory.newDataset(this.dsp, this.dataset);
 
-        // iterate over the variables represented in the databuffer
+        // iterate over the variables represented in the dataset
         for(DapVariable vv : this.dataset.getTopVariables()) {
-            DataVariable array = compileVar(vv);
+            DataVariable array = databuildVar(vv);
             this.datadataset.addVariable(array);
         }
     }
 
     protected DataVariable
-    compileVar(DapVariable dapvar)
+    databuildVar(DapVariable dapvar)
             throws DapException
     {
         DataVariable array = null;
         boolean isscalar = dapvar.getRank() == 0;
+	
         if(dapvar.getSort() == DapSort.ATOMICVARIABLE) {
-            array = compileAtomicVar((DapAtomicVariable)dapvar);
+            array = databuildAtomicVar((DapAtomicVariable)dapvar);
         } else if(dapvar.getSort() == DapSort.STRUCTURE) {
             if(isscalar)
-                array = compileStructure((DapStructure) dapvar, null, 0);
+                array = databuildStructure((DapStructure) dapvar, null, 0);
             else
-                array = compileStructureArray(dapvar);
+                array = databuildStructureArray(dapvar);
         } else if(dapvar.getSort() == DapSort.SEQUENCE) {
             if(isscalar)
-                array = compileSequence((DapSequence) dapvar, null, 0);
+                array = databuildSequence((DapSequence) dapvar, null, 0);
             else
-                array = compileSequenceArray(dapvar);
+                array = databuildSequenceArray(dapvar);
         }
         if(dapvar.isTopLevel()) {
             // extract the checksum from databuffer src,
@@ -1136,11 +1131,11 @@ public class NetcdfDSP extends AbstractDSP
     }
 
     protected DataAtomic
-    compileAtomicVar(DapAtomicVariable atomvar)
+    databuildAtomicVar(DapAtomicVariable atomvar)
             throws DapException
     {
         DapType daptype = atomvar.getBaseType();
-        D4DataAtomic data = (D4DataAtomic)factory.newAtomicVariable(this.dsp, atomvar, databuffer.position());
+        D4DataAtomic data = (D4DataAtomic)datafactory.newAtomicVariable(this.dsp, atomvar, databuffer.position());
         long total = 0;
         long dimproduct = data.getCount();
         if(!daptype.isEnumType() && !daptype.isFixedSize()) {
@@ -1159,22 +1154,22 @@ public class NetcdfDSP extends AbstractDSP
     }
 
     /**
-     * Compile a structure array.
+     * Databuild a structure array.
      *
      * @param dapvar the template
      * @return A DataCompoundArray for the databuffer for this struct.
      * @throws DapException
      */
     DataCompoundArray
-    compileStructureArray(DapVariable dapvar)
+    databuildStructureArray(DapVariable dapvar)
             throws DapException
     {
         DataCompoundArray structarray
-                = factory.newCompoundArray(this.dsp, dapvar);
+                = datafactory.newCompoundArray(this.dsp, dapvar);
         DapStructure struct = (DapStructure) dapvar;
         long dimproduct = structarray.getCount();
         for(int i = 0; i < dimproduct; i++) {
-            DataStructure instance = compileStructure(struct, structarray, i);
+            DataStructure instance = databuildStructure(struct, structarray, i);
             structarray.addElement(instance);
         }
         return structarray;
@@ -1182,50 +1177,50 @@ public class NetcdfDSP extends AbstractDSP
 
 
     /**
-     * Compile a structure instance.
+     * Databuild a structure instance.
      *
      * @param dapstruct The template
      * @return A DataStructure for the databuffer for this struct.
      * @throws DapException
      */
     DataStructure
-    compileStructure(DapStructure dapstruct, DataCompoundArray array, int index)
+    databuildStructure(DapStructure dapstruct, DataCompoundArray array, int index)
             throws DapException
     {
-        DataStructure d4ds = factory.newStructure(dsp, dapstruct, array, index);
+        DataStructure d4ds = datafactory.newStructure(dsp, dapstruct, array, index);
         List<DapVariable> dfields = dapstruct.getFields();
         for(int m = 0; m < dfields.size(); m++) {
             DapVariable dfield = dfields.get(m);
-            DataVariable dvfield = compileVar(dfield);
+            DataVariable dvfield = databuildVar(dfield);
             d4ds.addField(m, dvfield);
         }
         return d4ds;
     }
 
     /**
-     * Compile a sequence array.
+     * Databuild a sequence array.
      *
      * @param dapvar the template
      * @return A DataCompoundArray for the databuffer for this sequence.
      * @throws DapException
      */
     DataCompoundArray
-    compileSequenceArray(DapVariable dapvar)
+    databuildSequenceArray(DapVariable dapvar)
             throws DapException
     {
         DapSequence dapseq = (DapSequence) dapvar;
         DataCompoundArray seqarray
-                = factory.newCompoundArray(this.dsp, dapseq);
+                = datafactory.newCompoundArray(this.dsp, dapseq);
         long dimproduct = seqarray.getCount();
         for(int i = 0; i < dimproduct; i++) {
-            DataSequence dseq = compileSequence(dapseq, seqarray, i);
+            DataSequence dseq = databuildSequence(dapseq, seqarray, i);
             seqarray.addElement(dseq);
         }
         return seqarray;
     }
 
     /**
-     * Compile a sequence from a set of records.
+     * Databuild a sequence from a set of records.
      *
      * @param dapseq The template for this sequence
      * @param array  the parent compound array
@@ -1234,18 +1229,18 @@ public class NetcdfDSP extends AbstractDSP
      * @throws DapException
      */
     DataSequence
-    compileSequence(DapSequence dapseq, DataCompoundArray array, int index)
+    databuildSequence(DapSequence dapseq, DataCompoundArray array, int index)
             throws DapException
     {
         List<DapVariable> dfields = dapseq.getFields();
         // Get the count of the number of records
         long nrecs = getCount(databuffer);
-        DataSequence seq = factory.newSequence(this.dsp, dapseq, array, index);
+        DataSequence seq = datafactory.newSequence(this.dsp, dapseq, array, index);
         for(int r = 0; r < nrecs; r++) {
-            DataRecord rec = factory.newRecord(this.dsp, dapseq, seq, r);
+            DataRecord rec = datafactory.newRecord(this.dsp, dapseq, seq, r);
             for(int m = 0; m < dfields.size(); m++) {
                 DapVariable dfield = dfields.get(m);
-                DataVariable dvfield = compileVar(dfield);
+                DataVariable dvfield = databuildVar(dfield);
                 rec.addField(m, dvfield);
             }
             seq.addRecord(rec);

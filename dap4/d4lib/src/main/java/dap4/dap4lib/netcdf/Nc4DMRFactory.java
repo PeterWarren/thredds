@@ -26,7 +26,7 @@ public class Nc4Factory extends DefaultDMRFactory
     //////////////////////////////////////////////////
     // Type Decls
 
-    static protected class ID
+    static class ID
     {
         public int gid; // might also be root ncid
         public int id;  // dimension|type|variable id
@@ -39,7 +39,7 @@ public class Nc4Factory extends DefaultDMRFactory
 
         public ID(int gid)
         {
-            this(gid, NC_IDNULL);
+v            this(gid, NC_IDNULL);
         }
 
         public ID(int grpid, int id)
@@ -135,26 +135,6 @@ public class Nc4Factory extends DefaultDMRFactory
         annotatednode.annotate(NC4DSPKEY, nid);
         allnodes.add(annotatednode);
         return annotatednode;
-    }
-
-    /**
-     * Return gid of containing group
-     */
-    public int
-    getGID(DapNode node)
-    {
-        ID id = (ID) node.annotation(NC4DSPKEY);
-        return id.gid;
-    }
-
-    /**
-     * Return id of object
-     */
-    public int
-    getID(DapNode node)
-    {
-        ID id = (ID) node.annotation(NC4DSPKEY);
-        return id.id;
     }
 
     //////////////////////////////////////////////////

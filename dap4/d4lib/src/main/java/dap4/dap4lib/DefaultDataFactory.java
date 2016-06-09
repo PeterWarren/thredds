@@ -1,8 +1,4 @@
 /* Copyright 2012, UCAR/Unidata.
-   See the LICENSE file for more information.
-*/
-
-/* Copyright 2012, UCAR/Unidata.
    See the LICENSE file for more information. */
 
 package dap4.dap4lib;
