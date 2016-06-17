@@ -31,20 +31,17 @@ public class CDMDataAtomic extends AbstractDataVariable implements CDMDataVariab
     protected DapType basetype = null;
     protected TypeSort atomtype = null;
 
-    protected Array data = null;
-
     //////////////////////////////////////////////////
     // Constructors
 
-    public CDMDataAtomic(DSP dsp, DapAtomicVariable template, Array array)
+    public CDMDataAtomic(DSP dsp, DapAtomicVariable template, Object array)
             throws DataException
     {
-        super(template,dsp);
+        super(template,dsp,array);
         this.basetype = ((DapVariable) template).getBaseType();
         this.atomtype = this.basetype.getTypeSort();
         this.product = DapUtil.dimProduct(template.getDimensions());
         this.dsp = dsp;
-        this.data = array;
     }
 
     //////////////////////////////////////////////////
@@ -72,16 +69,16 @@ public class CDMDataAtomic extends AbstractDataVariable implements CDMDataVariab
     public long
     getSizeBytes()
     {
-        return data.getSizeBytes();
+        return ((Array)getSource()).getSizeBytes();
     }
 
     @Override
-    public void
-    read(List<Slice> slices, Object data, long offset)
+    public Object
+    read(List<Slice> slices)
         //read(long start, long count, Object data, long offset)
             throws DataException
     {
-        Array array = (Array) this.data;
+        Array array = ((Array)getSource());
         // If content.getDataType returns object, then we
         // really do not know its true datatype. So, as a rule,
         // we will rely on this.basetype.
@@ -94,64 +91,26 @@ public class CDMDataAtomic extends AbstractDataVariable implements CDMDataVariab
         Object content = array.get1DJavaArray(elementclass); // not very efficient
         try {
             Odometer odom = Odometer.factory(slices, ((DapVariable) this.getTemplate()).getDimensions(), false);
+            Object[] data = new Object[(int)odom.totalSize()];
             while(odom.hasNext()) {
-                long index = odom.next();
-                System.arraycopy(content, (int) index, data, (int) offset, 1);
-                offset++;
+                Index index = odom.next();
+                long offset = index.index();
+                System.arraycopy(content, (int) offset, data, (int)offset, 1);
             }
+            return data;
         } catch (DapException de) {
             throw new DataException(de);
         }
-/*
-    switch (datatype) {
-        case BOOLEAN:
-	    boolean[] bovector = (boolean[])vector;
-	
-	    break;	
-        case BYTE:
-	    byte[] byvector = (byte[])vector;
-	    break;	
-        case CHAR:
-	    char[] chvector = (char[])vector;
-	    break;	
-        case SHORT:
-	    short[] shvector = (short[])vector;
-	    break;	
-        case INT:
-	    int[] invector = (int[])vector;
-	    break;	
-        case LONG:
-	    long[] lovector = (long[])vector;
-	    break;	
-        case FLOAT:
-	    float[] flvector = (float[])vector;
-	    break;	
-        case DOUBLE:
-	    double[] dovector = (double[])vector;
-	    break;	
-        case STRING:
-	    string[] stvector = (string[])vector;
-	    break;	
-        case OBJECT:
-	    object[] obvector = (object[])vector;
-	    break;	
-        case STRUCTURE:
-        case SEQUENCE:
-        default:
-	    throw new DataException("Attempt to read non-atomic value of type: "+datatype);
-        }
-	return result;
-*/
     }
 
     @Override
     public Object
-    read(long index)
+    read(Index index)
             throws DataException
     {
         Object result;
-        int i = (int) index;
-        Array content = (Array) this.data;
+        int i = (int) index.index();
+        Array content = ((Array)getSource());
         DataType datatype = content.getDataType();
         long tmp = 0;
         switch (datatype) {
@@ -216,7 +175,7 @@ public class CDMDataAtomic extends AbstractDataVariable implements CDMDataVariab
             throws DataException
     {
         DapSort sort = null;
-        Array content = (Array) this.data;
+        Array content = ((Array)getSource());
         switch (content.getDataType()) {
         case BOOLEAN:
         case BYTE:

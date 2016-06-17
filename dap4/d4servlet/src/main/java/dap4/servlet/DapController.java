@@ -5,16 +5,19 @@
 
 package dap4.servlet;
 
-import dap4.ce.CEAST;
-import dap4.ce.CECompiler;
-import dap4.ce.CEConstraint;
-import dap4.ce.parser.CEParserImpl;
+import dap4.core.ce.CEAST;
+import dap4.core.ce.CECompiler;
+import dap4.core.ce.CEConstraint;
+import dap4.core.ce.parser.CEParserImpl;
+import dap4.core.data.DSP;
+import dap4.core.dmr.DMRPrint;
 import dap4.core.dmr.DapDataset;
 import dap4.core.dmr.ErrorResponse;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.core.util.ResponseFormat;
-import dap4.core.data.DSP;
+import dap4.core.data.DAPPrint;
+
 import dap4.dap4lib.DapCodes;
 import dap4.dap4lib.DapLog;
 import dap4.dap4lib.DapProtocol;
@@ -243,7 +246,7 @@ abstract public class DapController extends HttpServlet
             t.printStackTrace();
             int code = HttpServletResponse.SC_BAD_REQUEST;
             if(t instanceof DapException) {
-                DapException e = (DapException)t;
+                DapException e = (DapException) t;
                 code = e.getCode();
                 if(code <= 0)
                     code = DapCodes.SC_BAD_REQUEST;
@@ -375,10 +378,23 @@ abstract public class DapController extends HttpServlet
         addCommonHeaders(drq);
 
         // Dump the databuffer part
-        DapSerializer writer = new DapSerializer(dsp, ce, cw, byteorder);
-        writer.write(dsp.getDMR());
-        cw.flush();
-        cw.close();
+        switch (drq.getFormat()) {
+        case XML:
+        case HTML:
+            throw new IOException("Unsupported return format: " + drq.getFormat());
+        case TEXT:
+            sw = new StringWriter();
+            DAPPrint dp = new DAPPrint(sw);
+            dp.print(dsp.getDataset(),ce);
+            break;
+        case NONE:
+        default:
+            DapSerializer writer = new DapSerializer(dsp, ce, cw, byteorder);
+            writer.write(dsp.getDMR());
+            cw.flush();
+            cw.close();
+            break;
+        }
     }
 
     //////////////////////////////////////////////////////////
@@ -452,7 +468,7 @@ abstract public class DapController extends HttpServlet
         ErrorResponse err = new ErrorResponse();
         err.setCode(httpcode);
         if(t == null) {
-            err.setMessage("Servlet error: "+drq.getURL());
+            err.setMessage("Servlet error: " + drq.getURL());
         } else {
             StringWriter sw = new StringWriter();
             PrintWriter p = new PrintWriter(sw);

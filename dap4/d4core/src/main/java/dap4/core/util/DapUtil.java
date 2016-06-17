@@ -49,6 +49,7 @@ abstract public class DapUtil // Should only contain static methods
 
     static final public int CHECKSUMSIZE = 4; // bytes if CRC32
     static final public String DIGESTER = "CRC32";
+    static final public String CHECKSUMATTRNAME = "_DAP4_Checksum_CRC32";
 
     static final public String DRIVELETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 

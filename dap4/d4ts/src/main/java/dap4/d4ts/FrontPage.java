@@ -155,7 +155,14 @@ public class FrontPage
                     throw new DapException("Malformed file name: " + absname);
                 String datasetname = DapUtil.denullify(absname.substring(this.root.length()));
                 String urlpath = this.drq.getControllerPath() + datasetname; // append remainder not used by mappath
-                String line = String.format(HTML_FORMAT, name, urlpath, urlpath, urlpath, urlpath);
+                String line = String.format(HTML_FORMAT,
+                        name,
+                        urlpath,
+                        urlpath,
+                        urlpath,
+                        urlpath,
+                        urlpath
+                );
                 html.append(line);
             }
             html.append(TABLE_FOOTER);
@@ -185,6 +192,7 @@ public class FrontPage
                     + "<td halign='center'><a href='%s.dmr.txt'> DMR (TEXT) </a></div></td>%n"
                     + "<td halign='center'><a href='%s.dmr.xml'> DMR (XML) </a></div></td>%n"
                     + "<td halign='center'><a href='%s.dap'> DAP </a></div></td>%n"
+                    + "<td halign='center'><a href='%s.dap.txt'> DAP (TEXT) </a></div></td>%n"
                     + "<td halign='center'><a href='%s.dsr'> DSR </a></div></td>%n"
                     + "</tr>%n";
 }

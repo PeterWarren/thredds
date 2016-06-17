@@ -16,7 +16,9 @@ public enum ResponseFormat {
 
     private String format;
     ResponseFormat(String format) {this.format = format;}
+
     public String format() {return format;}
+
     static public ResponseFormat formatFor(String s)
     {
         for(ResponseFormat format: ResponseFormat.values())  {

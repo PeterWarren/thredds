@@ -3,13 +3,17 @@
 */
 
 
-package dap4.dap4lib;
+package dap4.dap4lib.serial;
 
 import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.core.util.DapDump;
 import dap4.core.util.DapException;
 import dap4.core.util.DapSort;
+import dap4.core.util.DapUtil;
+import dap4.dap4lib.ChecksumMode;
+import dap4.dap4lib.Dap4Util;
+import dap4.dap4lib.RequestMode;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -26,9 +30,6 @@ public class D4DataCompiler implements DataCompiler
     static String LBRACE = "{";
     static String RBRACE = "}";
 
-    static final String CHECKSUMATTRNAME = "_DAP4_Checksum_CRC32";
-
-    static final int CHECKSUMSIZE = 4; // for CRC32
 
     //////////////////////////////////////////////////
     // Instance variables
@@ -44,7 +45,7 @@ public class D4DataCompiler implements DataCompiler
 
     protected DSP dsp;
 
-    protected DapDataFactory factory = null;
+    protected DAPDataFactory factory = null;
 
     //////////////////////////////////////////////////
     //Constructor(s)
@@ -59,7 +60,7 @@ public class D4DataCompiler implements DataCompiler
      */
 
     public D4DataCompiler(DSP dsp, ChecksumMode checksummode,
-                        ByteBuffer databuffer, DapDataFactory factory)
+                        ByteBuffer databuffer, DAPDataFactory factory)
             throws DapException
     {
         this.dsp = dsp;
@@ -87,8 +88,8 @@ public class D4DataCompiler implements DataCompiler
         if(DEBUG) {
             DapDump.dumpbytes(this.databuffer, false);
         }
-        this.datadataset = factory.newDataset(this.dsp, this.dataset);
-        this.dsp.setDataDataset(this.datadataset);
+        this.datadataset = factory.newDataset(this.dsp, this.dataset, null);
+        this.dsp.setDataset(this.datadataset);
 
         // iterate over the variables represented in the databuffer
         for(DapVariable vv : this.dataset.getTopVariables()) {
@@ -130,7 +131,7 @@ public class D4DataCompiler implements DataCompiler
             throws DapException
     {
         DapType daptype = atomvar.getBaseType();
-        D4DataAtomic data = (D4DataAtomic)factory.newAtomicVariable(this.dsp, atomvar, databuffer.position());
+        D4Data.D4DataAtomic data = (D4Data.D4DataAtomic)factory.newAtomicVariable(this.dsp, atomvar, databuffer.position());
         long total = 0;
         long dimproduct = data.getCount();
         if(!daptype.isEnumType() && !daptype.isFixedSize()) {
@@ -160,7 +161,7 @@ public class D4DataCompiler implements DataCompiler
             throws DapException
     {
         DataCompoundArray structarray
-                = factory.newCompoundArray(this.dsp, dapvar);
+                = factory.newCompoundArray(this.dsp, dapvar, null);
         DapStructure struct = (DapStructure) dapvar;
         long dimproduct = structarray.getCount();
         for(int i = 0; i < dimproduct; i++) {
@@ -205,7 +206,7 @@ public class D4DataCompiler implements DataCompiler
     {
         DapSequence dapseq = (DapSequence) dapvar;
         DataCompoundArray seqarray
-                = factory.newCompoundArray(this.dsp, dapseq);
+                = factory.newCompoundArray(this.dsp, dapseq, null);
         long dimproduct = seqarray.getCount();
         for(int i = 0; i < dimproduct; i++) {
             DataSequence dseq = compileSequence(dapseq, seqarray, i);
@@ -251,9 +252,9 @@ public class D4DataCompiler implements DataCompiler
             throws DapException
     {
         if(!ChecksumMode.enabled(RequestMode.DAP, checksummode)) return null;
-        if(data.remaining() < CHECKSUMSIZE)
+        if(data.remaining() < DapUtil.CHECKSUMSIZE)
             throw new DapException("Short serialization: missing checksum");
-        byte[] checksum = new byte[CHECKSUMSIZE];
+        byte[] checksum = new byte[DapUtil.CHECKSUMSIZE];
         data.get(checksum);
         return checksum;
     }

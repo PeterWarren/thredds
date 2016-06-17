@@ -8,6 +8,7 @@ import dap4.core.data.*;
 import dap4.core.dmr.DapStructure;
 import dap4.core.dmr.DapVariable;
 import dap4.core.util.*;
+import dap4.core.util.Index;
 import dap4.dap4lib.AbstractDataVariable;
 import ucar.ma2.*;
 import ucar.nc2.Variable;
@@ -30,7 +31,6 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
     protected CDMDSP dsp = null;
     //Coverity[FB.URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD]
     protected Variable cdmvar = null;
-    protected ArrayStructure array = null;
     protected int[] shape = null;
     protected DataCompound[] instances = null;
     protected long defined = 0; // Current defined length of instances
@@ -44,14 +44,14 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
         this(dsp,dv,null);
     }
 
-    public CDMDataCompoundArray(CDMDSP dsp, DapVariable dv, ArrayStructure array)
+    public CDMDataCompoundArray(CDMDSP dsp, DapVariable dv, Object src)
         throws DataException
     {
-        super(dv,dsp);
+        super(dv,dsp,src);
         this.dsp = dsp;
         this.template = dv;
         this.cdmvar = (Variable) dsp.getCDMNode(dv);
-        this.array = array;
+        ArrayStructure array = (ArrayStructure)src;
         this.shape = array.getShape();
         if(this.shape.length == 0) this.shape = null; // uniform scalar mark
         // compute shape cross product
@@ -96,12 +96,14 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
     // Provide a read of a single value at a given offset in a dimensioned variable.
     @Override
     public DataCompound
-    read(long index)
+    getElement(Index index)
         throws DataException
     {
-        if(instances[(int) index] == null)
-            instances[(int) index] = new CDMDataStructure(this.dsp, (DapStructure) this.getTemplate(), this, array.getStructureData((int) index));
-        return instances[(int) index];
+        int i = (int)index.index();
+        ArrayStructure array = (ArrayStructure)getSource();
+        if(instances[i] == null)
+            instances[i] = new CDMDataStructure(this.dsp, (DapStructure) this.getTemplate(), this, array.getStructureData(i));
+        return instances[i];
     }
 
     /**
@@ -109,14 +111,14 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
      * or (eventually) CDMDataSequence objects.
      */
     @Override
-    public void read(List<Slice> slices, DataCompound[] result)
+    public List<DataCompound>
+    getElements(List<Slice> slices)
         throws DataException
     {
         // Cannot use array.section on ArrayStructure: not implemented.
         // So we need to simulate it
         long count = DapUtil.sliceProduct(slices);
-        if(count > result.length)
-            throw new DataException("read(slices,result): result is too short");
+        List<DataCompound> result = new ArrayList<>((int)count);
         Odometer odom;
         try {
             odom = Odometer.factory(slices,((DapVariable)this.getTemplate()).getDimensions(),false);
@@ -124,15 +126,17 @@ public class CDMDataCompoundArray extends AbstractDataVariable implements DataCo
             throw new DataException(de);
         }
         int i;
+        ArrayStructure array = (ArrayStructure)getSource();
         for(i=0;odom.hasNext();i++) {
-            long offset = odom.next();
-            int ioffset = (int)offset;
+            Index index = odom.next();
+            int ioffset = (int)index.index();
             if(instances[ioffset] == null) {
-                StructureData data = (StructureData) this.array.getStructureData(ioffset);
+                StructureData data = (StructureData) array.getStructureData(ioffset);
                 instances[ioffset] = new CDMDataStructure(this.dsp, (DapStructure) this.getTemplate(), this, data);
             }
-            result[i] = instances[ioffset];
+            result.add(instances[ioffset]);
         }
+        return result;
     }
 
     //////////////////////////////////////////////////

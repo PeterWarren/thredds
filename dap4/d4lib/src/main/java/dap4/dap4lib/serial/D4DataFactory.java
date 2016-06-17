@@ -1,12 +1,14 @@
 /* Copyright 2012, UCAR/Unidata.
    See the LICENSE file for more information. */
 
-package dap4.dap4lib;
+package dap4.dap4lib.serial;
 
 import dap4.core.data.*;
 import dap4.core.dmr.*;
 
-public class DefaultDataFactory implements DapDataFactory
+import static dap4.dap4lib.serial.D4Data.*;
+
+public class D4DataFactory implements DAPDataFactory
 {
     //////////////////////////////////////////////////
     // Constants
@@ -14,19 +16,19 @@ public class DefaultDataFactory implements DapDataFactory
     //////////////////////////////////////////////////
     // Constructor(s)
 
-    public DefaultDataFactory()
+    public D4DataFactory()
     {
     }
 
     //////////////////////////////////////////////////
-    // DapDataFactory API
+    // DAPDataFactory API
 
     @Override
     public DataDataset
-    newDataset(DSP dsp, DapDataset template)
+    newDataset(DSP dsp, DapDataset template, Object src)
             throws DataException
     {
-        return new D4DataDataset((D4DSP)dsp, template);
+        return new D4Data.D4DataDataset((D4DSP)dsp, template, src);
     }
 
     @Override
@@ -34,7 +36,7 @@ public class DefaultDataFactory implements DapDataFactory
     newAtomicVariable(DSP dsp, DapAtomicVariable template, Object source)
             throws DataException
     {
-        return new D4DataAtomic((D4DSP) dsp, template, (Integer)source);
+        return new D4DataAtomic(dsp, template, source);
     }
 
     @Override
@@ -42,7 +44,7 @@ public class DefaultDataFactory implements DapDataFactory
     newSequence(DSP dsp, DapSequence template, DataCompoundArray parent, Object source)
             throws DataException
     {
-        return new D4DataSequence((D4DSP) dsp, template, (D4DataCompoundArray)parent, (Integer)source);
+        return new D4DataSequence(dsp, template, parent, source);
     }
 
     @Override
@@ -50,7 +52,7 @@ public class DefaultDataFactory implements DapDataFactory
     newRecord(DSP dsp, DapSequence template, DataSequence parent, Object source)
             throws DataException
     {
-        return new D4DataRecord((D4DSP) dsp, template, (D4DataSequence)parent, (Integer)source);
+        return new D4DataRecord(dsp, template, (DataSequence)parent, source);
     }
 
     @Override
@@ -58,15 +60,16 @@ public class DefaultDataFactory implements DapDataFactory
     newStructure(DSP dsp, DapStructure dap, DataCompoundArray parent, Object source)
             throws DataException
     {
-        return new D4DataStructure((D4DSP) dsp, dap, (D4DataCompoundArray)parent, (Integer)source);
+        return new D4DataStructure(dsp, dap, (DataCompoundArray)parent, source);
     }
 
     @Override
     public DataCompoundArray
-    newCompoundArray(DSP dsp, DapVariable dapvar)
+    newCompoundArray(DSP dsp, DapVariable dapvar, Object src)
             throws DataException
     {
-        return new D4DataCompoundArray((D4DSP) dsp, dapvar);
+        return new D4DataCompoundArray(dsp, dapvar, src);
     }
+
 
 }

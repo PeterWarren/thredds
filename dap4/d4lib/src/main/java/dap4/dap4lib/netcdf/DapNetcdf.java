@@ -133,6 +133,9 @@ public interface DapNetcdf extends Library
     static final int NC_CHUNKED = 0;
     static final int NC_CONTIGUOUS = 1;
 
+    // Selected errors
+    static final int NC_NOERR = 0;
+
     static public class Vlen_t extends Structure
     {
         public static class ByValue extends Vlen_t implements Structure.ByValue
@@ -283,9 +286,38 @@ public interface DapNetcdf extends Library
 
     int nc_get_var_string(int ncid, int varid, String[] sarray);
 
+    // read single element
+    int nc_get_var1(int ncid, int varid, SizeTByReference indexp, Pointer p);
+
+    int nc_get_var1(int ncid, int varid, SizeTByReference indexp, Vlen_t[] vlen);      // vlen
+
+    int nc_get_var1_text(int ncid, int varid, SizeTByReference indexp, byte[] op);
+
+    int nc_get_var1_schar(int ncid, int varid, SizeTByReference indexp, byte[] ip);
+
+    int nc_get_var1_ubyte(int ncid, int varid, SizeTByReference indexp, byte[] ip);
+
+    int nc_get_var1_short(int ncid, int varid, SizeTByReference indexp, short[] ip);
+
+    int nc_get_var1_ushort(int ncid, int varid, SizeTByReference indexp, short[] ip);
+
+    int nc_get_var1_int(int ncid, int varid, SizeTByReference indexp, int[] ip);
+
+    int nc_get_var1_uint(int ncid, int varid, SizeTByReference indexp, int[] ip);
+
+    int nc_get_var1_longlong(int ncid, int varid, SizeTByReference indexp, long[] ip);
+
+    int nc_get_var1_ulonglong(int ncid, int varid, SizeTByReference indexp, long[] ip);
+
+    int nc_get_var1_float(int ncid, int varid, SizeTByReference indexp, float[] ip);
+
+    int nc_get_var1_double(int ncid, int varid, SizeTByReference indexp, double[] ip);
+
+    int nc_get_var1_string(int ncid, int varid, SizeTByReference indexp, String[] sarray);
+
     // read array section
 
-    int nc_get_vara(int ncid, int varid, SizeT[] startp, SizeT[] countp, byte[] bbuff);
+    int nc_get_vara(int ncid, int varid, SizeT[] startp, SizeT[] countp, Pointer mem);
 
     int nc_get_vara_uchar(int ncid, int varid, SizeT[] startp, SizeT[] countp, byte[] ip);
 
@@ -311,7 +343,7 @@ public interface DapNetcdf extends Library
 
     int nc_get_vara_string(int ncid, int varid, SizeT[] startp, SizeT[] countp, String[] ip);
 
-    int nc_get_vars(int ncid, int varid, SizeT[] startp, SizeT[] countp, SizeT[] stridep, byte[] bbuff);
+    int nc_get_vars(int ncid, int varid, SizeT[] startp, SizeT[] countp, SizeT[] stridep, Pointer p);
 
     int nc_get_vars_uchar(int ncid, int varid, SizeT[] startp, SizeT[] countp, SizeT[] stridep, byte[] ip);
 

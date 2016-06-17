@@ -8,10 +8,7 @@ package dap4.cdm.nc2;
 import dap4.cdm.NodeMap;
 import dap4.core.data.*;
 import dap4.core.dmr.*;
-import dap4.core.util.DapException;
-import dap4.core.util.DapSort;
-import dap4.core.util.DapUtil;
-import dap4.core.util.Escape;
+import dap4.core.util.*;
 import ucar.ma2.Array;
 import ucar.nc2.Attribute;
 import ucar.nc2.Group;
@@ -40,10 +37,6 @@ public class DataToCDM
     static String LBRACE = "{";
     static String RBRACE = "}";
 
-    static final String CHECKSUMATTRNAME = "_DAP4_Checksum_CRC32";
-
-    static final int CHECKSUMSIZE = 4; // for CRC32
-
     //////////////////////////////////////////////////
     // Instance variables
 
@@ -70,7 +63,7 @@ public class DataToCDM
     {
         this.ncfile = ncfile;
         this.dsp = dsp;
-        this.d4root = (DataDataset) dsp.getDataDataset();
+        this.d4root = (DataDataset) dsp.getDataset();
         this.dmr = dsp.getDMR();
         this.nodemap = nodemap;
         arraymap = new HashMap<Variable, Array>();
@@ -125,7 +118,7 @@ public class DataToCDM
             byte[] csum = dapvar.getChecksum();
             String scsum = Escape.bytes2hex(csum);
             Variable cdmvar = (Variable) nodemap.get(dapvar);
-            Attribute acsum = new Attribute(CHECKSUMATTRNAME, scsum);
+            Attribute acsum = new Attribute(DapUtil.CHECKSUMATTRNAME, scsum);
             cdmvar.addAttribute(acsum);
         }
         return array;
@@ -152,25 +145,24 @@ public class DataToCDM
      * structure arrays; so this code may throw an exception.
      *
      * @param d4var     the data underlying this structure instance
-     * @param recno     the index in the parent compound array.
+     * @param pos       the linear index in the parent compound array.
      * @param container the parent CDMArrayStructure
      * @return An Array for this instance
      * @throws DapException
      */
     protected CDMArray
-    createStructure(DataStructure d4var, int recno, CDMArrayStructure container)
+    createStructure(DataStructure d4var, long pos, CDMArrayStructure container)
             throws DapException
     {
         assert (d4var.getSort() == DataSort.STRUCTURE);
         DapStructure dapstruct = (DapStructure) d4var.getTemplate();
-        assert (dapstruct.getRank() > 0 || recno == 0);
         int nmembers = dapstruct.getFields().size();
         List<DapVariable> dfields = dapstruct.getFields();
         assert nmembers == dfields.size();
         for(int m = 0; m < nmembers; m++) {
-            DataVariable dfield = d4var.readfield(m);
+            DataVariable dfield = d4var.getfield(m);
             Array afield = createVar(dfield);
-            container.addField(recno, m, afield);
+            container.addField(pos, m, afield);
         }
         return container;
     }
@@ -192,25 +184,28 @@ public class DataToCDM
         List<DapDimension> dimset = dapstruct.getDimensions();
         CDMArrayStructure arraystruct;
         DataCompoundArray d4array;
-        long dimproduct;
+        boolean isscalar = (dimset == null || dimset.size() == 0);
         try {
-        if(dimset == null || dimset.size() == 0) {// scalar
-            assert (d4var.getSort() == DataSort.STRUCTURE);
-            dimproduct = 1;
-            d4array = ((DataStructure)d4var).asCompoundArray();
-        } else {
-            assert (d4var.getSort() == DataSort.COMPOUNDARRAY);
-            dimproduct = DapUtil.dimProduct(dimset);
-            d4array = (DataCompoundArray) d4var;
-	}
-        arraystruct = new CDMArrayStructure(this.dsp, this.cdmroot, d4array);
-        for(int i = 0; i < dimproduct; i++) {
-            DataStructure dds = (DataStructure) d4array.read(i);
-            createStructure(dds, i, arraystruct);
-     	}
-        arraystruct.finish();
-        return arraystruct;
-        } catch (IOException ioe) {throw new DapException(ioe); }
+            if(isscalar) {
+                assert (d4var.getSort() == DataSort.STRUCTURE);
+                d4array = ((DataStructure) d4var).asCompoundArray();
+            } else {
+                assert (d4var.getSort() == DataSort.COMPOUNDARRAY);
+                d4array = (DataCompoundArray) d4var;
+            }
+            arraystruct = new CDMArrayStructure(this.dsp, this.cdmroot, d4array);
+            Odometer odom = isscalar ? Odometer.factoryScalar()
+                    : Odometer.factory(null, dimset, false);
+            while(odom.hasNext()) {
+                DataStructure dds = (DataStructure) d4array.getElement(odom.indices());
+                createStructure(dds, odom.index(), arraystruct);
+            }
+            arraystruct.finish();
+            return arraystruct;
+        } catch (IOException ioe) {
+            throw new DapException(ioe);
+        }
+
     }
 
     /**
@@ -233,9 +228,9 @@ public class DataToCDM
         long nrecs = d4var.getRecordCount();
         // Fill in the record fields
         for(int recno = 0; recno < nrecs; recno++) {
-            DataRecord rec = (DataRecord) d4var.readRecord(recno);
+            DataRecord rec = (DataRecord) d4var.getRecord(recno);
             for(int fieldno = 0; fieldno < dapseq.getFields().size(); fieldno++) {
-                DataVariable field = (DataVariable) rec.readfield(fieldno);
+                DataVariable field = (DataVariable) rec.getfield(fieldno);
                 // create the field to get an array
                 container.addField(recno, fieldno, createVar(field));
             }

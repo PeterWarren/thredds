@@ -62,7 +62,7 @@ public class GetCoverage extends WcsRequest {
 
     super(operation, version, dataset);
 
-    // Validate coverage ID parameter.
+    // Validate coverage Notes parameter.
     if (coverageId == null)
       throw new WcsException(WcsException.Code.MissingParameterValue, "coverage", "Coverage identifier required.");
     if (!this.getWcsDataset().isAvailableCoverageName(coverageId))

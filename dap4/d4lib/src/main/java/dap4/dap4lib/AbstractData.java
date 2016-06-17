@@ -17,16 +17,33 @@ abstract public class AbstractData implements Data
     protected DataSort sort = null;
     protected DapNode template = null;
     protected DSP dsp = null;
+    protected Object source = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
 
-    protected AbstractData(DapNode template, DSP dsp)
+    protected AbstractData(DapNode template, DSP dsp, Object src)
         throws DataException
     {
         this.template = template;
         this.sort = computesort(this);
         this.dsp = dsp;
+        this.source = src;
+    }
+
+    //////////////////////////////////////////////////
+    // AnnotatedNode Interface
+
+    protected Object annotation = null;
+
+    public void annotate(Object value)
+    {
+        annotation = value;
+    }
+
+    public Object annotation()
+    {
+        return annotation;
     }
 
     //////////////////////////////////////////////////
@@ -36,17 +53,19 @@ abstract public class AbstractData implements Data
     public DataSort
     getSort()
     {
-        return sort;
+        return this.sort;
     }
 
     @Override
     public DapNode
     getTemplate()
     {
-        return template;
+        return this.template;
     }
 
     public DSP getDSP() {return this.dsp;}
+
+    public Object getSource() {return this.source;}
 
     //////////////////////////////////////////////////
     // Utilities

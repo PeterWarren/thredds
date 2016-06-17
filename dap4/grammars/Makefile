@@ -1,6 +1,6 @@
 
 DAP4TARGET=../d4core/src/main/java/dap4/core/dmr/parser/Dap4BisonParser.java
-CETARGET=../d4servlet/src/main/java/dap4/ce/parser/CEBisonParser.java
+CETARGET=../d4core/src/main/java/dap4/core/ce/parser/CEBisonParser.java
 
 .PHONEY: bison
 

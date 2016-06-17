@@ -33,6 +33,12 @@ public class MultiOdometer extends Odometer
     {
     }
 
+    public MultiOdometer(List<Slice> set, boolean usecontiguous)
+            throws DapException
+    {
+	this(set,null,usecontiguous);
+    }
+
     public MultiOdometer(List<Slice> set, List<DapDimension> dimset, boolean usecontiguous)
             throws DapException
     {
@@ -128,7 +134,7 @@ public class MultiOdometer extends Odometer
     }
 
     @Override
-    public Long
+    public Index
     next()
     {
         if(super.hasNext())

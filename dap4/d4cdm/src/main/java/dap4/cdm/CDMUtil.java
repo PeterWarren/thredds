@@ -11,6 +11,7 @@ import dap4.core.dmr.DapType;
 import dap4.core.dmr.TypeSort;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
+import dap4.core.util.Index;
 import dap4.core.util.Slice;
 import dap4.core.data.DataAtomic;
 import ucar.ma2.DataType;
@@ -513,18 +514,6 @@ abstract public class CDMUtil
      * to Convert.ValueClass.
      */
 
-    static Object
-    extractObject(TypeSort atomtype, DataAtomic dataset, long index)
-            throws DataException
-    {
-        try {
-            Object result = dataset.read(index);
-            return result;
-        } catch (IOException ioe) {
-            throw new DataException(ioe);
-        }
-    }
-
     /**
      * Extract, as a long, value from a (presumably)
      * atomic typed array of values; dataset position
@@ -538,7 +527,7 @@ abstract public class CDMUtil
      */
 
     static public long
-    extractLongValue(TypeSort atomtype, DataAtomic dataset, long index)
+    extractLongValue(TypeSort atomtype, DataAtomic dataset, Index index)
             throws DataException
     {
         Object result;
@@ -600,7 +589,7 @@ abstract public class CDMUtil
      */
 
     static public double
-    extractDoubleValue(TypeSort atomtype, DataAtomic dataset, int index)
+    extractDoubleValue(TypeSort atomtype, DataAtomic dataset, Index index)
             throws DataException
     {
         Object result;

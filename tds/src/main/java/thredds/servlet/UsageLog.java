@@ -66,7 +66,7 @@ public class UsageLog {
    * <p/>
    * <p>The following context information is gathered:
    * <ul>
-   * <li>"ID" - an identifier for the current thread;</li>
+   * <li>"Notes" - an identifier for the current thread;</li>
    * <li>"host" - the remote host (IP address or host name);</li>
    * <li>"userid" - the id of the remote user;</li>
    * <li>"startTime" - the system time in millis when this request is started (i.e., when this method is called); and</li>
@@ -87,7 +87,7 @@ public class UsageLog {
     MDC.put("ident", (session == null) ? "-" : session.getId());
     MDC.put("userid", req.getRemoteUser() != null ? req.getRemoteUser() : "-"); */
 
-    MDC.put("ID", Long.toString(logServerAccessId.incrementAndGet()));
+    MDC.put("Notes", Long.toString(logServerAccessId.incrementAndGet()));
     MDC.put("startTime", Long.toString(System.currentTimeMillis()));
 
     String query = req.getQueryString();
@@ -122,7 +122,7 @@ public class UsageLog {
    * <p/>
    * <p>The following context information is gathered:
    * <ul>
-   * <li>"ID" - an identifier for the current thread; and</li>
+   * <li>"Notes" - an identifier for the current thread; and</li>
    * <li>"startTime" - the system time in millis when this method is called.</li>
    * </ul>
    * <p/>
@@ -132,7 +132,7 @@ public class UsageLog {
    */
   public static String setupNonRequestContext() {
     // Setup context.
-    MDC.put("ID", Long.toString(logServerAccessId.incrementAndGet()));
+    MDC.put("Notes", Long.toString(logServerAccessId.incrementAndGet()));
     MDC.put("startTime", Long.toString(System.currentTimeMillis()));
 
     return "Non-request thread opening.";

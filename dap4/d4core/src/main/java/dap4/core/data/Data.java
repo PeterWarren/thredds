@@ -5,7 +5,6 @@
 package dap4.core.data;
 
 import dap4.core.dmr.DapNode;
-import dap4.core.util.DapSort;
 
 /**
  * The Data*.java classes
@@ -39,24 +38,40 @@ import dap4.core.util.DapSort;
  * Notes:
  * <ul>
  * <li> For the compound types (Sequence,Structure),
- *      it is desirable to have both classes to
- *      represent both the collection and the instances.
- *      Thus for Sequences, we need a Singular sort (RECORD)
- *      and a set of Records (SEQUENCE). Similarly for
- *      structures: STRUCTURE(singular) STRUCTUREARRAY(set).
- *      Note that ATOMICVARIABLE does not have two sorts:
- *      it always represents an array of primitive typed objects.
+ * it is desirable to have both classes to
+ * represent both the collection and the instances.
+ * Thus for Sequences, we need a Singular sort (RECORD)
+ * and a set of Records (SEQUENCE). Similarly for
+ * structures: STRUCTURE(singular) STRUCTUREARRAY(set).
+ * Note that ATOMICVARIABLE does not have two sorts:
+ * it always represents an array of primitive typed objects.
  * <li> DATASET in this context is different
- *      from the DATASET when used elsewhere.
- *      Specifically, DATASET here refers to the aggregation
- *      of the data of all variables independent of any group scopes.
+ * from the DATASET when used elsewhere.
+ * Specifically, DATASET here refers to the aggregation
+ * of the data of all variables independent of any group scopes.
  * <li> The term data was used rather than array to avoid
- *      confusion when using ucar.ma2.Array classes.
+ * confusion when using ucar.ma2.Array classes.
  * </ul>
  */
 
 public interface Data
 {
     public DataSort getSort();
+
     public DapNode getTemplate();
+
+    public DSP getDSP();
+
+    public Object getSource();
+
+    //////////////////////////////////////////////////
+    // Annotatation
+
+    /* Purpose of annotation is to (sort of) get around
+       single inheritance by allowing a node to store
+       a single arbitrary piece of state.
+    */
+    public void annotate(Object value);
+    public Object annotation();
+
 }

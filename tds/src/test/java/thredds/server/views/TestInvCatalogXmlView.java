@@ -65,7 +65,7 @@ public class TestInvCatalogXmlView
             .append( "         xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n" )
             .append( "         version=\"1.0.1\">\n" )
             .append( "  <service name=\"ncDap\" serviceType=\"OPENDAP\" base=\"/thredds/dodsC/\" />\n" )
-            .append( "  <dataset name=\"some data\" ID=\"SomeData\">\n" )
+            .append( "  <dataset name=\"some data\" Notes=\"SomeData\">\n" )
             .append( "     <metadata inherited=\"true\">\n" )
             .append( "       <serviceName>ncDap</serviceName>\n" )
             .append( "     </metadata>\n" )

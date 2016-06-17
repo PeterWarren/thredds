@@ -2,12 +2,13 @@
    See the LICENSE file for more information.
 */
 
-package dap4.dap4lib;
+package dap4.dap4lib.serial;
 
 import dap4.core.data.DataCompiler;
 import dap4.core.data.DataDataset;
 import dap4.core.dmr.DapDataset;
 import dap4.core.util.DapException;
+import dap4.dap4lib.AbstractDSP;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -43,20 +44,8 @@ abstract public class D4DSP extends AbstractDSP
     // DSP API
     // Most is left to be subclass defined; 
 
-    @Override
-    public DataDataset
-    getDataDataset()
-    {
-        return super.getDataDataset();
-    }
-
     //////////////////////////////////////////////////
     // (Other) Accessors
-
-    public void setDataDataset(D4DataDataset data)
-    {
-        super.setDataDataset(data);
-    }
 
     protected void
     build(String document, byte[] serialdata, ByteOrder order)
@@ -81,7 +70,7 @@ abstract public class D4DSP extends AbstractDSP
         this.dmr = dmr;
         // "Compile" the databuffer section of the server response
         this.databuffer = ByteBuffer.wrap(serialdata).order(order);
-        DataCompiler compiler = new D4DataCompiler(this, checksummode, this.databuffer, new DefaultDataFactory());
+        DataCompiler compiler = new D4DataCompiler(this, checksummode, this.databuffer, new D4DataFactory());
         compiler.compile();
     }
 

@@ -5,14 +5,12 @@
 package dap4.dap4lib;
 
 import dap4.core.data.DSP;
-import dap4.core.data.DapDataFactory;
-import dap4.core.data.DataCompiler;
 import dap4.core.dmr.DapDataset;
-import dap4.core.dmr.DapFactory;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapDump;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
+import dap4.dap4lib.serial.D4DSP;
 import org.apache.http.HttpStatus;
 import ucar.httpservices.HTTPFactory;
 import ucar.httpservices.HTTPMethod;
@@ -23,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 
 /**
  * Make a request to a server and convert the reply

@@ -323,7 +323,7 @@ public class ConfigCatalogHtmlWriter {
           sb.append(name);
           sb.append("</tt></a></td>\r\n");
 
-        } else if (ds.getID() != null) { // Dataset with an ID.
+        } else if (ds.getID() != null) { // Dataset with an Notes.
           // Write link to HTML dataset page.
           sb.append("<a href='");
           sb.append(Escape.html(catHtml));
@@ -333,7 +333,7 @@ public class ConfigCatalogHtmlWriter {
           sb.append(name);
           sb.append("</tt></a></td>\r\n");
 
-        } else { // Dataset without an ID.
+        } else { // Dataset without an Notes.
           sb.append("<tt>");
           sb.append(name);
           sb.append("</tt></td>\r\n");

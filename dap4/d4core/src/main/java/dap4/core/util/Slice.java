@@ -4,12 +4,11 @@
 
 package dap4.core.util;
 
+import dap4.core.data.DataException;
 import dap4.core.dmr.DapDimension;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 /**
  * A Slice is used for two purposes
@@ -107,20 +106,20 @@ public class Slice
     }
 
     public Slice(long first, long last, long stride)
-            throws DapException
+            throws DataException
     {
         this(first, last, stride, (last == UNDEFINED ? UNDEFINED : last + 1));
     }
 
     public Slice(long first, long last, long stride, long maxsize)
-            throws DapException
+            throws DataException
     {
         this();
         setIndices(first, last, stride, maxsize);
     }
 
     public Slice(Slice s)
-            throws DapException
+            throws DataException
     {
         this();
         setIndices(s.getFirst(), s.getLast(), s.getStride(), s.getMaxSize());
@@ -129,7 +128,7 @@ public class Slice
     }
 
     public Slice(DapDimension dim)
-            throws DapException
+            throws DataException
     {
         this();
         setIndices(0, dim.getSize() - 1, 1, dim.getSize());
@@ -144,11 +143,11 @@ public class Slice
      * Perform sanity checks on a slice and repair where possible.
      *
      * @return this (fluent interface)
-     * @throws DapException if slice is malformed
+     * @throws DataException if slice is malformed
      */
     public Slice
     finish()
-            throws DapException
+            throws DataException
     {
         // Attempt to repair undefined values
         if(this.first == UNDEFINED) this.first = 0;   // default
@@ -158,26 +157,26 @@ public class Slice
         if(this.size == UNDEFINED && this.last != UNDEFINED)
             this.size = this.last + 1;
         else if(this.last == UNDEFINED && this.size == UNDEFINED)
-            throw new DapException("Slice: both last and size are UNDEFINED");
+            throw new DataException("Slice: both last and size are UNDEFINED");
         // else (this.last != UNDEFINED && this.size != UNDEFINED)
         assert (first != UNDEFINED);
         assert (stride != UNDEFINED);
         assert (last != UNDEFINED);
         // sanity checks
         if(first > this.size)
-            throw new DapException("Slice: first index > max size");
+            throw new DataException("Slice: first index > max size");
         if(stride > size)
-            throw new DapException("Slice: stride > max size");
+            throw new DataException("Slice: stride > max size");
         if(last > size)
-            throw new DapException("Slice: last > max size");
+            throw new DataException("Slice: last > max size");
         if(first < 0)
-            throw new DapException("Slice: first index < 0");
+            throw new DataException("Slice: first index < 0");
         if(last < 0)
-            throw new DapException("Slice: last index < 0");
+            throw new DataException("Slice: last index < 0");
         if(stride <= 0)
-            throw new DapException("Slice: stride index <= 0");
+            throw new DataException("Slice: stride index <= 0");
         if(first > last)
-            throw new DapException("Slice: first index > last");
+            throw new DataException("Slice: first index > last");
         return this; // fluent interface
     }
 
@@ -216,13 +215,13 @@ public class Slice
     }
 
     public void setMaxSize(long size)
-            throws DapException
+            throws DataException
     {
         setIndices(first, last, stride, size);
     }
 
 /*    public Slice fill(DapDimension dim)
-            throws DapException
+            throws DataException
     {
         setIndices(0, dim.getSize() - 1, 1, dim.getSize());
         setWhole(true);
@@ -233,13 +232,13 @@ public class Slice
 */
 
     public Slice setIndices(long first, long last, long stride)
-            throws DapException
+            throws DataException
     {
         return setIndices(first, last, stride, UNDEFINED);
     }
 
     public Slice setIndices(long first, long last, long stride, long maxsize)
-            throws DapException
+            throws DataException
     {
         this.first = first;
         this.last = last;
@@ -288,7 +287,7 @@ public class Slice
     }
 
     public Slice setSourceDimension(DapDimension dim)
-        throws DapException
+        throws DataException
     {
         this.srcdim = dim;
         return this; // fluent interface
@@ -351,7 +350,7 @@ public class Slice
     @Override
     public int hashCode()
     {
-        return (int)(getFirst()<<20 | getLast()<<10 | getStride());
+        return (int) (getFirst() << 20 | getLast() << 10 | getStride());
     }
 
     @Override
@@ -385,10 +384,10 @@ public class Slice
      * suitable for use in a constraint
      *
      * @return constraint usable string
-     * @throws DapException
+     * @throws DataException
      */
     public String toConstraintString()
-            throws DapException
+            throws DataException
     {
         assert this.first != UNDEFINED && this.stride != UNDEFINED && this.last != UNDEFINED;
         if(this.stride == 1) {
@@ -430,11 +429,11 @@ public class Slice
      * @param target
      * @param src
      * @return new, composed Range
-     * @throws DapException
+     * @throws DataException
      */
     static public Slice
     compose(Slice target, Slice src)
-            throws DapException
+            throws DataException
     {
         long sr_stride = target.getStride() * src.getStride();
         long sr_first = MAP(target, src.getFirst());
@@ -449,17 +448,37 @@ public class Slice
      * @param target the target range
      * @param i      index of the element
      * @return the i-th element of a range
-     * @throws DapException if index is invalid
+     * @throws DataException if index is invalid
      */
     static long
     MAP(Slice target, long i)
-            throws DapException
+            throws DataException
     {
         if(i < 0)
-            throw new DapException("Slice.compose: i must be >= 0");
+            throw new DataException("Slice.compose: i must be >= 0");
         if(i > target.getLast())
-            throw new DapException("i must be <= last");
+            throw new DataException("i must be <= last");
         return target.getFirst() + i * target.getStride();
     }
+
+    /**
+     * Given an offset (single index) and a set of dimensions
+     * compute the set of dimension indices that correspond
+     * to the offset.
+     */
+
+    static public List<Slice>
+    indexToSlices(Index indices)
+            throws DataException
+    {
+        // offset = d3*(d2*(d1*(x1))+x2)+x3
+        List<Slice> slices = new ArrayList<>(indices.rank);
+        for(int i = 0; i < indices.rank; i++) {
+            long isize = indices.indices[i];
+            slices.add(new Slice(isize, isize, 1, indices.dimsizes[i]));
+        }
+        return slices;
+    }
+
 
 }

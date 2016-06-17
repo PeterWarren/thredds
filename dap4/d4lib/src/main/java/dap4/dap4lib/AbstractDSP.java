@@ -5,9 +5,11 @@
 package dap4.dap4lib;
 
 import dap4.core.data.DSP;
-import dap4.core.data.DataCompiler;
 import dap4.core.data.DataDataset;
-import dap4.core.dmr.*;
+import dap4.core.dmr.DapAttribute;
+import dap4.core.dmr.DapDataset;
+import dap4.core.dmr.DapNode;
+import dap4.core.dmr.DefaultDMRFactory;
 import dap4.core.dmr.parser.Dap4Parser;
 import dap4.core.dmr.parser.Dap4ParserImpl;
 import dap4.core.util.DapContext;
@@ -42,7 +44,7 @@ abstract public class AbstractDSP implements DSP
     protected ByteBuffer databuffer = null;
     protected ByteOrder order = null;
     protected ChecksumMode checksummode = ChecksumMode.DAP;
-    protected DataDataset datadataset = null;
+    protected DataDataset dataset = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -60,14 +62,14 @@ abstract public class AbstractDSP implements DSP
 
     //////////////////////////////////////////////////
 
-    public DataDataset getDataDataset()
+    public DataDataset getDataset()
     {
-        return this.datadataset;
+        return this.dataset;
     }
 
-    public void setDataDataset(DataDataset dds)
+    public void setDataset(DataDataset dds)
     {
-        this.datadataset = dds;
+        this.dataset = dds;
     }
 
     @Override
@@ -100,6 +102,7 @@ abstract public class AbstractDSP implements DSP
     {
         this.dmr = dmr;
     }
+
 
     // DSP Extensions
 
@@ -145,14 +148,14 @@ abstract public class AbstractDSP implements DSP
     }
 
     public ChecksumMode getChecksumMode()
-       {
-           return this.checksummode;
-       }
+    {
+        return this.checksummode;
+    }
 
-       public void setChecksumMode(ChecksumMode mode)
-       {
-           this.checksummode = mode;
-       }
+    public void setChecksumMode(ChecksumMode mode)
+    {
+        this.checksummode = mode;
+    }
 
     //////////////////////////////////////////////////
     // Utilities

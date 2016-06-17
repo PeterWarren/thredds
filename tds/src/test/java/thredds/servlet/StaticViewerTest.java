@@ -148,7 +148,7 @@ public class StaticViewerTest {
             "    <service name='wcs' serviceType='WCS' base='/thredds/wcs/' />\n" +
             "    <service name='wms' serviceType='WMS' base='/thredds/wms/' />\n" +
             "    <service name='remoteWMS' serviceType='REMOTEWMS' base='http://server/thredds/wms/' />\n" +
-            "  </service>\n" + "  <dataset name='ds 1' ID='ds1' urlPath='test/ds1.nc'>\n" +
+            "  </service>\n" + "  <dataset name='ds 1' Notes='ds1' urlPath='test/ds1.nc'>\n" +
             "    <metadata inherited='true'>\n" + "      <serviceName>all</serviceName>\n" +
             "    </metadata>\n" +
             "    <property name='" + viewerName + "' value='" + viewerValue + "' />\n" +

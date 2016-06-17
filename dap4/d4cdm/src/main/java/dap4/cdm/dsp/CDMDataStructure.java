@@ -11,8 +11,8 @@ import dap4.core.data.DataVariable;
 import dap4.core.dmr.DapAtomicVariable;
 import dap4.core.dmr.DapStructure;
 import dap4.core.dmr.DapVariable;
+import dap4.core.util.Index;
 import dap4.dap4lib.AbstractDataVariable;
-import dap4.dap4lib.D4DataCompoundArray;
 import ucar.ma2.Array;
 import ucar.ma2.ArrayStructure;
 import ucar.ma2.StructureData;
@@ -45,7 +45,7 @@ public class CDMDataStructure extends AbstractDataVariable implements DataStruct
     public CDMDataStructure(CDMDSP dsp, DapStructure dap, CDMDataCompoundArray parent, StructureData data)
             throws DataException
     {
-        super(dap, dsp);
+        super(dap, dsp, data);
         this.dsp = dsp;
         this.parent = parent;
         this.dapstruct = dap;
@@ -61,10 +61,10 @@ public class CDMDataStructure extends AbstractDataVariable implements DataStruct
 
     // Read named field
     @Override
-    public DataVariable readfield(String name) throws DataException
+    public DataVariable getfield(String name) throws DataException
     {
         StructureMembers.Member member = cdmdata.findMember(name);
-        return readfield(member);
+        return getfield(member);
     }
 
     public void
@@ -75,15 +75,16 @@ public class CDMDataStructure extends AbstractDataVariable implements DataStruct
 
     // Read ith field
     @Override
-    public DataVariable readfield(int i)
+    public DataVariable getfield(int i)
             throws DataException
     {
         if(i < 0 || i >= this.members.size())
             throw new DataException("readfield: index out of bounds: " + i);
-        return readfield(this.members.get(i));
+        return getfield(this.members.get(i));
     }
 
-    protected DataVariable readfield(StructureMembers.Member member)
+    protected DataVariable
+    getfield(StructureMembers.Member member)
             throws DataException
     {
         int index = this.members.indexOf(member);

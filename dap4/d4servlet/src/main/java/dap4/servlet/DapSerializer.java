@@ -4,12 +4,11 @@
 
 package dap4.servlet;
 
-import dap4.ce.CEConstraint;
+import dap4.core.ce.CEConstraint;
 import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.core.util.*;
 import dap4.core.data.DSP;
-import dap4.dap4lib.Dap4Util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,7 +56,7 @@ public class DapSerializer
         this.dsp = dsp;
         this.order = order;
         this.stream = stream;
-        this.data = dsp.getDataDataset();
+        this.data = dsp.getDataset();
         this.ce = constraint;
     }
 
@@ -128,15 +127,14 @@ public class DapSerializer
             List<Slice> slices;
             ByteBuffer buf;
             if(dapvar.getRank() == 0) { // scalar
-                dst.writeObject(basetype, dav.read(0));
+                dst.writeObject(basetype, dav.read(Index.SCALAR));
             } else {// dimensioned
                 // get the slices from constraint
                 slices = ce.getConstrainedSlices(dapvar);
                 if(slices == null)
                     throw new DataException("Unknown variable: " + dapvar.getFQN());
                 long count = DapUtil.sliceProduct(slices);
-                Object vector = Dap4Util.createVector(basetype.getAtomicType(), count);
-                dav.read(slices,vector,0);
+                Object vector = dav.read(slices);
                 dst.writeArray(basetype, vector);
             }
         } catch (IOException ioe) {
@@ -197,7 +195,7 @@ public class DapSerializer
             DapStructure dapvar = (DapStructure) vv;
             for(DapVariable field : dapvar.getFields()) {
                 if(!ce.references(field)) continue; // not in the view
-                DataVariable dv = ds.readfield(field.getShortName());
+                DataVariable dv = ds.getfield(field.getShortName());
                 writeVariable(field, dv, dst);
             }
         } catch (IOException ioe) {
@@ -238,7 +236,7 @@ public class DapSerializer
     {
         try {
             if(dapvar.getRank() == 0) {
-                writeCompound(dapvar, dca.read(0), dst);
+                writeCompound(dapvar, (DataCompound)dca.getElement(Index.SCALAR), dst);
                 return;
             }
             // Get the active set of slices for this variable
@@ -246,10 +244,9 @@ public class DapSerializer
             if(slices == null)
                 throw new DataException("Undefined variable: " + dapvar);
             long count = DapUtil.sliceProduct(slices);
-            DataCompound[] dc = new DataCompound[(int) count];
-            dca.read(slices, dc);
+            List<DataCompound> dc = dca.getElements(slices);
             for(int i = 0; i < count; i++) {
-                writeCompound(dapvar, dc[i], dst);
+                writeCompound(dapvar, dc.get(i), dst);
             }
         } catch (IOException ioe) {
             throw new DataException(ioe);
@@ -272,7 +269,7 @@ public class DapSerializer
             DapSequence dapvar = (DapSequence) vv;
             for(DapVariable field : dapvar.getFields()) {
                 if(!ce.references(field)) continue; // not in the view
-                DataVariable dv = dr.readfield(field.getShortName());
+                DataVariable dv = dr.getfield(field.getShortName());
                 writeVariable(field, dv, dst);
             }
         } catch (IOException ioe) {
@@ -303,9 +300,9 @@ public class DapSerializer
         tmp.computeChecksums(false);
         try {
             for(int i = 0; i < nrecs; i++) {
-                DataRecord rec = ds.readRecord(i);
+                DataRecord rec = ds.getRecord(i);
                 if(ce.match(seq, rec)) {
-                    writeRecord(dapvar, ds.readRecord(i), tmp);
+                    writeRecord(dapvar, ds.getRecord(i), tmp);
                     actual++;
                 }
             }

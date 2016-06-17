@@ -4,6 +4,8 @@
 
 package dap4.core.util;
 
+import dap4.core.data.DataException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,7 +107,7 @@ public class MultiSlice extends Slice
     @Override
     public Slice
     finish()
-            throws DapException
+            throws DataException
     {
         this.size = -1;
         for(int i = 0; i < slices.size(); i++) {// size is max size
@@ -116,7 +118,7 @@ public class MultiSlice extends Slice
                 this.size = sl.getMaxSize();
         }
         if(this.size < 0)
-            throw new DapException("Cannot compute multislice size");
+            throw new DataException("Cannot compute multislice size");
         for(int i = 0; i < slices.size(); i++) {
             this.slices.get(i).setMaxSize(this.size);
         }
@@ -146,7 +148,7 @@ public class MultiSlice extends Slice
     @Override
     public void
     setMaxSize(long size)
-            throws DapException
+            throws DataException
     {
         for(int i = 0; i < slices.size(); i++) {
             slices.get(i).setMaxSize(size);

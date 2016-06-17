@@ -5,9 +5,9 @@
 package dap4.test;
 
 
-import dap4.ce.CECompiler;
-import dap4.ce.CEConstraint;
-import dap4.ce.parser.CEParserImpl;
+import dap4.core.ce.CECompiler;
+import dap4.core.ce.CEConstraint;
+import dap4.core.ce.parser.CEParserImpl;
 import dap4.core.dmr.DapDataset;
 import dap4.core.dmr.DefaultDMRFactory;
 import dap4.core.dmr.parser.Dap4Parser;

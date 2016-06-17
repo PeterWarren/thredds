@@ -86,8 +86,8 @@ public class CDMDSP extends AbstractDSP
 
     protected NetcdfDataset ncdfile = null;
 
-    protected DapFactory dmrfactory = null;
-    protected DapDataFactory datafactory = null;
+    protected DMRFactory dmrfactory = null;
+    protected DAPDataFactory datafactory = null;
 
     // Map between cdmnode and dapnode
     protected NodeMap nodemap = new NodeMap();
@@ -960,7 +960,7 @@ public class CDMDSP extends AbstractDSP
             throws DataException
     {
         List<Variable> cdmvars = ncdfile.getVariables();
-        DataDataset dds = datafactory.newDataset(this, dmr);
+        DataDataset dds = datafactory.newDataset(this, dmr, ncdfile);
         for(Variable v : cdmvars) {
             DapVariable dv = (DapVariable) nodemap.get(v);
             if(dv == null)
@@ -1003,7 +1003,7 @@ public class CDMDSP extends AbstractDSP
                 DataStructure cds = datafactory.newStructure(this, ds, null, array.getStructureData(0));
                 dv = cds;
             } else {
-                DataCompoundArray cdca = datafactory.newCompoundArray(this, ds);
+                DataCompoundArray cdca = datafactory.newCompoundArray(this, ds, array);
                 dv = cdca;
             }
             break;

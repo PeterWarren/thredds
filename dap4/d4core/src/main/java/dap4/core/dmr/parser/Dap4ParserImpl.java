@@ -39,7 +39,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
     //////////////////////////////////////////////////
     // Instance variables
 
-    protected DapFactory factory = null;
+    protected DMRFactory factory = null;
 
     protected ErrorResponse errorresponse = null;
 
@@ -52,7 +52,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
     //////////////////////////////////////////////////
     // Constructors
 
-    public Dap4ParserImpl(DapFactory factory)
+    public Dap4ParserImpl(DMRFactory factory)
     {
         super();
         this.factory = factory; // see Dap4Actions
@@ -576,9 +576,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
                 dim = (DapDimension) grp.findByFQN(nameorsize.value, DapSort.DIMENSION);
             } else {// Size only is given; presume a number; create unique anonymous dimension
                 String ssize = nameorsize.value.trim();
-                if(ssize.equals("*"))
-                    dim = DapDimension.VLEN;
-                else {
+                 {
                     // Note that we create it in the root group
                     assert (root != null);
                     long anonsize;

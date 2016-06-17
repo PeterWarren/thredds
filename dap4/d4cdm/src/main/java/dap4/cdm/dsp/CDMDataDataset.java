@@ -22,12 +22,12 @@ public class CDMDataDataset extends AbstractData implements DataDataset
     //////////////////////////////////////////////////
     // Constructors
 
-    public CDMDataDataset(CDMDSP dsp, DapDataset dataset)
+    public CDMDataDataset(CDMDSP dsp, DapDataset dataset, Object src)
         throws DataException
     {
-        super(dataset,dsp);
+        super(dataset,dsp,src);
         this.dsp = dsp;
-        dsp.setDataDataset(this);
+        dsp.setDataset(this);
     }
 
     //////////////////////////////////////////////////

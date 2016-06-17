@@ -65,7 +65,7 @@ public class CDMCompiler
     {
         this.ncfile = ncfile;
         this.dsp = dsp;
-        this.d4root = (DataDataset) dsp.getDataDataset();
+        this.d4root = (DataDataset) dsp.getDataset();
         this.dmr = dsp.getDMR();
     }
 

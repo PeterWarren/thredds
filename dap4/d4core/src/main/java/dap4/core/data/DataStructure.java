@@ -15,11 +15,11 @@ public interface DataStructure extends DataCompound
 {
     public void addField(int fieldno, DataVariable dvfield) throws DataException;
 
-    // Read ith field
-    public DataVariable readfield(int i) throws DataException;
+    // Get ith field  as variable
+    public DataVariable getfield(int i) throws DataException;
 
-    // Read named field of the offsetth instance
-    public DataVariable readfield(String name) throws DataException;
+    // Get named field of the offsetth instance
+    public DataVariable getfield(String name) throws DataException;
 
     // This is a hack to support the problem that CDM has not scalar objects:
     // only ArrayStrccuture. So provide a mechanism to convert a scalar to a

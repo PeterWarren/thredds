@@ -70,7 +70,7 @@ public class TestRemoteCatalogRequest
 
   public void testCommandDefaultValues()
   {
-    // Command defaults to SHOW when dataset ID not given:
+    // Command defaults to SHOW when dataset Notes not given:
     //     check that [url=http://** /*.xml, command=null, dataset=null] is
     //     valid and becomes [url, command=SHOW, dataset=null]
     req = basicSetup( catUriString, null, null, null, null );
@@ -83,9 +83,9 @@ public class TestRemoteCatalogRequest
     assertTrue( rcr.getCommand().toString().equalsIgnoreCase( cmdShow ) );
     assertEquals( rcr.getDataset(), "" );
 
-    // Command defaults to SUBSET when dataset ID is given:
-    //     check that [/catalog/** /*.xml, command=null, dataset=ID, htmlView=null] is
-    //     valid and becomes [** /*.xml, command=SUBSET, dataset=ID, htmlView=true]
+    // Command defaults to SUBSET when dataset Notes is given:
+    //     check that [/catalog/** /*.xml, command=null, dataset=Notes, htmlView=null] is
+    //     valid and becomes [** /*.xml, command=SUBSET, dataset=Notes, htmlView=true]
     req = basicSetup( catUriString, null, datasetId, null, null );
     bindingResult = CatalogServiceUtils.bindAndValidateRemoteCatalogRequest( req );
     bindResultMsg = TestLocalCatalogRequest.checkBindingResults( bindingResult );
@@ -97,9 +97,9 @@ public class TestRemoteCatalogRequest
     assertEquals( rcr.getDataset(), datasetId );
     assertTrue( rcr.isHtmlView());
 
-    // Command defaults to SUBSET when dataset ID is given:
-    //     check that [/catalog/** /*.xml, command=null, dataset=ID, htmlView=true] is
-    //     valid and becomes [** /*.xml, command=SUBSET, dataset=ID, htmlView=true]
+    // Command defaults to SUBSET when dataset Notes is given:
+    //     check that [/catalog/** /*.xml, command=null, dataset=Notes, htmlView=true] is
+    //     valid and becomes [** /*.xml, command=SUBSET, dataset=Notes, htmlView=true]
     req = basicSetup( catUriString, null, datasetId, "true", null );
     bindingResult = CatalogServiceUtils.bindAndValidateRemoteCatalogRequest( req );
     bindResultMsg = TestLocalCatalogRequest.checkBindingResults( bindingResult );
@@ -111,9 +111,9 @@ public class TestRemoteCatalogRequest
     assertEquals( rcr.getDataset(), datasetId );
     assertTrue( rcr.isHtmlView());
 
-    // Command defaults to SUBSET when dataset ID is given:
-    //     check that [/catalog/** /*.xml, command=null, dataset=ID, htmlView=false] is
-    //     valid and becomes [** /*.xml, command=SUBSET, dataset=ID, htmlView=false]
+    // Command defaults to SUBSET when dataset Notes is given:
+    //     check that [/catalog/** /*.xml, command=null, dataset=Notes, htmlView=false] is
+    //     valid and becomes [** /*.xml, command=SUBSET, dataset=Notes, htmlView=false]
     req = basicSetup( catUriString, null, datasetId, "false", null );
     bindingResult = CatalogServiceUtils.bindAndValidateRemoteCatalogRequest( req );
     bindResultMsg = TestLocalCatalogRequest.checkBindingResults( bindingResult );

@@ -48,7 +48,7 @@ public class DapRequest
     protected String url = null;  // without any query  and as with any modified dataset path
     protected String querystring = null;
     protected String server = null; // scheme + host + port
-    protected String controllerpath = null; // scheme + host + port + prefix of path thru servlet ID
+    protected String controllerpath = null; // scheme + host + port + prefix of path thru servlet Notes
     protected String datasetpath = null; // past controller path; char(0) != '/'
 
     protected RequestMode mode = null; // .dmr, .dap, or .dsr

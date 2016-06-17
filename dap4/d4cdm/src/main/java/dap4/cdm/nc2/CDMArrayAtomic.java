@@ -36,6 +36,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
 
     protected DataSort sort = null;
     protected DapVariable template = null;
+    protected Object source = null;
 
     // CDMArray variables
     protected DataDataset root = null;
@@ -63,7 +64,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
         super(CDMUtil.daptype2cdmtype(((DapVariable) data.getTemplate()).getBaseType()),
                 CDMUtil.computeEffectiveShape(((DapVariable) data.getTemplate()).getDimensions()));
         this.dsp = dsp;
-        this.root = dsp.getDataDataset();
+        this.root = dsp.getDataset();
         this.data = data;
         this.template = (DapVariable) this.data.getTemplate();
         this.basetype = this.template.getBaseType();
@@ -73,7 +74,24 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
         this.elementsize = this.basetype.getSize();
     }
 
-    // ///////////////////////////////////////////////
+    /////////////////////////////////////////////////
+    // Annotation
+
+    Object annotation = null;
+
+    @Override
+    public void annotate(Object o)
+    {
+        this.annotation = o;
+    }
+
+    @Override
+    public Object annotation()
+    {
+        return this.annotation;
+    }
+
+    /////////////////////////////////////////////////
     // CDMArray Interface
 
     @Override
@@ -161,7 +179,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     {
         setup(index);
         try {
-            Object value = this.data.read(index);
+            Object value = read(index);
             return Convert.doubleValue(this.basetype, value);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -179,7 +197,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     {
         setup(index);
         try {
-            Object value = this.data.read(index);
+            Object value = read(index);
             return (float) Convert.doubleValue(this.basetype, value);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -196,7 +214,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     {
         setup(index);
         try {
-            Object value = this.data.read(index);
+            Object value = read(index);
             return Convert.longValue(this.basetype, value);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -213,7 +231,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     {
         setup(index);
         try {
-            Object value = this.data.read(index);
+            Object value = read(index);
             return (int) Convert.longValue(this.basetype, value);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -230,7 +248,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     {
         setup(index);
         try {
-            Object value = this.data.read(index);
+            Object value = read(index);
             return (short) Convert.longValue(this.basetype, value);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -247,7 +265,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     {
         setup(index);
         try {
-            Object value = this.data.read(index);
+            Object value = read(index);
             return (byte) (Convert.longValue(basetype, value) & 0xFFL);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -264,7 +282,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     {
         setup(index);
         try {
-            Object value = this.read(index);
+            Object value = read(index);
             return (char) (Convert.longValue(basetype, value) & 0xFFL);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -281,7 +299,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     {
         setup(index);
         try {
-            Object value = this.data.read(index);
+            Object value = read(index);
             return (Convert.longValue(basetype, value) != 0);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -298,7 +316,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     {
         setup(index);
         try {
-            return data.read(index);
+            return read(index);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
         }
@@ -520,15 +538,21 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     }
 
     @Override
+    public Object
+    getSource()
+    {
+        return this.source;
+    }
+
+    @Override
     public long getElementSize()
     {
         return Dap4Util.daptypeSize(this.basetype.getTypeSort());
     }
 
     @Override
-    public void
-    read(List<Slice> slices, Object data, long offset)
-        //read(long start, long count, Object data, long offset)
+    public Object
+    read(List<dap4.core.util.Slice> slices)
             throws DataException
     {
         Array array = (Array) this.data;
@@ -544,11 +568,13 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
         Object content = array.get1DJavaArray(elementclass); // not very efficient
         try {
             Odometer odom = Odometer.factory(slices, ((DapVariable) this.getTemplate()).getDimensions(), false);
+            Object[] data = new Object[(int)odom.totalSize()];
             while(odom.hasNext()) {
-                long index = odom.next();
-                System.arraycopy(content, (int) index, data, (int) offset, 1);
-                offset++;
+                odom.next();
+                long offset = odom.index();
+                System.arraycopy(content, (int) offset, data, (int) offset, 1);
             }
+            return data;
         } catch (DapException de) {
             throw new DataException(de);
         }
@@ -596,10 +622,25 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
 
     @Override
     public Object
+    read(dap4.core.util.Index index)
+            throws DataException
+    {
+        Array content = (Array) this.data;
+        DataType datatype = content.getDataType();
+        return read(index, datatype, content);
+    }
+
+    protected Object
+    read(dap4.core.util.Index index, DataType datatype, Array content)
+            throws DataException
+    {
+        return read(index.index(), datatype, content);
+    }
+
+    public Object
     read(long index)
             throws DataException
     {
-        int i = (int) index;
         Array content = (Array) this.data;
         DataType datatype = content.getDataType();
         return read(index, datatype, content);

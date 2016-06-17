@@ -18,10 +18,6 @@ public class DapDimension extends DapNode implements DapDecl, Cloneable
     static final public long VARIABLELENGTH = -1;
     static final public long UNDEFINED = -2;
 
-    // Provide a single instance of the variable length dimension.
-    static final public DapDimension VLEN =
-	new DapDimension("*",VARIABLELENGTH);
-
     //////////////////////////////////////////////////
     // Instance variables
 

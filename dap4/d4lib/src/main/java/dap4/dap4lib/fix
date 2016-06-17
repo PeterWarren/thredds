@@ -1,5 +1,0 @@
-F=`ls -1 keep |tr '\r\n' '  '`
-for f in $F ; do
-rm -f ./$f
-sed -e 's|package[ ][ ]*dap4.dap4shared[;]|package dap4.dap4lib;|' <keep/$f >./$f
-done

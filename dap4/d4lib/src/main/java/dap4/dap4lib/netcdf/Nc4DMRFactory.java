@@ -1,8 +1,4 @@
 /* Copyright 2012, UCAR/Unidata.
-   See the LICENSE file for more information.
-*/
-
-/* Copyright 2012, UCAR/Unidata.
    See the LICENSE file for more information. */
 
 package dap4.dap4lib.netcdf;
@@ -14,41 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-import static dap4.dap4lib.netcdf.NetcdfDSP.*;
+import static dap4.dap4lib.netcdf.Nc4DMR.*;
 
-public class Nc4Factory extends DefaultDMRFactory
+public class Nc4DMRFactory implements DMRFactory
 {
-
-    // Nc4DSP Uses two annotations keys: one to track ids
-    // and one to track all nodes in tree by FQN
-    static public final int NC4DSPKEY = "NC4DSPKEY".hashCode();
-
-    //////////////////////////////////////////////////
-    // Type Decls
-
-    static class ID
-    {
-        public int gid; // might also be root ncid
-        public int id;  // dimension|type|variable id
-
-        // Other kinds of nodes are not annotated
-        public ID()
-        {
-            this(NC_GRPNULL, NC_IDNULL);
-        }
-
-        public ID(int gid)
-        {
-v            this(gid, NC_IDNULL);
-        }
-
-        public ID(int grpid, int id)
-        {
-            this.gid = grpid;
-            this.id = id;
-        }
-    }
-
     //////////////////////////////////////////////////
 
     protected Stack<DapNode> scope = new Stack<>();
@@ -63,7 +28,7 @@ v            this(gid, NC_IDNULL);
 
     //////////////////////////////////////////////////
     // Constructor
-    public Nc4Factory()
+    public Nc4DMRFactory()
     {
         super();
     }
@@ -93,15 +58,9 @@ v            this(gid, NC_IDNULL);
     // Annotation management
 
     protected DapNode
-    tag(DapNode container, DapNode annotatednode, int id)
+    tag(DapNode container, DapNode node, Notes info)
     {
-        return tag(container, annotatednode, id, NetcdfDSP.NC_GRPNULL);
-    }
-
-    protected DapNode
-    tag(DapNode container, DapNode annotatednode, int id, int gid)
-    {
-        DapNode n = tag(annotatednode, id, gid);
+        DapNode n = tag(node, info);
         if(container != null) try {
             switch (container.getSort()) {
             case DATASET:
@@ -122,90 +81,79 @@ v            this(gid, NC_IDNULL);
     }
 
     protected DapNode
-    tag(DapNode annotatednode, int id)
+    tag(DapNode node, Notes info)
     {
-        return tag(annotatednode, id, NetcdfDSP.NC_GRPNULL);
-    }
-
-    protected DapNode
-    tag(DapNode annotatednode, int id, int gid)
-    {
-        DapNode parent = top();
-        ID nid = new ID(gid, id);
-        annotatednode.annotate(NC4DSPKEY, nid);
-        allnodes.add(annotatednode);
-        return annotatednode;
+        node.annotate(info);
+        allnodes.add(node);
+        return node;
     }
 
     //////////////////////////////////////////////////
-    // DapFactory Extended API
+    // DMRFactory Extended API
 
     public DapAttribute newAttribute(String name, DapType basetype)
     {
-        return (DapAttribute) tag(super.newAttribute(name, basetype), -1);
+        return (DapAttribute) tag(new Nc4Attribute(name, basetype), null);
     }
 
     public DapAttributeSet newAttributeSet(String name)
     {
-        return (DapAttributeSet) tag(super.newAttributeSet(name), -1);
+        return (DapAttributeSet) tag(new Nc4DMR.Nc4AttributeSet(name), null);
     }
 
     public DapOtherXML newOtherXML(String name)
     {
-        return (DapOtherXML) tag(super.newOtherXML(name), -1);
+        return (DapOtherXML) tag(new Nc4OtherXML(name), null);
     }
 
     //////////////////////////////////////////////////
     // "Top Level"  nodes
 
-    public DapDimension newDimension(String name, long size, int id)
+    public DapDimension newDimension(String name, long size, Notes info)
     {
-        return (DapDimension) tag(top(), super.newDimension(name, size), id);
+        return (DapDimension) tag(top(), new Nc4Dimension(name, size), info);
     }
 
-    public DapMap newMap(DapVariable target, int id)
+    public DapMap newMap(DapVariable target, Notes info)
     {
-        return (DapMap) tag(top(), super.newMap(target), id);
+        return (DapMap) tag(top(), new Nc4Map(target), info);
     }
 
-    public DapVariable newAtomicVariable(String name, DapType t, int id)
+    public DapVariable newAtomicVariable(String name, DapType t, Notes info)
     {
-        return (DapVariable) tag(scope.peek(), super.newAtomicVariable(name, t), id);
+        return (DapVariable) tag(scope.peek(), new Nc4AtomicVariable(name, t), info);
     }
 
-    public DapVariable newVariable(String name, DapType t, int gid, int id)
+    public DapGroup newGroup(String name, Notes info)
     {
-        return (DapVariable) tag(top(), super.newVariable(name, t), id, gid);
+        return (DapGroup) tag(top(), new Nc4Group(name), info);
     }
 
-    public DapGroup newGroup(String name, int id)
+    public DapDataset newDataset(String name, Notes info)
+            throws DapException
     {
-        return (DapGroup) tag(top(), super.newGroup(name), id);
+        return (DapDataset) tag(top(), new Nc4Dataset(name), info);
     }
 
-    public DapDataset newDataset(String name, int id)
+    public DapEnumeration newEnumeration(String name, DapType basetype, Notes info)
     {
-        return (DapDataset) tag(top(), super.newDataset(name), id);
+        return (DapEnumeration) tag(top(), new Nc4Enumeration(name, basetype), info);
     }
 
-    public DapEnumeration newEnumeration(String name, DapType basetype, int id)
+    public DapEnumConst newEnumConst(String name, long value, Notes info)
     {
-        return (DapEnumeration) tag(top(), super.newEnumeration(name, basetype), id);
+        return (DapEnumConst) tag(top(), new Nc4EnumConst(name, value), info);
     }
 
-    public DapEnumConst newEnumConst(String name, long value, int id)
+    public DapStructure newStructure(String name, Notes info)
     {
-        return (DapEnumConst) tag(top(), super.newEnumConst(name, value), id);
+        return (DapStructure) tag(top(), new Nc4Structure(name), info);
     }
 
-    public DapStructure newStructure(String name, int id)
+    public DapSequence newSequence(String name, Notes info)
     {
-        return (DapStructure) tag(top(), super.newStructure(name), id);
+        return (DapSequence) tag(top(), new Nc4Sequence(name), info);
     }
 
-    public DapSequence newSequence(String name, int id)
-    {
-        return (DapSequence) tag(top(), super.newSequence(name), id);
-    }
 }
 

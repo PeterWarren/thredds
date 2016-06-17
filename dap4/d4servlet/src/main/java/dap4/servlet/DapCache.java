@@ -3,7 +3,7 @@
 
 package dap4.servlet;
 
-import dap4.ce.CEConstraint;
+import dap4.core.ce.CEConstraint;
 import dap4.core.data.DSP;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;

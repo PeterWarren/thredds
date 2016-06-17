@@ -7,10 +7,9 @@ package dap4.cdm;
 import dap4.cdm.dsp.*;
 import dap4.core.data.*;
 import dap4.core.dmr.*;
-import ucar.ma2.Array;
 import ucar.ma2.StructureData;
 
-public class CDMDataFactory implements DapDataFactory
+public class CDMDataFactory implements DAPDataFactory
 {
     //////////////////////////////////////////////////
     // Constants
@@ -23,14 +22,14 @@ public class CDMDataFactory implements DapDataFactory
     }
 
     //////////////////////////////////////////////////
-    // DapDataFactory API
+    // DAPDataFactory API
 
     @Override
     public DataDataset
-    newDataset(DSP dsp, DapDataset template)
+    newDataset(DSP dsp, DapDataset template, Object src)
             throws DataException
     {
-        return new CDMDataDataset((CDMDSP) dsp, template);
+        return new CDMDataDataset((CDMDSP) dsp, template, src);
     }
 
     @Override
@@ -38,7 +37,7 @@ public class CDMDataFactory implements DapDataFactory
     newAtomicVariable(DSP dsp, DapAtomicVariable template, Object source)
             throws DataException
     {
-        return new CDMDataAtomic(dsp, template, (Array)source);
+        return new CDMDataAtomic(dsp, template, source);
     }
 
     @Override
@@ -67,10 +66,10 @@ public class CDMDataFactory implements DapDataFactory
 
     @Override
     public DataCompoundArray
-    newCompoundArray(DSP dsp, DapVariable dapvar)
+    newCompoundArray(DSP dsp, DapVariable dapvar, Object src)
             throws DataException
     {
-        return new CDMDataCompoundArray((CDMDSP) dsp, dapvar);
+        return new CDMDataCompoundArray((CDMDSP) dsp, dapvar, src);
     }
 
 }

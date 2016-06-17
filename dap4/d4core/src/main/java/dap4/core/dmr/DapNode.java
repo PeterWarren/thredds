@@ -67,8 +67,6 @@ abstract public class DapNode
      */
     protected Map<String, DapAttribute> attributes = null;
 
-    protected Map<Integer, Object> annotations = new HashMap<>();
-
     //////////////////////////////////////////////////
     // Constructors
 
@@ -115,20 +113,23 @@ abstract public class DapNode
     }
 
     //////////////////////////////////////////////////
+    // Annotatation
 
-    public void annotate(Integer key, Object value)
+    /* Purpose of annotation is to (sort of) get around
+       single inheritance by allowing a node to store
+       a single arbitrary piece of state.
+    */
+
+    protected Object annotation = null;
+
+    public void annotate(Object value)
     {
-        annotations.put(key, value);
+        annotation = value;
     }
 
-    public Object annotation(Integer key)
+    public Object annotation()
     {
-        return annotations.get(key);
-    }
-
-    public void clearAnnotations()
-    {
-        annotations.clear();
+        return annotation;
     }
 
     //////////////////////////////////////////////////

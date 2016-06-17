@@ -51,7 +51,7 @@ for more information.
             </pathDefaults>
 
             <variables>
-                <!-- Configure variables individually according to their internal ID.
+                <!-- Configure variables individually according to their internal Notes.
                      This is the most specific setting and will override any others -->
                 <variable id="Z_sfc">
                     <defaultColorScaleRange>10 20</defaultColorScaleRange>

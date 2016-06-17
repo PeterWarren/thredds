@@ -1,13 +1,11 @@
 /* Copyright 2012, UCAR/Unidata.
-   See the LICENSE file for more information.
-*/
-
-/* Copyright 2012, UCAR/Unidata.
    See the LICENSE file for more information. */
+
+// OBSOLETE
 
 package dap4.core.dmr;
 
-public class DefaultDMRFactory implements DapFactory
+public class DefaultDMRFactory implements DMRFactory
 {
 
     //////////////////////////////////////////////////
@@ -17,7 +15,7 @@ public class DefaultDMRFactory implements DapFactory
     }
 
     //////////////////////////////////////////////////
-    // DapFactory API
+    // DMRFactory API
 
     public DapAttribute newAttribute(String name, DapType basetype)
     {

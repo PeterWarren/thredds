@@ -4,21 +4,23 @@
 
 package dap4.core.data;
 
+import dap4.core.dmr.DapDimension;
 import dap4.core.dmr.DapVariable;
-import dap4.core.util.DapSort;
+import dap4.core.util.DapException;
+import dap4.core.util.Index;
+import dap4.core.util.Odometer;
+import dap4.core.util.Slice;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
-DataVariable is purely to allow
-unified reference to various kinds of
-variables:
--DataAtomic
--DataCompoundArray
--DataStructure
--DataSequence
-*/
+ * DataVariable is common element for all kinds of variables:
+ * -DataAtomic
+ * -DataCompoundArray
+ * -DataStructure
+ * -DataSequence
+ */
 
 public interface DataVariable extends Data
 {
