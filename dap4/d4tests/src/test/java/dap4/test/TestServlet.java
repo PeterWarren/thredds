@@ -1,6 +1,7 @@
 package dap4.test;
 
 import dap4.core.util.DapDump;
+import dap4.dap4lib.AbstractDSP;
 import dap4.dap4lib.ChunkInputStream;
 import dap4.dap4lib.RequestMode;
 import dap4.servlet.DapCache;
@@ -8,8 +9,19 @@ import dap4.servlet.Generator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder;
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
 import thredds.server.dap4.Dap4Controller;
 
+import javax.servlet.ServletContext;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -35,7 +47,7 @@ public class TestServlet extends DapTestCommon
     //////////////////////////////////////////////////
     // Constants
 
-    static protected final String RESOURCEPATH = "/src/resources"; // wrt getTestInputFilesDIr
+    static protected final String RESOURCEPATH = "/src/test/data/resources"; // wrt getTestInputFilesDIr
     static protected final String TESTINPUTDIR = "/testfiles";
     static protected final String BASELINEDIR = "/TestServlet/baseline";
     static protected final String GENERATEDIR = "/TestCDMClient/testinput";
@@ -101,10 +113,9 @@ public class TestServlet extends DapTestCommon
             this.generatepath = canonjoin(this.generateroot, dataset);
         }
 
-
         String makeurl(RequestMode ext)
         {
-            String u = canonjoin(FAKEURLPREFIX, canonjoin(TESTINPUTDIR, dataset)) + "." + ext.toString();
+            String u = "/dap4" + canonjoin(TESTINPUTDIR, dataset) + "." + ext.toString();
             return u;
         }
 
@@ -145,18 +156,21 @@ public class TestServlet extends DapTestCommon
     //////////////////////////////////////////////////
     // Instance variables
 
-    // Test cases
-
-    protected List<ServletTest> alltestcases = new ArrayList<ServletTest>();
-
-    protected List<ServletTest> chosentests = new ArrayList<ServletTest>();
-
-
-    //////////////////////////////////////////////////
+    protected MockMvc mockMvc;
 
     @Before
     public void setup()
     {
+        StandaloneMockMvcBuilder mvcbuilder =
+                MockMvcBuilders.standaloneSetup(new Dap4Controller());
+        Validator v = new Validator() {
+            public boolean supports(Class<?> clazz) {return true;}
+            public void validate(Object target, Errors errors) {return;}
+        };
+        mvcbuilder.setValidator(v);
+        this.mockMvc = mvcbuilder.build();
+        setTESTDIRS(RESOURCEPATH);
+        AbstractDSP.TESTING = true;
         if(prop_ascii)
             Generator.setASCII(true);
         ServletTest.setRoots(canonjoin(getResourceRoot(), TESTINPUTDIR),
@@ -166,6 +180,13 @@ public class TestServlet extends DapTestCommon
         chooseTestcases();
     }
 
+    // Test cases
+
+    protected List<ServletTest> alltestcases = new ArrayList<ServletTest>();
+
+    protected List<ServletTest> chosentests = new ArrayList<ServletTest>();
+
+
     //////////////////////////////////////////////////
     // Define test cases
 
@@ -173,7 +194,7 @@ public class TestServlet extends DapTestCommon
     chooseTestcases()
     {
         if(true) {
-            chosentests = locate("test_fill.nc");
+            chosentests = locate("test_one_vararray.nc");
             prop_visual = true;
         } else {
             for(ServletTest tc : alltestcases) {
@@ -750,19 +771,14 @@ public class TestServlet extends DapTestCommon
             throws Exception
     {
         boolean pass = true;
-        // Create request and response objects
-        Mocker mocker = new Mocker("dap4", testcase.makeurl(RequestMode.DMR), this);
-        // See if the servlet can process this
-        try {
-            mocker.controller.handleRequest(mocker.req, mocker.resp);
-        } catch (Throwable t) {
-            System.out.println(testcase.xfail ? "XFail" : "Fail");
-            t.printStackTrace();
-            return testcase.xfail;
-        }
-
+        String url = testcase.makeurl(RequestMode.DMR);
+        RequestBuilder rb = MockMvcRequestBuilders
+                .get(url)
+                .servletPath(url);
+        MvcResult result = this.mockMvc.perform(rb).andReturn();
         // Collect the output
-        byte[] byteresult = mocker.resp.getContentAsByteArray();
+        MockHttpServletResponse res = result.getResponse();
+        byte[] byteresult = res.getContentAsByteArray();
 
         // Test by converting the raw output to a string
 
@@ -775,7 +791,7 @@ public class TestServlet extends DapTestCommon
             // Read the baseline file
             String baselinecontent = readfile(testcase.baselinepath + ".dmr");
             System.out.println("DMR Comparison: vs " + testcase.baselinepath + ".dmr");
-            pass = same(getTitle(),baselinecontent, sdmr);
+            pass = same(getTitle(), baselinecontent, sdmr);
             System.out.println(pass ? "Pass" : "Fail");
         }
         return pass;
@@ -787,18 +803,14 @@ public class TestServlet extends DapTestCommon
     {
         boolean pass = true;
         String baseline;
-        // Create request and response objects
-        Mocker mocker = new Mocker("dap4", testcase.makeurl(RequestMode.DAP), this);
-        byte[] byteresult = null; // output
-
-        // See if the servlet can process this
-        try {
-            byteresult = mocker.execute();
-        } catch (Throwable t) {
-            System.out.println(testcase.xfail ? "XFail" : "Fail");
-            t.printStackTrace();
-            return testcase.xfail;
-        }
+        String url = testcase.makeurl(RequestMode.DAP);
+        RequestBuilder rb = MockMvcRequestBuilders
+                .get(url)
+                .servletPath(url);
+        MvcResult result = this.mockMvc.perform(rb).andReturn();
+        // Collect the output
+        MockHttpServletResponse res = result.getResponse();
+        byte[] byteresult = res.getContentAsByteArray();
 
         if(prop_debug || DEBUG) {
             DapDump.dumpbytestream(byteresult, ByteOrder.nativeOrder(), "TestServlet.dodata");
@@ -841,7 +853,7 @@ public class TestServlet extends DapTestCommon
             // Read the baseline file
             System.out.println("Note Comparison:");
             String baselinecontent = readfile(testcase.baselinepath + ".dap");
-            pass = same(getTitle(),baselinecontent, sdata);
+            pass = same(getTitle(), baselinecontent, sdata);
             System.out.println(pass ? "Pass" : "Fail");
         }
 

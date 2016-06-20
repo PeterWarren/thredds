@@ -182,6 +182,8 @@ public class NetcdfDSP extends AbstractDSP
             System.out.printf("NetcdfDSP: closed: %s%n", path);
     }
 
+    protected DMRFactory getFactory() {return new Nc4DMRFactory();}
+
     //////////////////////////////////////////////////
     // Accessors
     //////////////////////////////////////////////////

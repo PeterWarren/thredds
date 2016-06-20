@@ -12,10 +12,12 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
+import thredds.core.DatasetManager;
+import thredds.core.TdsRequestedDataset;
 import thredds.server.dap4.Dap4Controller;
 import ucar.httpservices.HTTPUtil;
-import ucar.unidata.util.test.UnitTestCommon;
 import ucar.unidata.util.test.TestDir;
+import ucar.unidata.util.test.UnitTestCommon;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -86,7 +88,6 @@ abstract public class DapTestCommon extends UnitTestCommon
                 throws ServletException
         {
             this.controller = ct;
-            this.controller.TESTING = true;
         }
 
         /**
@@ -150,7 +151,41 @@ abstract public class DapTestCommon extends UnitTestCommon
     }
 
     //////////////////////////////////////////////////
+    // Static variables
+
+    static protected String dap4root = null;
+    static protected String dap4testroot = null;
+    static protected String dap4resourcedir = null;
+
+    static {
+        dap4root = locateDAP4Root(threddsroot);
+        if(dap4root == null)
+            System.err.println("Cannot locate /dap4 parent dir");
+        dap4testroot = canonjoin(dap4root,D4TESTDIRNAME);
+        dap4resourcedir = canonjoin(dap4testroot,DFALTRESOURCEPATH);
+    }
+
+    //////////////////////////////////////////////////
     // Static methods
+
+    static protected void setTESTDIRS(String... dirs)
+    {
+        String[] realdirs = new String[dirs.length];
+        for(int i = 0; i < realdirs.length; i++) {
+            realdirs[i] = canonjoin(dap4testroot,dirs[i]);
+        }
+        DapController.TESTDIRS = realdirs;
+    }
+
+    static protected String getD4TestsRoot()
+    {
+        return dap4testroot;
+    }
+
+    static protected String getResourceRoot()
+    {
+        return dap4resourcedir;
+    }
 
     static String
     locateDAP4Root(String threddsroot)
@@ -169,10 +204,7 @@ abstract public class DapTestCommon extends UnitTestCommon
     // Instance variables
 
 
-    protected String dap4root = null;
-    protected String dap4testroot = null;
     protected String d4tsserver = null;
-    protected String resourcedir = null;
 
     protected String title = "Dap4 Testing";
 
@@ -184,11 +216,7 @@ abstract public class DapTestCommon extends UnitTestCommon
     public DapTestCommon(String name)
     {
         super(name);
-        this.dap4root = locateDAP4Root(this.threddsroot);
-        if(this.dap4root == null)
-            System.err.println("Cannot locate /dap4 parent dir");
-        this.dap4testroot = dap4root + "/" + D4TESTDIRNAME;
-        this.resourcedir = dap4root + "/" + DFALTRESOURCEPATH;
+
         this.d4tsserver = TestDir.dap4TestServer;
         if(DEBUG)
             System.err.println("DapTestCommon: d4tsServer=" + d4tsserver);
@@ -230,16 +258,6 @@ abstract public class DapTestCommon extends UnitTestCommon
 
     //////////////////////////////////////////////////
     // Overrideable methods
-
-    protected String getD4TestsRoot()
-    {
-        return this.dap4testroot;
-    }
-
-    protected String getResourceRoot()
-    {
-        return getD4TestsRoot() + DFALTRESOURCEPATH;
-    }
 
     //////////////////////////////////////////////////
     // Accessor
@@ -290,7 +308,17 @@ abstract public class DapTestCommon extends UnitTestCommon
     @Override
     public String getResourceDir()
     {
-        return this.resourcedir;
+        return this.dap4resourcedir;
+    }
+
+    /**
+     * Unfortunately, mock does not appear to always
+     * do proper initialization
+     */
+    static protected void
+    mockSetup()
+    {
+        TdsRequestedDataset.setDatasetManager(new DatasetManager());
     }
 
 }

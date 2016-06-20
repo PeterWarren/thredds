@@ -7,6 +7,7 @@ package dap4.cdm.nc2;
 import dap4.cdm.CDMUtil;
 import dap4.cdm.NodeMap;
 import dap4.core.data.DSP;
+import dap4.core.util.DapContext;
 import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.HttpDSP;
 import dap4.dap4lib.XURI;
@@ -127,12 +128,13 @@ public class DapNetcdfFile extends NetcdfFile
 
         }
         this.finalurl = url;
+        DapContext cxt = new DapContext();
         cancel = (cancelTask == null ? nullcancel : cancelTask);
         // 1. Get and parse the constrained DMR and Data v-a-v URL
         if(xuri.isFile())
-            this.dsp = (DSP) new FileDSP().open(url);
+            this.dsp = (DSP) new FileDSP().open(url,cxt);
         else
-            this.dsp = (DSP) new HttpDSP().open(url);
+            this.dsp = (DSP) new HttpDSP().open(url,cxt);
 
         // 2. Construct an equivalent CDM tree and populate 
         //    this NetcdfFile object.

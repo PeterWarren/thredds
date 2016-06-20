@@ -6,6 +6,7 @@ package dap4.dap4lib.serial;
 
 import dap4.core.data.DataCompiler;
 import dap4.core.data.DataDataset;
+import dap4.core.dmr.DMRFactory;
 import dap4.core.dmr.DapDataset;
 import dap4.core.util.DapException;
 import dap4.dap4lib.AbstractDSP;
@@ -23,7 +24,6 @@ import java.nio.ByteOrder;
 
 abstract public class D4DSP extends AbstractDSP
 {
-
     //////////////////////////////////////////////////
     // Constants
 
@@ -39,6 +39,10 @@ abstract public class D4DSP extends AbstractDSP
     {
         super();
     }
+
+    //////////////////////////////////////////////////
+
+    protected DMRFactory getFactory() {return new D4DMRFactory();}
 
     //////////////////////////////////////////////////
     // DSP API

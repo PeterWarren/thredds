@@ -33,10 +33,13 @@
 
 package thredds.server.dap4;
 
-import dap4.core.util.*;
 import dap4.cdm.dsp.CDMDSP;
+import dap4.core.util.DapContext;
+import dap4.core.util.DapException;
+import dap4.core.util.DapUtil;
 import thredds.core.TdsRequestedDataset;
-import ucar.nc2.*;
+import ucar.nc2.NetcdfFile;
+import ucar.nc2.dataset.NetcdfDataset;
 import ucar.nc2.util.CancelTask;
 
 /**
@@ -60,14 +63,14 @@ public class ThreddsDSP extends CDMDSP
     public ThreddsDSP(String path, DapContext cxt)
             throws DapException
     {
-        super(path,cxt);
+        super(path, cxt);
 //        init(createNetcdfFile(path, null));
     }
 
     public ThreddsDSP(NetcdfFile ncd, DapContext cxt)
             throws DapException
     {
-        super(ncd,cxt);
+        super(ncd, cxt);
 //        init(ncd);
     }
 
@@ -81,8 +84,11 @@ public class ThreddsDSP extends CDMDSP
     {
         try {
             path = DapUtil.canonicalpath(location);
-            NetcdfFile ncfile = TdsRequestedDataset.getNetcdfFile(this.request, this.response, null);
-//            NetcdfFile ncfile = DatasetHandler.getNetcdfFile(this.request, this.response,location);
+            NetcdfFile ncfile;
+            if(TESTING)
+                ncfile = NetcdfDataset.openDataset(path);
+            else
+                ncfile = TdsRequestedDataset.getNetcdfFile(this.request, this.response, path);
             return ncfile;
         } catch (Exception e) {
             return null;

@@ -6,10 +6,7 @@ package dap4.dap4lib;
 
 import dap4.core.data.DSP;
 import dap4.core.data.DataDataset;
-import dap4.core.dmr.DapAttribute;
-import dap4.core.dmr.DapDataset;
-import dap4.core.dmr.DapNode;
-import dap4.core.dmr.DefaultDMRFactory;
+import dap4.core.dmr.*;
 import dap4.core.dmr.parser.Dap4Parser;
 import dap4.core.dmr.parser.Dap4ParserImpl;
 import dap4.core.util.DapContext;
@@ -36,6 +33,10 @@ abstract public class AbstractDSP implements DSP
     static public final boolean USEDOM = false;
 
     //////////////////////////////////////////////////
+
+    static public boolean TESTING = false;
+
+    //////////////////////////////////////////////////
     // Instance variables
 
     protected DapContext context = null;
@@ -54,6 +55,11 @@ abstract public class AbstractDSP implements DSP
     }
 
     //////////////////////////////////////////////////
+    // Sub class defined
+
+    abstract protected DMRFactory getFactory();
+
+    //////////////////////////////////////////////////
     // DSP Interface
 
     // Subclass defined
@@ -70,13 +76,6 @@ abstract public class AbstractDSP implements DSP
     public void setDataset(DataDataset dds)
     {
         this.dataset = dds;
-    }
-
-    @Override
-    public DSP open(String path)
-            throws DapException
-    {
-        return open(path, new DapContext());
     }
 
     @Override
@@ -176,7 +175,7 @@ abstract public class AbstractDSP implements DSP
         // Parse the dmr
         Dap4Parser parser;
         //if(USEDOM)
-        parser = new Dap4ParserImpl(new DefaultDMRFactory());
+        parser = new Dap4ParserImpl(getFactory());
         //else
         //    parser = new DOM4Parser(new DefaultDMRFactory());
         if(PARSEDEBUG)

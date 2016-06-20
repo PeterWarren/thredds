@@ -4,13 +4,13 @@
 
 package dap4.test;
 
+import dap4.core.dmr.DMRPrint;
 import dap4.core.dmr.DapDataset;
-import dap4.core.dmr.DefaultDMRFactory;
 import dap4.core.dmr.ErrorResponse;
 import dap4.core.dmr.parser.Dap4Parser;
 import dap4.core.dmr.parser.Dap4ParserImpl;
 import dap4.core.dmr.parser.ParseUtil;
-import dap4.core.dmr.DMRPrint;
+import dap4.dap4lib.serial.D4DMRFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,8 +19,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertTrue;
 
 
 public class TestParserDMR extends DapTestCommon
@@ -35,11 +33,9 @@ public class TestParserDMR extends DapTestCommon
     //////////////////////////////////////////////////
     // Constants
     // Define the input set(s)
-    static protected final String DIR1 = "/TestParsers/testinput"; // relative to dap4 root
-    static protected final String DIR2 = "/TestParsers/dmrset"; // relative to dap4  root
-    static protected final String DIR3 = "/TestServlet/baseline"; // relative to dap4 root
-
-    static protected final String BASELINEDIR = "/TestParsers/baseline";
+    static protected final String DIR1 = "/TestParsers/dmrset"; // relative to dap4  root
+    static protected final String DIR2 = "/TestServlet/baseline"; // relative to dap4  root
+    static protected final String BASELINE = "/TestParsers/baseline"; // relative to dap4 root
 
     //////////////////////////////////////////////////
 
@@ -59,7 +55,7 @@ public class TestParserDMR extends DapTestCommon
             this.dir = dir;
             this.ext = ext;
             this.input = resourceroot + dir + "/" + name + "." + ext;
-            this.baseline = resourceroot + BASELINEDIR + "/" + name + ".dmr";
+            this.baseline = resourceroot + BASELINE + "/" + name + "." + "dmp";
         }
     }
     //////////////////////////////////////////////////
@@ -88,7 +84,7 @@ public class TestParserDMR extends DapTestCommon
     chooseTestcases()
     {
         if(false) {
-            chosentests = locate("test_atomic_array.syn");
+            chosentests = locate("test_atomic_array");
         } else {
             for(TestCase tc : alltestcases) {
                 chosentests.add(tc);
@@ -112,13 +108,8 @@ public class TestParserDMR extends DapTestCommon
     {
         String root = getResourceRoot();
         TestCase.resourceroot = root;
-
-        if(true)
-            loadDir(DIR1, "dmr");
-        if(true)
-            loadDir(DIR2, "dmr");
-        if(true)
-            loadDir(DIR3, "dmr");
+        loadDir(DIR1, "dmr");
+        loadDir(DIR2, "dmr");
     }
 
     void loadDir(String dirsuffix, String... extensions)
@@ -195,17 +186,15 @@ public class TestParserDMR extends DapTestCommon
     public void testParser()
             throws Exception
     {
-        int failcount = 0;
         int ntests = 0;
-        for (TestCase testcase : chosentests) {
+        for(TestCase testcase : chosentests) {
             ntests++;
-            if(!doOneTest(testcase))
-                failcount++;
+            doOneTest(testcase);
         }
-        Assert.assertTrue("***Fail: "+failcount,failcount==0);
+        Assert.assertTrue("***Pass ", true);
     }
 
-    boolean
+    void
     doOneTest(TestCase testcase)
             throws Exception
     {
@@ -220,7 +209,7 @@ public class TestParserDMR extends DapTestCommon
 
         document = readfile(testinput);
 
-        Dap4Parser parser = new Dap4ParserImpl(new DefaultDMRFactory());
+        Dap4Parser parser = new Dap4ParserImpl(new D4DMRFactory());
         if(PARSEDEBUG || debug)
             parser.setDebugLevel(1);
 
@@ -232,7 +221,7 @@ public class TestParserDMR extends DapTestCommon
             System.err.println("Error response:\n" + err.buildXML());
         if(dmr == null) {
             System.err.println("No dataset created");
-            return false;
+            return;
         }
 
         // Dump the parsed DMR for comparison purposes
@@ -247,7 +236,6 @@ public class TestParserDMR extends DapTestCommon
         if(prop_visual)
             visual(testcase.name, testresult);
 
-        boolean pass = true;
         if(prop_baseline) {
             writefile(baseline, testresult);
         } else if(prop_diff) { //compare with baseline
@@ -257,9 +245,8 @@ public class TestParserDMR extends DapTestCommon
                 baselinecontent = document;
             else
                 baselinecontent = readfile(baseline);
-            pass = pass && same(getTitle(),baselinecontent, testresult);
+            Assert.assertTrue("Files are different",
+                    same(getTitle(), baselinecontent, testresult));
         }
-
-        return pass;
     }
 }

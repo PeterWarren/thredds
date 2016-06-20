@@ -9,15 +9,15 @@ import dap4.core.ce.CEAST;
 import dap4.core.ce.CECompiler;
 import dap4.core.ce.CEConstraint;
 import dap4.core.ce.parser.CEParserImpl;
+import dap4.core.data.DAPPrint;
 import dap4.core.data.DSP;
 import dap4.core.dmr.DMRPrint;
 import dap4.core.dmr.DapDataset;
 import dap4.core.dmr.ErrorResponse;
+import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.core.util.ResponseFormat;
-import dap4.core.data.DAPPrint;
-
 import dap4.dap4lib.DapCodes;
 import dap4.dap4lib.DapLog;
 import dap4.dap4lib.DapProtocol;
@@ -72,7 +72,7 @@ abstract public class DapController extends HttpServlet
 
     static protected long binarywritelimit = ChunkWriter.DEFAULTWRITELIMIT;
 
-    static public boolean TESTING = true;
+    static public String[] TESTDIRS = null;
 
     //////////////////////////////////////////////////
     // Static accessors
@@ -135,7 +135,7 @@ abstract public class DapController extends HttpServlet
      * @param drq The merged dap state
      */
 
-    abstract protected void doFavicon(DapRequest drq, String icopath) throws IOException;
+    abstract protected void doFavicon(DapRequest drq, String icopath, DapContext cxt) throws IOException;
 
     /**
      * Process a capabilities request.
@@ -144,7 +144,7 @@ abstract public class DapController extends HttpServlet
      * @param drq The merged dap state
      */
 
-    abstract protected void doCapabilities(DapRequest drq) throws IOException;
+    abstract protected void doCapabilities(DapRequest drq, DapContext cxt) throws IOException;
 
     /**
      * Convert a URL path into an absolute file path
@@ -211,17 +211,23 @@ abstract public class DapController extends HttpServlet
         if(DEBUG) {
             System.err.println("DAP4 Servlet: processing url: " + drq.getOriginalURL());
         }
+
+        DapContext cxt = new DapContext();
+        cxt.put(HttpServletRequest.class, req);
+        cxt.put(HttpServletResponse.class, res);
+
         if(url.endsWith(FAVICON)) {
-            doFavicon(drq, FAVICON);
+            doFavicon(drq, FAVICON, cxt);
             return;
         }
+
         String datasetpath = DapUtil.nullify(drq.getDataset());
         try {
             if(datasetpath == null) {
                 // This is the case where a request was made without a dataset;
                 // According to the spec, I think we should return the
                 // services/capabilities document
-                doCapabilities(drq);
+                doCapabilities(drq,cxt);
             } else {
                 RequestMode mode = drq.getMode();
                 if(mode == null)
@@ -229,13 +235,13 @@ abstract public class DapController extends HttpServlet
                             .setCode(HttpServletResponse.SC_BAD_REQUEST);
                 switch (mode) {
                 case DMR:
-                    doDMR(drq);
+                    doDMR(drq, cxt);
                     break;
                 case DAP:
-                    doData(drq);
+                    doData(drq, cxt);
                     break;
                 case DSR:
-                    doDSR(drq);
+                    doDSR(drq, cxt);
                     break;
                 default:
                     throw new DapException("Unrecognized request extension")
@@ -273,7 +279,7 @@ abstract public class DapController extends HttpServlet
      */
 
     protected void
-    doDSR(DapRequest drq)
+    doDSR(DapRequest drq, DapContext cxt)
             throws IOException
     {
         try {
@@ -297,10 +303,10 @@ abstract public class DapController extends HttpServlet
      */
 
     protected void
-    doDMR(DapRequest drq)
+    doDMR(DapRequest drq, DapContext cxt)
             throws IOException
     {
-        DSP dsp = DapCache.open(drq.getResourcePath());
+        DSP dsp = DapCache.open(drq.getResourcePath(), cxt);
         DapDataset dmr = dsp.getDMR();
 
         // Process any constraint view
@@ -342,10 +348,10 @@ abstract public class DapController extends HttpServlet
      */
 
     protected void
-    doData(DapRequest drq)
+    doData(DapRequest drq, DapContext cxt)
             throws IOException
     {
-        DSP dsp = DapCache.open(drq.getResourcePath());
+        DSP dsp = DapCache.open(drq.getResourcePath(), cxt);
         if(dsp == null)
             throw new IOException("No such file: " + drq.getResourcePath());
         DapDataset dmr = dsp.getDMR();
@@ -385,7 +391,7 @@ abstract public class DapController extends HttpServlet
         case TEXT:
             sw = new StringWriter();
             DAPPrint dp = new DAPPrint(sw);
-            dp.print(dsp.getDataset(),ce);
+            dp.print(dsp.getDataset(), ce);
             break;
         case NONE:
         default:

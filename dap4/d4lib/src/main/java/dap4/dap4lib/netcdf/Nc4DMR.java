@@ -257,7 +257,6 @@ public class Nc4DMR
     static public class Nc4Dataset extends DapDataset
     {
         public Nc4Dataset(String name)
-                throws DapException
         {
             super(name);
         }

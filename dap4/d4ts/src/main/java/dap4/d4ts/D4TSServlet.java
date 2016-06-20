@@ -4,6 +4,7 @@
 
 package dap4.d4ts;
 
+import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.dap4lib.DapLog;
@@ -98,7 +99,7 @@ public class D4TSServlet extends DapController
 
     @Override
     protected void
-    doFavicon(DapRequest drq, String icopath)
+    doFavicon(DapRequest drq, String icopath, DapContext cxt)
             throws IOException
     {
         String favfile = getResourcePath(drq, icopath);
@@ -113,7 +114,7 @@ public class D4TSServlet extends DapController
 
     @Override
     protected void
-    doCapabilities(DapRequest drq)
+    doCapabilities(DapRequest drq, DapContext cxt)
             throws IOException
     {
         addCommonHeaders(drq);

@@ -37,6 +37,18 @@ abstract public class UnitTestCommon
     // NetcdfDataset enhancement to use: need only coord systems
     static final Set<NetcdfDataset.Enhance> ENHANCEMENT = EnumSet.of(NetcdfDataset.Enhance.CoordSystems);
 
+    static protected String threddsroot = null;
+    static protected String threddsServer = null;
+
+    static {
+        // Compute the root path
+        threddsroot = locateThreddsRoot();
+        assert threddsroot != null: "Cannot locate /thredds parent dir";
+        threddsServer = TestDir.remoteTestServer;
+        if(DEBUG)
+            System.err.println("UnitTestCommon: threddsServer=" + threddsServer);
+    }
+
     //////////////////////////////////////////////////
     // Static methods
 
@@ -125,9 +137,6 @@ abstract public class UnitTestCommon
     protected String title = "Testing";
     protected String name = "testcommon";
 
-    protected String threddsroot = null;
-    protected String threddsServer = null;
-
     //////////////////////////////////////////////////
     // Constructor(s)
 
@@ -140,12 +149,6 @@ abstract public class UnitTestCommon
     {
         this.title = name;
         setSystemProperties();
-        // Compute the root path
-        this.threddsroot = locateThreddsRoot();
-        Assert.assertTrue("Cannot locate /thredds parent dir", this.threddsroot != null);
-        this.threddsServer = TestDir.remoteTestServer;
-        if(DEBUG)
-            System.err.println("UnitTestCommon: threddsServer=" + threddsServer);
     }
 
     /**
@@ -461,6 +464,7 @@ abstract public class UnitTestCommon
         }
         return false;
     }
+
 
 }
 

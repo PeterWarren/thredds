@@ -54,7 +54,7 @@ abstract public class DapCache
 
     //////////////////////////////////////////////////
 
-    static public synchronized DSP open(String path)
+    static public synchronized DSP open(String path, DapContext cxt)
             throws IOException
     {
         int lrusize = lru.size();
@@ -80,7 +80,7 @@ abstract public class DapCache
         if(dsp == null)
             throw new DapException("Resource has no matching DSP: "+path)
                         .setCode(DapCodes.SC_FORBIDDEN);
-        dsp.open(path);
+        dsp.open(path,cxt);
         lru.add(dsp);
         return dsp;
     }

@@ -9,6 +9,8 @@ import dap4.core.data.*;
 import dap4.core.dmr.*;
 import ucar.ma2.StructureData;
 
+import static dap4.cdm.dsp.CDMData.*;
+
 public class CDMDataFactory implements DAPDataFactory
 {
     //////////////////////////////////////////////////
@@ -29,7 +31,7 @@ public class CDMDataFactory implements DAPDataFactory
     newDataset(DSP dsp, DapDataset template, Object src)
             throws DataException
     {
-        return new CDMDataDataset((CDMDSP) dsp, template, src);
+        return new CDMData.CDMDataDataset((CDMDSP) dsp, template, src);
     }
 
     @Override
@@ -37,7 +39,7 @@ public class CDMDataFactory implements DAPDataFactory
     newAtomicVariable(DSP dsp, DapAtomicVariable template, Object source)
             throws DataException
     {
-        return new CDMDataAtomic(dsp, template, source);
+        return new CDMData.CDMDataAtomic(dsp, template, source);
     }
 
     @Override
@@ -61,7 +63,7 @@ public class CDMDataFactory implements DAPDataFactory
     newStructure(DSP dsp, DapStructure dap, DataCompoundArray parent, Object source)
             throws DataException
     {
-        return new CDMDataStructure((CDMDSP) dsp, dap, (CDMDataCompoundArray)parent, (StructureData)source);
+        return new CDMData.CDMDataStructure((CDMDSP) dsp, dap, (CDMData.CDMDataCompoundArray)parent, (StructureData)source);
     }
 
     @Override

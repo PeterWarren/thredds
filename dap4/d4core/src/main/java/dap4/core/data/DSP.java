@@ -26,7 +26,6 @@ public interface DSP
     // static public boolean dspMatch(String path, DapContext context);
 
     public DSP open(String path, DapContext context) throws DapException;
-    public DSP open(String path) throws DapException;
 
     public String getPath();
     public Object getContext();

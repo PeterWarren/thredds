@@ -267,12 +267,14 @@ public class SerialWriter
             break;
 
         case Opaque:
-            ByteBuffer[] datao = (ByteBuffer[]) values;
+            // Unfortunately, Array.get1d does not produce
+            // a ByteBuffer[].
+            Object[] datao = (Object[]) values;
             // Pass 1: get total size
             total = 0;
             int size = 0;
             for(int i = 0; i < datao.length; i++) {
-                ByteBuffer opaquedata = datao[i];
+                ByteBuffer opaquedata = (ByteBuffer)datao[i];
                 // the data may be at an offset in the buffer
                 size = opaquedata.remaining(); // should be limit - pos
                 total += (size + COUNTSIZE);
@@ -280,7 +282,7 @@ public class SerialWriter
             buf = ByteBuffer.allocate(total).order(order);
             // Pass 2: write the opaque elements
             for(int i = 0; i < datao.length; i++) {
-                ByteBuffer opaquedata = datao[i];
+                ByteBuffer opaquedata = (ByteBuffer)datao[i];
                 size = opaquedata.remaining(); // should be limit - pos
                 buf.putLong(size);
                 int savepos = opaquedata.position();

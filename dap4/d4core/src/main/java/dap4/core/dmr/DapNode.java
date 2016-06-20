@@ -122,9 +122,10 @@ abstract public class DapNode
 
     protected Object annotation = null;
 
-    public void annotate(Object value)
+    public DapNode annotate(Object value)
     {
         annotation = value;
+        return this;
     }
 
     public Object annotation()

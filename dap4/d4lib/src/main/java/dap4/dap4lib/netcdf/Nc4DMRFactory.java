@@ -18,11 +18,6 @@ public class Nc4DMRFactory implements DMRFactory
 
     protected Stack<DapNode> scope = new Stack<>();
 
-    protected DapNode top()
-    {
-        return scope.empty() ? null : scope.peek();
-    }
-
     // Collect all created nodes
     protected List<DapNode> allnodes = new ArrayList<>();
 
@@ -58,18 +53,23 @@ public class Nc4DMRFactory implements DMRFactory
     // Annotation management
 
     protected DapNode
-    tag(DapNode container, DapNode node, Notes info)
+    tag(DapNode node, Object notes)
     {
-        DapNode n = tag(node, info);
+        allnodes.add(node);
+        node.annotate(notes);
+        DapNode container = scope.peek();
         if(container != null) try {
             switch (container.getSort()) {
             case DATASET:
             case GROUP:
-                ((DapGroup) container).addDecl(n);
+                ((DapGroup) container).addDecl(node);
                 break;
             case STRUCTURE:
             case SEQUENCE:
-                ((DapStructure) container).addField(n);
+                ((DapStructure) container).addField(node);
+                break;
+            case ENUMERATION:
+                ((DapEnumeration) container).addEnumConst((DapEnumConst) node);
                 break;
             default:
                 throw new DapException("Nc4Factory: unexpected container: " + container);
@@ -77,82 +77,73 @@ public class Nc4DMRFactory implements DMRFactory
         } catch (DapException e) {
             throw new IllegalStateException(e);
         }
-        return n;
-    }
-
-    protected DapNode
-    tag(DapNode node, Notes info)
-    {
-        node.annotate(info);
-        allnodes.add(node);
         return node;
     }
 
     //////////////////////////////////////////////////
     // DMRFactory Extended API
 
-    public DapAttribute newAttribute(String name, DapType basetype)
+    public DapAttribute newAttribute(String name, DapType basetype, Object notes)
     {
-        return (DapAttribute) tag(new Nc4Attribute(name, basetype), null);
+        return (DapAttribute) tag(new Nc4Attribute(name, basetype),notes);
     }
 
-    public DapAttributeSet newAttributeSet(String name)
+    public DapAttributeSet newAttributeSet(String name, Object notes)
     {
-        return (DapAttributeSet) tag(new Nc4DMR.Nc4AttributeSet(name), null);
+        return (DapAttributeSet) tag(new Nc4DMR.Nc4AttributeSet(name),notes);
     }
 
-    public DapOtherXML newOtherXML(String name)
+    public DapOtherXML newOtherXML(String name, Object notes)
     {
-        return (DapOtherXML) tag(new Nc4OtherXML(name), null);
+        return (DapOtherXML) tag(new Nc4OtherXML(name),notes);
     }
 
     //////////////////////////////////////////////////
     // "Top Level"  nodes
 
-    public DapDimension newDimension(String name, long size, Notes info)
+    public DapDimension newDimension(String name, long size, Object notes)
     {
-        return (DapDimension) tag(top(), new Nc4Dimension(name, size), info);
+        return (DapDimension) tag(new Nc4Dimension(name, size),notes);
     }
 
-    public DapMap newMap(DapVariable target, Notes info)
+    public DapMap newMap(DapVariable target, Object notes)
     {
-        return (DapMap) tag(top(), new Nc4Map(target), info);
+        return (DapMap) tag(new Nc4Map(target),notes);
     }
 
-    public DapVariable newAtomicVariable(String name, DapType t, Notes info)
+    public DapAtomicVariable newAtomicVariable(String name, DapType t, Object notes)
     {
-        return (DapVariable) tag(scope.peek(), new Nc4AtomicVariable(name, t), info);
+        return (DapAtomicVariable) tag(new Nc4AtomicVariable(name, t),notes);
     }
 
-    public DapGroup newGroup(String name, Notes info)
+    public DapGroup newGroup(String name, Object notes)
     {
-        return (DapGroup) tag(top(), new Nc4Group(name), info);
+        return (DapGroup) tag(new Nc4Group(name),notes);
     }
 
-    public DapDataset newDataset(String name, Notes info)
-            throws DapException
+    public DapDataset newDataset(String name, Object notes)
     {
-        return (DapDataset) tag(top(), new Nc4Dataset(name), info);
+        return (DapDataset) tag(new Nc4Dataset(name),notes);
     }
 
-    public DapEnumeration newEnumeration(String name, DapType basetype, Notes info)
+    public DapEnumeration newEnumeration(String name, DapType basetype, Object notes)
     {
-        return (DapEnumeration) tag(top(), new Nc4Enumeration(name, basetype), info);
+        return (DapEnumeration) tag(new Nc4Enumeration(name, basetype),notes);
     }
 
-    public DapEnumConst newEnumConst(String name, long value, Notes info)
+    public DapEnumConst newEnumConst(String name, long value, Object notes)
     {
-        return (DapEnumConst) tag(top(), new Nc4EnumConst(name, value), info);
+        return (DapEnumConst) tag(new Nc4EnumConst(name, value),notes);
     }
 
-    public DapStructure newStructure(String name, Notes info)
+    public DapStructure newStructure(String name, Object notes)
     {
-        return (DapStructure) tag(top(), new Nc4Structure(name), info);
+        return (DapStructure) tag(new Nc4Structure(name),notes);
     }
 
-    public DapSequence newSequence(String name, Notes info)
+    public DapSequence newSequence(String name, Object notes)
     {
-        return (DapSequence) tag(top(), new Nc4Sequence(name), info);
+        return (DapSequence) tag(new Nc4Sequence(name),notes);
     }
 
 }

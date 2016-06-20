@@ -198,7 +198,7 @@ public class Dap4EventHandler extends SaxEventHandler
             break;
 
         case ATTRIBUTE:
-            attr = attributemap.get(name);
+            attr = attributemap.get(name.toLowerCase());
             if(attr == null)
                 yytoken = UNKNOWN_ATTR;
             else

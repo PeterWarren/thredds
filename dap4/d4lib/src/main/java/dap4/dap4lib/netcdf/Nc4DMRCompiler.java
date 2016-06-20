@@ -126,7 +126,7 @@ public class Nc4DMRCompiler
         errcheck(ret = nc4.nc_inq_grpname(ncid, namep));
         GroupNotes gi = new GroupNotes(ncid, ncid);
         String[] pieces = DapUtil.canonicalpath(this.path).split("[/]");
-        DapDataset g = factory.newDataset(pieces[pieces.length-1], gi);
+        DapDataset g = factory.newDataset(pieces[pieces.length-1],gi);
         gi.set(g);
         this.dmr = g;
         factory.enterContainer(g);
@@ -192,7 +192,7 @@ public class Nc4DMRCompiler
         DapDimension dim = factory.newDimension(name, lenp.longValue(), di);
         di.set(dim);
         if(isunlimited) {
-            DapAttribute ultag = factory.newAttribute(UCARTAGUNLIM, DapType.INT8);
+            DapAttribute ultag = factory.newAttribute(UCARTAGUNLIM, DapType.INT8, null);
             ultag.setValues(new Object[]{(Byte) (byte) 1});
             dim.addAttribute(ultag);
         }
@@ -258,14 +258,15 @@ public class Nc4DMRCompiler
         errcheck(ret = nc4.nc_inq_enum(ti.gid, ti.id, namep, basetypep, sizep, nmembersp));
         DapEnumeration de = factory.newEnumeration(name, DapType.lookup(base.get().getTypeSort()), ti);
         ti.set(de);
-
+        factory.enterContainer(de);
         // build list of enum consts
         int nconsts = nmembersp.intValue();
         for(int i = 0; i < nconsts; i++) {
             // Get info about the ith const
             errcheck(ret = nc4.nc_inq_enum_member(ti.gid, ti.id, i, namep, valuep));
-            de.addEnumConst(factory.newEnumConst(makeString(namep), (long) valuep.getValue()));
+            de.addEnumConst(factory.newEnumConst(makeString(namep), (long) valuep.getValue(), null));
         }
+        factory.leaveContainer();
     }
 
     protected void
@@ -274,9 +275,11 @@ public class Nc4DMRCompiler
     {
         DapStructure ds = factory.newStructure(name, ti);
         ti.set(ds);
+        factory.enterContainer(ds);
         for(int i = 0; i < nfields; i++) {
             buildfield(ti, i);
         }
+        factory.leaveContainer();
     }
 
     protected void
@@ -341,7 +344,7 @@ public class Nc4DMRCompiler
         VarNotes vi = new VarNotes(gid, vid).setType(xtype);
         if(xtype == null)
             throw new DapException("Unknown type id: " + xtype.id);
-        DapVariable var = factory.newVariable(name, xtype.get());
+        DapVariable var = factory.newAtomicVariable(name, xtype.get(),vi);
         vi.set(var);
         int[] dimids = getVardims(gid, vid, ndimsp.getValue());
         for(int i = 0; i < dimids.length; i++) {
@@ -352,7 +355,7 @@ public class Nc4DMRCompiler
         }
         // Now, if this is of type opaque, tag it with the size
         if(xtype.get().isOpaqueType()) {
-            DapAttribute sizetag = factory.newAttribute(UCARTAGOPAQUE, DapType.INT64);
+            DapAttribute sizetag = factory.newAttribute(UCARTAGOPAQUE, DapType.INT64, null);
             sizetag.setValues(new Object[]{(long) xtype.opaquelen});
             var.addAttribute(sizetag);
         }
@@ -372,14 +375,16 @@ public class Nc4DMRCompiler
         // of the basetype. Field name is same as the vlen type
         DapSequence ds = factory.newSequence(vname, ti);
         ti.set(ds);
+        factory.enterContainer(ds);
         TypeNotes baset = TypeNotes.find(basetype);
         if(baset == null)
             throw new DapException("Undefined vlen basetype: " + basetype);
         makeField(ti, 0, vname, baset, 0, new int[0]);
         // Annotate to indicate that this came from a vlen
-        DapAttribute tag = factory.newAttribute(UCARTAGVLEN, DapType.INT8);
+        DapAttribute tag = factory.newAttribute(UCARTAGVLEN, DapType.INT8, null);
         tag.setValues(new Object[]{(Byte) (byte) 1});
         ds.addAttribute(tag);
+        factory.leaveContainer();
     }
 
     protected void
@@ -398,7 +403,7 @@ public class Nc4DMRCompiler
         errcheck(ret = nc4.nc_inq_attlen(gid, vid, name, countp));
         // Get the values of the attribute
         Object[] values = getAttributeValues(gid, vid, name, base, countp.intValue());
-        DapAttribute da = factory.newAttribute(name, (DapType) base.get());
+        DapAttribute da = factory.newAttribute(name, (DapType) base.get(), null);
         da.setValues(values);
 
         if(isglobal) {

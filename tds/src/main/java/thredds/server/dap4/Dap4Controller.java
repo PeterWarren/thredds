@@ -33,6 +33,7 @@
 
 package thredds.server.dap4;
 
+import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.dap4lib.DapCodes;
@@ -40,6 +41,7 @@ import dap4.servlet.DSPFactory;
 import dap4.servlet.DapCache;
 import dap4.servlet.DapController;
 import dap4.servlet.DapRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import thredds.core.TdsRequestedDataset;
@@ -113,7 +115,7 @@ public class Dap4Controller extends DapController
 
     @Override
     protected void
-    doFavicon(DapRequest drq, String icopath)
+    doFavicon(DapRequest drq, String icopath, DapContext cxt)
             throws IOException
     {
         throw new UnsupportedOperationException("Favicon");
@@ -121,7 +123,7 @@ public class Dap4Controller extends DapController
 
     @Override
     protected void
-    doCapabilities(DapRequest drq)
+    doCapabilities(DapRequest drq, DapContext cxt)
             throws IOException
     {
         addCommonHeaders(drq);
@@ -152,19 +154,25 @@ public class Dap4Controller extends DapController
     {
         // For some reason, I cannot get Spring autowiring to work with
         // MockServlet, so provide alternate.
-        File realfile;
-        if(TESTING) {
-            ServletContext cxt = drq.getContext();
-            realfile = new File(cxt.getRealPath(relpath));
+        File realfile = null;
+        if(TESTDIRS != null) {
+            for(String s: TESTDIRS) {
+                String path = DapUtil.canonjoin(s,relpath);
+                File f = new File(path);
+                if(f.exists()) {
+                    realfile = f;
+                    break;
+                }
+            }
         } else
             realfile  = TdsRequestedDataset.getFile(relpath);
-        String realpath = DapUtil.canonicalpath(realfile.getAbsolutePath());
-        if(!realfile.exists())
-            throw new DapException("Requested file not found " + realpath)
+        if(realfile == null || !realfile.exists())
+            throw new DapException("Requested file not found " + relpath)
                     .setCode(DapCodes.SC_NOT_FOUND);
         if(!realfile.canRead())
-            throw new DapException("Requested file not readable " + realpath)
+            throw new DapException("Requested file not readable " + relpath)
                     .setCode(DapCodes.SC_FORBIDDEN);
+        String realpath = DapUtil.canonicalpath(realfile.getAbsolutePath());
         return realpath;
     }
 
