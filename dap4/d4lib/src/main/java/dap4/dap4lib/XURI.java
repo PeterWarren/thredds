@@ -7,8 +7,9 @@ package dap4.dap4lib;
 import dap4.core.util.DapUtil;
 import dap4.core.util.Escape;
 import ucar.httpservices.HTTPUtil;
-import java.net.*;
-import java.nio.charset.Charset;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -61,16 +62,16 @@ public class XURI
     protected String frag = null;
 
     // Following are url decoded
-    Map<String, String> fields // decomposed query
-        = new HashMap<String, String>();
-    Map<String, String> parameters // decomposed fragment
-        = new HashMap<String, String>();
+    protected Map<String, String> fields // decomposed query
+            = new HashMap<String, String>();
+    protected Map<String, String> parameters // decomposed fragment
+            = new HashMap<String, String>();
 
     //////////////////////////////////////////////////
     // Constructor
 
     public XURI(String path)
-        throws URISyntaxException
+            throws URISyntaxException
     {
         if(path == null)
             throw new URISyntaxException(path, "Null URI");
@@ -100,7 +101,7 @@ public class XURI
             this.isfile = (theproto.equals("file"));
         } else {//(this.protocols.length > 1
             int prefix = 0;
-            for(int i = 0;i < this.protocols.size() - 1;i++) {
+            for(int i = 0; i < this.protocols.size() - 1; i++) {
                 prefix += (this.protocols.get(i) + ":").length();
             }
             this.trueurl = path.substring(prefix);
@@ -121,8 +122,8 @@ public class XURI
 
         if(!lastproto.equals(canonical(this.url.getScheme())))
             throw new URISyntaxException(this.url.toString(),
-                String.format("malformed url: %s :: %s",
-                    lastproto, this.url.getScheme()));
+                    String.format("malformed url: %s :: %s",
+                            lastproto, this.url.getScheme()));
         this.baseprotocol = lastproto;
         this.userinfo = canonical(this.url.getUserInfo());
         if(this.isfile && DapUtil.hasDriveLetter(this.url.getHost() + ":")) {
@@ -137,38 +138,14 @@ public class XURI
         }
 
         // Parse the raw query (before decoding)
-        String query = this.url.getRawQuery();
-        String[] params = null;
-	    if(query != null)
-	        params = this.url.getRawQuery().split(QUERYSEP);
-        if(params != null && params.length > 0) {
-            this.query = "";
-            for(String param : params) {
-                String[] pair = param.split("[=]");
-                String name = Escape.urlDecode(pair[0]);
-                name = name.toLowerCase(); // for consistent lookup
-                String value = "";
-                if(pair.length > 1) {
-                    value = Escape.urlDecode(pair[1]);
-                    this.fields.put(name, value);
-                    this.query += name + "=" + value;
-                }
-            }
-        }
+        this.query = this.url.getRawQuery();
+        if(this.query != null)
+            setQuery(this.query);
 
         // Parse the raw fragment (before decoding)
         this.frag = canonical(this.url.getFragment());
-        if(this.frag != null) {
-            params = this.frag.split(FRAGMENTSEP);
-            for(String param : params) {
-                String[] pair = param.split("=");
-                String name = Escape.urlDecode(pair[0]);
-                name = name.toLowerCase(); // for consistent lookup
-                String value = (pair.length == 2 ? Escape.urlDecode(pair[1])
-                    : "");
-                this.parameters.put(name, value);
-            }
-        }
+        if(this.frag != null)
+            setFragment(this.frag);
     }
 
     //////////////////////////////////////////////////
@@ -239,6 +216,46 @@ public class XURI
         return parameters;
     }
 
+    public XURI
+    setQuery(String q)
+    {
+        if(q == null || q.length() == 0) return this;
+        String[] params = q.split(QUERYSEP);
+        if(params != null && params.length > 0) {
+            this.query = q;
+            for(String param : params) {
+                String[] pair = param.split("[=]");
+                String name = Escape.urlDecode(pair[0]);
+                name = name.toLowerCase(); // for consistent lookup
+                String value = "";
+                if(pair.length > 1) {
+                    value = Escape.urlDecode(pair[1]);
+                    this.fields.put(name, value);
+                }
+            }
+        }
+        return this;
+    }
+
+    public XURI
+    setFragment(String f)
+    {
+        if(f == null || f.length() == 0) return this;
+        String[] params = f.split(FRAGMENTSEP);
+        if(params != null && params.length > 0) {
+            this.frag = f;
+            for(String param : params) {
+                String[] pair = param.split("=");
+                String name = Escape.urlDecode(pair[0]);
+                name = name.toLowerCase(); // for consistent lookup
+                String value = (pair.length == 2 ? Escape.urlDecode(pair[1])
+                        : "");
+                this.parameters.put(name, value);
+            }
+        }
+        return this;
+    }
+
     //////////////////////////////////////////////////
     // API
 
@@ -248,6 +265,7 @@ public class XURI
      * @param parts to include
      * @return the assembled uri
      */
+
     public String
     assemble(EnumSet<Parts> parts)
     {

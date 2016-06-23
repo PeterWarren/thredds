@@ -3,9 +3,11 @@ package dap4.test;
 import dap4.core.util.DapDump;
 import dap4.dap4lib.AbstractDSP;
 import dap4.dap4lib.ChunkInputStream;
+import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.RequestMode;
 import dap4.servlet.DapCache;
 import dap4.servlet.Generator;
+import dap4.servlet.SynDSP;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +55,7 @@ public class TestServlet extends DapTestCommon
     static protected final String GENERATEDIR = "/TestCDMClient/testinput";
 
     // constants for Fake Request
-    static protected final String FAKEURLPREFIX = "http://localhost:8080/dap4";
+    static protected final String FAKEURLPREFIX = "/dap4";
 
     static protected final BigInteger MASK = new BigInteger("FFFFFFFFFFFFFFFF", 16);
 
@@ -115,7 +117,7 @@ public class TestServlet extends DapTestCommon
 
         String makeurl(RequestMode ext)
         {
-            String u = "/dap4" + canonjoin(TESTINPUTDIR, dataset) + "." + ext.toString();
+            String u = canonjoin(FAKEURLPREFIX,canonjoin(TESTINPUTDIR, dataset)) + "." + ext.toString();
             return u;
         }
 
@@ -158,6 +160,14 @@ public class TestServlet extends DapTestCommon
 
     protected MockMvc mockMvc;
 
+    // Test cases
+
+    protected List<ServletTest> alltestcases = new ArrayList<ServletTest>();
+
+    protected List<ServletTest> chosentests = new ArrayList<ServletTest>();
+
+    //////////////////////////////////////////////////.
+
     @Before
     public void setup()
     {
@@ -171,6 +181,8 @@ public class TestServlet extends DapTestCommon
         this.mockMvc = mvcbuilder.build();
         setTESTDIRS(RESOURCEPATH);
         AbstractDSP.TESTING = true;
+        DapCache.registerDSP(FileDSP.class);
+        DapCache.registerDSP(SynDSP.class);
         if(prop_ascii)
             Generator.setASCII(true);
         ServletTest.setRoots(canonjoin(getResourceRoot(), TESTINPUTDIR),
@@ -180,22 +192,17 @@ public class TestServlet extends DapTestCommon
         chooseTestcases();
     }
 
-    // Test cases
-
-    protected List<ServletTest> alltestcases = new ArrayList<ServletTest>();
-
-    protected List<ServletTest> chosentests = new ArrayList<ServletTest>();
-
-
     //////////////////////////////////////////////////
     // Define test cases
 
     protected void
     chooseTestcases()
     {
-        if(true) {
-            chosentests = locate("test_one_vararray.nc");
+        if(false) {
+            chosentests = locate("test_atomic_array.syn");
             prop_visual = true;
+            prop_debug = true;
+	    prop_generate = false;
         } else {
             for(ServletTest tc : alltestcases) {
                 chosentests.add(tc);
@@ -727,24 +734,24 @@ public class TestServlet extends DapTestCommon
 
     //////////////////////////////////////////////////
     // Junit test methods
+
     @Test
     public void testServlet()
             throws Exception
     {
         DapCache.flush();
         for(ServletTest testcase : chosentests) {
-            Assert.assertTrue(doOneTest(testcase));
+            doOneTest(testcase);
         }
     }
 
     //////////////////////////////////////////////////
     // Primary test method
-    boolean
+
+    void
     doOneTest(ServletTest testcase)
             throws Exception
     {
-        boolean pass = true;
-
         System.out.println("Testcase: " + testcase.testinputpath);
         System.out.println("Baseline: " + testcase.baselinepath);
 
@@ -752,25 +759,21 @@ public class TestServlet extends DapTestCommon
             RequestMode ext = RequestMode.modeFor(extension);
             switch (ext) {
             case DMR:
-                pass = dodmr(testcase);
+                dodmr(testcase);
                 break;
             case DAP:
-                pass = dodata(testcase);
+                dodata(testcase);
                 break;
             default:
-                assert (false);
-                if(!pass) break;
+                Assert.assertTrue("Unknown extension",false);
             }
-            if(!pass) break;
         }
-        return pass;
     }
 
-    boolean
+    void
     dodmr(ServletTest testcase)
             throws Exception
     {
-        boolean pass = true;
         String url = testcase.makeurl(RequestMode.DMR);
         RequestBuilder rb = MockMvcRequestBuilders
                 .get(url)
@@ -791,19 +794,17 @@ public class TestServlet extends DapTestCommon
             // Read the baseline file
             String baselinecontent = readfile(testcase.baselinepath + ".dmr");
             System.out.println("DMR Comparison: vs " + testcase.baselinepath + ".dmr");
-            pass = same(getTitle(), baselinecontent, sdmr);
-            System.out.println(pass ? "Pass" : "Fail");
+            Assert.assertTrue("***Fail",same(getTitle(), baselinecontent, sdmr));
         }
-        return pass;
     }
 
-    boolean
+    void
     dodata(ServletTest testcase)
             throws Exception
     {
-        boolean pass = true;
         String baseline;
         String url = testcase.makeurl(RequestMode.DAP);
+
         RequestBuilder rb = MockMvcRequestBuilders
                 .get(url)
                 .servletPath(url);
@@ -823,11 +824,7 @@ public class TestServlet extends DapTestCommon
         }
 
         if(DEBUG) {
-            System.out.println("///////////////////");
-            ByteBuffer datab = ByteBuffer.wrap(byteresult).order(ByteOrder.nativeOrder());
-            DapDump.dumpbytes(datab, true);
-            System.out.println("///////////////////");
-            System.out.flush();
+            DapDump.dumpbytes(ByteBuffer.wrap(byteresult).order(ByteOrder.nativeOrder()), true);
         }
 
         // Setup a ChunkInputStream
@@ -853,43 +850,12 @@ public class TestServlet extends DapTestCommon
             // Read the baseline file
             System.out.println("Note Comparison:");
             String baselinecontent = readfile(testcase.baselinepath + ".dap");
-            pass = same(getTitle(), baselinecontent, sdata);
-            System.out.println(pass ? "Pass" : "Fail");
+            Assert.assertTrue("***Fail",same(getTitle(), baselinecontent, sdata));
         }
-
-        return pass;
     }
 
     //////////////////////////////////////////////////
     // Utility methods
-    /*
-    boolean
-    generatesetup()
-    {
-        if(!prop_generate)
-            return false;
-        File genpath = new File(this.root + "/" + GENERATEDIR);
-        if(!genpath.exists()) {// create generate dir if it does not exist
-            if(!genpath.mkdirs())
-                return report("Cannot create: " + genpath.toString());
-        } else if(!genpath.isDirectory())
-            return report("Not a directory: " + genpath.toString());
-        else if(!genpath.canWrite())
-            return report("Directory not writeable: " + genpath.toString());
-        // Clear the generate directory, but of files only
-        //clearDir(genpath, false);
-        return true;
-    }
-    */
-
-    boolean
-    report(String msg)
-    {
-        System.err.println(msg);
-        prop_generate = false;
-        return false;
-    }
-
 
     // Locate the test cases with given prefix
     List<ServletTest>
@@ -903,5 +869,5 @@ public class TestServlet extends DapTestCommon
         return results;
     }
 
+}
 
-} // class TestServlet

@@ -4,12 +4,14 @@
 
 package dap4.cdm.nc2;
 
+import dap4.cdm.CDMTypeFcns;
 import dap4.cdm.CDMUtil;
 import dap4.core.data.*;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.DapVariable;
 import dap4.core.util.*;
 import dap4.dap4lib.Dap4Util;
+import dap4.dap4lib.LibTypeFcns;
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
 import ucar.ma2.Index;
@@ -61,7 +63,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     CDMArrayAtomic(DSP dsp, Group cdmroot, DataAtomic data)
             throws DapException
     {
-        super(CDMUtil.daptype2cdmtype(((DapVariable) data.getTemplate()).getBaseType()),
+        super(CDMTypeFcns.daptype2cdmtype(((DapVariable) data.getTemplate()).getBaseType()),
                 CDMUtil.computeEffectiveShape(((DapVariable) data.getTemplate()).getDimensions()));
         this.dsp = dsp;
         this.root = dsp.getDataset();
@@ -163,10 +165,10 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     public Class
     getElementType()
     {
-        DataType dt = CDMUtil.daptype2cdmtype(this.basetype);
+        DataType dt = CDMTypeFcns.daptype2cdmtype(this.basetype);
         if(dt == null)
             throw new IllegalArgumentException("Unknown datatype: " + this.basetype);
-        return CDMUtil.cdmElementClass(dt);
+        return CDMTypeFcns.cdmElementClass(dt);
     }
 
     /**
@@ -547,7 +549,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     @Override
     public long getElementSize()
     {
-        return Dap4Util.daptypeSize(this.basetype.getTypeSort());
+        return LibTypeFcns.size(this.basetype);
     }
 
     @Override
@@ -559,10 +561,10 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
         // If content.getDataType returns object, then we
         // really do not know its true datatype. So, as a rule,
         // we will rely on this.basetype.
-        DataType datatype = CDMUtil.daptype2cdmtype(this.basetype);
+        DataType datatype = CDMTypeFcns.daptype2cdmtype(this.basetype);
         if(datatype == null)
             throw new DataException("Unknown basetype: " + this.basetype);
-        Class elementclass = CDMUtil.cdmElementClass(datatype);
+        Class elementclass = CDMTypeFcns.cdmElementClass(datatype);
         if(elementclass == null)
             throw new DataException("Attempt to read non-atomic value of type: " + datatype);
         Object content = array.get1DJavaArray(elementclass); // not very efficient

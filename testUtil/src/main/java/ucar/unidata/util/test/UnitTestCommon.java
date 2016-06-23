@@ -228,10 +228,10 @@ abstract public class UnitTestCommon
         }
         System.out.println(sep.toString());
         System.out.println("Testing " + title + ": " + header + ":");
-        System.out.println("---------------");
+        System.out.println("===============");
         System.out.print(captured);
         System.out.println(sep.toString());
-        System.out.println("---------------");
+        System.out.println("===============");
     }
 
     static public String

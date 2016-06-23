@@ -110,7 +110,7 @@ public class TestNc4Iosp extends DapTestCommon
     void
     chooseTestcases()
     {
-        if(true) {
+        if(false) {
             chosentests = locate("test_vlen3.nc");
             //chosentests.add(new Nc4IospTest("test_test.nc"));
         } else {

@@ -166,7 +166,7 @@ public class TestCDMClient extends DapTestCommon
     void
     chooseTestcases()
     {
-        if(true) {
+        if(false) {
             chosentests = locate("test_opaque.nc");
             prop_visual = true;
         } else {

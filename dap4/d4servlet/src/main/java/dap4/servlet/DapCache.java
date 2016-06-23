@@ -21,6 +21,7 @@ import java.util.List;
  * Note that we do not have to release because Java
  * uses garbage collection and entries will be purged
  * if the LRU cache is full.
+ * Singleton class
  */
 
 abstract public class DapCache
@@ -31,8 +32,10 @@ abstract public class DapCache
 
     static final int MAXFILES = 100; // size of the cache
 
+    static public final String MATCHMETHOD = "dspMatch";
+
     //////////////////////////////////////////////////
-    // Instance variables
+    // Static variables
 
     /**
      * Define an lru cache of known DSP objects: oldest first.
@@ -41,6 +44,59 @@ abstract public class DapCache
 
     // This should be set by any subclass
     static protected DSPFactory factory = null;
+
+    /**
+     * Define a map of known DSP classes.
+     */
+    static protected DSPRegistry registry = new DSPRegistry();
+
+    //////////////////////////////////////////////////
+    // Static methods
+
+    /**
+     * Register a DSP class.
+     *
+     * @param klass Class that implements DSP.
+     * @throws IllegalAccessException|InstantiationException|ClassCastException if class is not accessible, or has no no-arg constructor, or doesn't implement DSP.
+     */
+    static public void registerDSP(Class<? extends DSP> klass)
+    {
+        registry.register(klass, false);
+    }
+
+    /**
+     * Register a DSP class.
+     *
+     * @param klass Class that implements DSP.
+     * @param last  true=>insert at the end of the list; otherwise front
+     * @throws IllegalAccessException|InstantiationException|ClassCastException if class is not accessible, or has no no-arg constructor, or doesn't implement DSP.
+     */
+    static public void registerDSP(Class<? extends DSP> klass, boolean last)
+    {
+        registry.register(klass, last);
+    }
+
+    /**
+     * See if a specific DSP is registered
+     *
+     * @param klass Class for which to search
+     */
+
+    static public boolean dspRegistered(Class<? extends DSP> klass)
+    {
+        return registry.registered(klass);
+    }
+
+    /**
+     * Unregister dsp.
+     *
+     * @param klass Class for which to search
+     */
+    static public void dspUnregister(Class<? extends DSP> klass)
+    {
+        registry.unregister(klass);
+    }
+
 
     static public void setFactory(DSPFactory f)
     {
@@ -51,8 +107,6 @@ abstract public class DapCache
     {
         return factory;
     }
-
-    //////////////////////////////////////////////////
 
     static public synchronized DSP open(String path, DapContext cxt)
             throws IOException
@@ -76,11 +130,11 @@ abstract public class DapCache
             CEConstraint.release(lru.get(0).getDMR());
         }
         // Find dsp that can process this path
-        DSP dsp = factory.findMatchingDSP(path);
+        DSP dsp = registry.findMatchingDSP(path);
         if(dsp == null)
-            throw new DapException("Resource has no matching DSP: "+path)
-                        .setCode(DapCodes.SC_FORBIDDEN);
-        dsp.open(path,cxt);
+            throw new DapException("Resource has no matching DSP: " + path)
+                    .setCode(DapCodes.SC_FORBIDDEN);
+        dsp.open(path, cxt);
         lru.add(dsp);
         return dsp;
     }

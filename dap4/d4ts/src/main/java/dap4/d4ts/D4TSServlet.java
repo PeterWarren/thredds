@@ -50,9 +50,9 @@ public class D4TSServlet extends DapController
             // in event that two or more dsps can match a given file
             // (e.q. FileDSP vs NetcdfDSP).
             // Only used in server
-            registerDSP(NetcdfDSP.class, true);
-            registerDSP(SynDSP.class, true);
-            registerDSP(FileDSP.class, true);
+            DapCache.registerDSP(NetcdfDSP.class, true);
+            DapCache.registerDSP(SynDSP.class, true);
+            DapCache.registerDSP(FileDSP.class, true);
         }
 
     }

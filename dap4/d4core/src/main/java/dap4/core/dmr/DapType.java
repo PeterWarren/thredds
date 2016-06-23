@@ -5,7 +5,10 @@
 package dap4.core.dmr;
 
 import dap4.core.util.DapSort;
+import dap4.core.util.DapUtil;
 
+import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -159,12 +162,12 @@ public class DapType extends DapNode implements DapDecl
      * except for enums, where it returns the
      * basetype of the enum.
      *
-     * @return  lowest level atomic type
+     * @return lowest level atomic type
      */
     public TypeSort getAtomicType()
     {
         if(this.typesort == TypeSort.Enum) {
-            return ((DapEnumeration)this).getBaseType().getTypeSort();
+            return ((DapEnumeration) this).getBaseType().getTypeSort();
         } else
             return getTypeSort();
     }
@@ -253,4 +256,22 @@ public class DapType extends DapNode implements DapDecl
     {
         return TypeSort.getSize(getAtomicType());
     }
+
+    // Reflective operations
+
+    public Object vector(int n)
+    {
+        if(n < 0)
+            throw new IllegalArgumentException();
+        return Array.newInstance(this.getClass(), n);
+    }
+
+    public Object vectorget(Object vector, int n)
+    {
+        if(n < 0)
+            throw new IllegalArgumentException();
+        assert (vector.getClass().isArray()) : "Attempt to apply index to non-vector";
+        return Array.get(vector, n);
+    }
+
 }

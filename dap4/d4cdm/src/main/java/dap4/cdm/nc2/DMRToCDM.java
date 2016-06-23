@@ -4,13 +4,16 @@
 
 package dap4.cdm.nc2;
 
+import dap4.cdm.CDMTypeFcns;
 import dap4.cdm.CDMUtil;
 import dap4.cdm.NodeMap;
 import dap4.core.data.DSP;
 import dap4.core.dmr.*;
 import dap4.core.util.Convert;
+import dap4.core.util.CoreTypeFcns;
 import dap4.core.util.DapException;
 import dap4.core.util.DapSort;
+import dap4.dap4lib.LibTypeFcns;
 import ucar.ma2.DataType;
 import ucar.ma2.ForbiddenConversionException;
 import ucar.nc2.*;
@@ -87,32 +90,7 @@ public class DMRToCDM
         // Create enums in this group
         for(DapEnumeration dapenum : dapparent.getEnums()) {
             DapType basetype = dapenum.getBaseType();
-            DataType cdmbasetype;
-            switch (basetype.getTypeSort()) {
-            case Char:
-            case Int8:
-            case UInt8:
-                cdmbasetype = DataType.ENUM1;
-                break;
-            case Int16:
-            case UInt16:
-                cdmbasetype = DataType.ENUM2;
-                break;
-            case Int32:
-            case UInt32:
-                cdmbasetype = DataType.ENUM4;
-                break;
-
-            case Int64:
-            case UInt64:
-                // Unfortunately, CDM does not support (U)Int64, so truncate to 32.
-                cdmbasetype = DataType.ENUM4;
-                break;
-
-            default:
-                throw new DapException("Illegal DapEnumeration basetype");
-            }
-
+            DataType cdmbasetype = CDMTypeFcns.enumTypeFor(basetype);
             Map<Integer, String> map = new HashMap<Integer, String>();
             List<String> ecnames = dapenum.getNames();
             for(String ecname : ecnames) {
@@ -180,9 +158,9 @@ public class DMRToCDM
             DapType basetype = atomvar.getBaseType();
             DataType cdmbasetype;
             if(basetype.isEnumType())
-                cdmbasetype = CDMUtil.enumtypefor(basetype);
+                cdmbasetype = CDMTypeFcns.enumTypeFor(basetype);
             else
-                cdmbasetype = CDMUtil.daptype2cdmtype(basetype);
+                cdmbasetype = CDMTypeFcns.daptype2cdmtype(basetype);
             if(cdmbasetype == null)
                 throw new DapException("Unknown basetype:" + basetype);
             cdmvar.setDataType(cdmbasetype);
@@ -292,28 +270,7 @@ public class DMRToCDM
             throws DapException
     {
         DapType basetype = dapenum.getBaseType();
-        DataType cdmbasetype;
-        switch (basetype.getTypeSort()) {
-        case Char:
-        case Int8:
-        case UInt8:
-            cdmbasetype = DataType.ENUM1;
-            break;
-        case Int16:
-        case UInt16:
-            cdmbasetype = DataType.ENUM2;
-            break;
-        case Int32:
-        case UInt32:
-            cdmbasetype = DataType.ENUM4;
-            break;
-
-        case Int64:
-        case UInt64:
-        default:
-            throw new DapException("Illegal DapEnumeration basetype");
-        }
-
+        DataType cdmbasetype = CDMTypeFcns.enumTypeFor(basetype);
         Map<Integer, String> map = new HashMap<Integer, String>();
         List<String> ecnames = dapenum.getNames();
         for(String ecname : ecnames) {
@@ -352,13 +309,13 @@ public class DMRToCDM
             DapType basetype = dapattr.getBaseType();
             if(!(basetype.isNumericType() || basetype.isStringType() || basetype.isCharType()))
                 throw new ForbiddenConversionException("Illegal attribute type:" + basetype.toString());
-            DapType uptype = Convert.upcastType(basetype);
-            DataType cdmtype = CDMUtil.daptype2cdmtype(uptype);
+            DapType uptype = CoreTypeFcns.upcastType(basetype);
+            DataType cdmtype = CDMTypeFcns.daptype2cdmtype(uptype);
             Object[] dapvalues = dapattr.getValues();
             List cdmvalues = new ArrayList();
             for(int i = 0; i < dapvalues.length; i++) {
                 Object o = dapvalues[i];
-                o = Convert.upcast(o, uptype);
+                o = CoreTypeFcns.upcast(uptype,o);
                 if(cdmtype == DataType.CHAR)
                     o = ((Character) o).toString();
                 cdmvalues.add(o);

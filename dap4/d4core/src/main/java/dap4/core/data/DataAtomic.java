@@ -7,10 +7,7 @@ package dap4.core.data;
 import dap4.core.dmr.DapDimension;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.DapVariable;
-import dap4.core.util.DapException;
-import dap4.core.util.Index;
-import dap4.core.util.Odometer;
-import dap4.core.util.Slice;
+import dap4.core.util.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -107,7 +104,6 @@ public interface DataAtomic extends DataVariable
      */
 
     /**
-     *
      * @param slices
      * @return
      * @throws DataException
@@ -151,8 +147,11 @@ public interface DataAtomic extends DataVariable
         DapVariable var = getVariable();
         List<DapDimension> dims = var.getDimensions();
         List<Slice> slices = Slice.indexToSlices(indices);
-        Object[] data = (Object[]) read(slices);
-        return data[0];
+        Object data = read(slices);
+        DapType basetype = var.getBaseType();
+        if(basetype == null)
+            throw new DataException("Variable has no basetype: "+var);
+        return CoreTypeFcns.get(var.getBaseType(), data, 0);
     }
 
 }

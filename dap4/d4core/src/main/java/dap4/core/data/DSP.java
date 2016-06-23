@@ -30,10 +30,8 @@ public interface DSP
     public String getPath();
     public Object getContext();
     public DapDataset getDMR() throws DapException;
-
     public DataDataset getDataset() throws DataException;
     public void setDataset(DataDataset ds);
-
     public void close() throws IOException;
-
+    public Object getSource();
 }

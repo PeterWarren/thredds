@@ -33,6 +33,11 @@ abstract public class D4DSP extends AbstractDSP
     static protected final String DMRVERSION = "1.0";
 
     //////////////////////////////////////////////////
+    // Instance variables
+
+    protected ByteBuffer databuffer = null; // local copy of AbstractDSP.getSource
+
+    //////////////////////////////////////////////////
     // Constructor(s)
 
     public D4DSP()
@@ -71,9 +76,10 @@ abstract public class D4DSP extends AbstractDSP
     build(DapDataset dmr, byte[] serialdata, ByteOrder order)
             throws DapException
     {
-        this.dmr = dmr;
+        setDMR(dmr);
         // "Compile" the databuffer section of the server response
-        this.databuffer = ByteBuffer.wrap(serialdata).order(order);
+        setSource(ByteBuffer.wrap(serialdata).order(order));
+        this.databuffer = (ByteBuffer)getSource();
         DataCompiler compiler = new D4DataCompiler(this, checksummode, this.databuffer, new D4DataFactory());
         compiler.compile();
     }

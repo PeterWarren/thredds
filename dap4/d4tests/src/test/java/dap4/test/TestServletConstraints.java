@@ -2,11 +2,27 @@ package dap4.test;
 
 import dap4.core.util.DapDump;
 import dap4.core.util.Escape;
+import dap4.dap4lib.AbstractDSP;
 import dap4.dap4lib.ChunkInputStream;
+import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.RequestMode;
+import dap4.servlet.DapCache;
+import dap4.servlet.DapController;
+import dap4.servlet.Generator;
+import dap4.servlet.SynDSP;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder;
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
+import thredds.server.dap4.Dap4Controller;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -30,13 +46,13 @@ public class TestServletConstraints extends DapTestCommon
     //////////////////////////////////////////////////
     // Constants
 
+    static protected final String RESOURCEPATH = "/src/test/data/resources"; // wrt getTestInputFilesDIr
     static protected final String TESTINPUTDIR = "/testfiles";
     static protected String BASELINEDIR = "/TestServletConstraints/baseline";
     static protected String GENERATEDIR = "/TestCDMClient/testinput";
 
-
     // constants for Fake Request
-    static String FAKEURLPREFIX = "http://localhost:8080/dap4";
+    static String FAKEURLPREFIX = "/dap4";
 
     static final BigInteger MASK = new BigInteger("FFFFFFFFFFFFFFFF", 16);
 
@@ -103,9 +119,9 @@ public class TestServletConstraints extends DapTestCommon
             this.xfail = xfail;
             this.extensions = extensions.split(",");
             this.template = template;
-            this.testinputpath = canonjoin(this.inputroot,dataset) + "." + id;
-            this.baselinepath = canonjoin(this.baselineroot,dataset) + "." + id;
-            this.generatepath = canonjoin(this.generateroot,dataset) + "." + id;
+            this.testinputpath = canonjoin(this.inputroot, dataset) + "." + id;
+            this.baselinepath = canonjoin(this.baselineroot, dataset) + "." + id;
+            this.generatepath = canonjoin(this.generateroot, dataset) + "." + id;
             alltests[id] = this;
         }
 
@@ -113,14 +129,19 @@ public class TestServletConstraints extends DapTestCommon
         {
             String url = canonjoin(FAKEURLPREFIX, canonjoin(TESTINPUTDIR, dataset));
             if(ext != null) url += "." + ext.toString();
-            if(constraint != null) {
-                url += "?" + CONSTRAINTTAG + "=";
-                String ce = constraint;
+            return url;
+        }
+
+        String makequery(RequestMode ext)
+        {
+            String query = "";
+            if(this.constraint != null) {
+                String ce = this.constraint;
                 // Escape it
                 ce = Escape.urlEncodeQuery(ce);
-                url += ce;
+                query = ce;
             }
-            return url;
+            return query;
         }
 
         public String toString()
@@ -132,7 +153,7 @@ public class TestServletConstraints extends DapTestCommon
     //////////////////////////////////////////////////
     // Instance variables
 
-    // Test cases
+    protected MockMvc mockMvc;
 
     List<ConstraintTest> alltestcases = new ArrayList<ConstraintTest>();
 
@@ -144,7 +165,31 @@ public class TestServletConstraints extends DapTestCommon
     //////////////////////////////////////////////////
 
     @Before
-    public void setup() {
+    public void setup()
+    {
+        StandaloneMockMvcBuilder mvcbuilder =
+                MockMvcBuilders.standaloneSetup(new Dap4Controller());
+        Validator v = new Validator()
+        {
+            public boolean supports(Class<?> clazz)
+            {
+                return true;
+            }
+
+            public void validate(Object target, Errors errors)
+            {
+                return;
+            }
+        };
+        mvcbuilder.setValidator(v);
+        this.mockMvc = mvcbuilder.build();
+        setTESTDIRS(RESOURCEPATH);
+        AbstractDSP.TESTING = true;
+        DapController.TESTING = true;
+        DapCache.registerDSP(FileDSP.class);
+        DapCache.registerDSP(SynDSP.class);
+        if(prop_ascii)
+            Generator.setASCII(true);
         ConstraintTest.setRoots(canonjoin(getResourceRoot(), TESTINPUTDIR),
                 canonjoin(getResourceRoot(), BASELINEDIR),
                 canonjoin(getResourceRoot(), GENERATEDIR));
@@ -159,7 +204,9 @@ public class TestServletConstraints extends DapTestCommon
     chooseTestcases()
     {
         if(false) {
-            chosentests = locate(5);
+            chosentests = locate(1);
+            prop_visual = true;
+            prop_debug = true;
         } else {
             for(ConstraintTest tc : alltestcases) {
                 chosentests.add(tc);
@@ -298,25 +345,24 @@ public class TestServletConstraints extends DapTestCommon
 
     //////////////////////////////////////////////////
     // Junit test methods
+
     @Test
     public void testServletConstraints()
             throws Exception
     {
-        boolean pass = true;
+        DapCache.flush();
         for(ConstraintTest testcase : chosentests) {
-            if(!doOneTest(testcase))
-                pass = false;
+            doOneTest(testcase);
         }
-        Assert.assertTrue("***Fail: TestServletConstraints", pass);
     }
 
     //////////////////////////////////////////////////
     // Primary test method
-    boolean
+
+    void
     doOneTest(ConstraintTest testcase)
             throws Exception
     {
-        boolean pass = true;
         System.out.println("Testcase: " + testcase.toString());
         System.out.println("Baseline: " + testcase.baselinepath);
 
@@ -324,78 +370,68 @@ public class TestServletConstraints extends DapTestCommon
             RequestMode ext = RequestMode.modeFor(extension);
             switch (ext) {
             case DMR:
-                pass = dodmr(testcase);
+                dodmr(testcase);
                 break;
             case DAP:
-                pass = dodata(testcase);
+                dodata(testcase);
                 break;
             default:
-                assert (false);
-                if(!pass) break;
-            }
-            if(!pass) {
-                System.err.printf("TestServletConstraint: fail: %s ext=%s\n", testcase, extension);
-                System.err.flush();
-                break;
+                Assert.assertTrue("Unknown extension", false);
             }
         }
-        return pass;
     }
 
-    boolean
+    void
     dodmr(ConstraintTest testcase)
             throws Exception
     {
-        boolean pass = true;
         String url = testcase.makeurl(RequestMode.DMR);
-        // Create request and response objects
-        Mocker mocker = new Mocker("dap4",url,this);
-        byte[] byteresult = null;
+        String query = testcase.makequery(RequestMode.DMR);
 
-        // See if the servlet can process this
-        try {
-            byteresult = mocker.execute();
-        } catch (Throwable t) {
-            System.out.println(testcase.xfail ? "XFail" : "Fail");
-            t.printStackTrace();
-            return testcase.xfail;
-        }
+        RequestBuilder rb = MockMvcRequestBuilders
+                .get(url)
+                .servletPath(url)
+                .param(CONSTRAINTTAG, query);
+
+        MvcResult result = this.mockMvc.perform(rb).andReturn();
+        // Collect the output
+        MockHttpServletResponse res = result.getResponse();
+        byte[] byteresult = res.getContentAsByteArray();
 
         // Test by converting the raw output to a string
         String sdmr = new String(byteresult, UTF8);
         if(prop_visual)
             visual(url, sdmr);
-        if(prop_baseline) {
+        if(!testcase.xfail && prop_baseline) {
             writefile(testcase.baselinepath + ".dmr", sdmr);
         } else if(prop_diff) { //compare with baseline
             // Read the baseline file
             String baselinecontent = readfile(testcase.baselinepath + ".dmr");
             System.out.println("DMR Comparison:");
-            pass = same(getTitle(),baselinecontent, sdmr);
-            System.out.println(pass ? "Pass" : "Fail");
+            Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdmr));
         }
-        return pass;
     }
 
-    boolean
+    void
     dodata(ConstraintTest testcase)
             throws Exception
     {
-        boolean pass = true;
         String baseline;
         RequestMode mode = RequestMode.DAP;
-        String methodurl = testcase.makeurl(mode);
-        // Create request and response objects
-        Mocker mocker = new Mocker("dap4",methodurl,this);
-        byte[] byteresult = null;
+        String url = testcase.makeurl(mode);
+        String query = testcase.makequery(RequestMode.DMR);
 
-        try {
-            byteresult = mocker.execute();
-        } catch (Throwable t) {
-            t.printStackTrace();
-            return false;
-        }
-        if(DEBUG) {
+        RequestBuilder rb = MockMvcRequestBuilders
+                .get(url)
+                .servletPath(url)
+                .param(CONSTRAINTTAG, query);
+
+        MvcResult result = this.mockMvc.perform(rb).andReturn();
+        // Collect the output
+        MockHttpServletResponse res = result.getResponse();
+        byte[] byteresult = res.getContentAsByteArray();
+
+        if(prop_debug || DEBUG) {
             DapDump.dumpbytes(ByteBuffer.wrap(byteresult).order(ByteOrder.nativeOrder()), true);
         }
 
@@ -406,7 +442,7 @@ public class TestServletConstraints extends DapTestCommon
 
         String sdmr = reader.readDMR(); // Read the DMR
         if(prop_visual)
-            visual(methodurl, sdmr);
+            visual(url, sdmr);
 
         Dump printer = new Dump();
         String sdata = printer.dumpdata(reader, true, reader.getByteOrder(), testcase.template);
@@ -414,7 +450,7 @@ public class TestServletConstraints extends DapTestCommon
         if(prop_visual)
             visual(testcase.title + ".dap", sdata);
 
-        if(prop_baseline)
+        if(!testcase.xfail && prop_baseline)
             writefile(testcase.baselinepath + ".dap", sdata);
 
         if(prop_diff) {
@@ -422,11 +458,8 @@ public class TestServletConstraints extends DapTestCommon
             // Read the baseline file
             System.out.println("Note Comparison:");
             String baselinecontent = readfile(testcase.baselinepath + ".dap");
-            pass = same(getTitle(),baselinecontent, sdata);
-            System.out.println(pass ? "Pass" : "Fail");
+            Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdata));
         }
-
-        return pass;
     }
 
     //////////////////////////////////////////////////
@@ -449,21 +482,4 @@ public class TestServletConstraints extends DapTestCommon
         }
         return results;
     }
-    //////////////////////////////////////////////////
-    // Stand alone
-
-    static public void
-    main(String[] argv)
-    {
-        try {
-            new TestServlet().testServlet();
-        } catch (Exception e) {
-            System.err.println("*** FAIL");
-            e.printStackTrace();
-            System.exit(1);
-        }
-        System.err.println("*** PASS");
-        System.exit(0);
-    }// main
-
-} // class TestServlet
+}

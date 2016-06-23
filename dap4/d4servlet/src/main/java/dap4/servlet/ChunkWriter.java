@@ -18,9 +18,9 @@ public class ChunkWriter extends OutputStream
 
     static final protected boolean DEBUG = false;
 
-    static final int MAXCHUNKSIZE = 0xFFFFFF;
+    static final int MAXCHUNKSIZE = 0xFFFF;
 
-    static final long DEFAULTWRITELIMIT = 100*1000000;
+    static final long DEFAULTWRITELIMIT = 1*1000000;
 
     static final int SIZEOF_INTEGER = 4;
 

@@ -74,121 +74,6 @@ public abstract class Convert
     //////////////////////////////////////////////////
 
     /**
-     * Given a DapAttribute basetype
-     * convert it to avoid losing information.
-     * This primarily alters unsigned types
-     *
-     * @param basetype the basetype of the DapAttribute
-     * @return the upcast DapType
-     */
-    static public DapType
-    upcastType(DapType basetype)
-    {
-        switch (basetype.getTypeSort()) {
-        case UInt8:
-            return DapType.INT16;
-        case UInt16:
-            return DapType.INT32;
-        case UInt32:
-            return DapType.INT64;
-        default:
-            break;
-        }
-        return basetype;
-    }
-
-    /**
-     * Given an value from a DapAttribute,
-     * convert it to avoid losing information.
-     * This primarily alters unsigned types
-     *
-     * @param o       the object to upcast
-     * @param srctype the basetype of the DapAttribute
-     * @return the upcast value
-     */
-    static public Object
-    upcast(Object o, DapType srctype)
-    {
-        Object result = null;
-        TypeSort otype = TypeSort.classToType(o);
-        TypeSort srcatomtype = srctype.getTypeSort();
-        if(otype == null)
-            throw new ConversionException("Unexpected value type: " + o.getClass());
-        switch (srcatomtype) {
-        case UInt8:
-            long lvalue = ((Byte) o).longValue();
-            lvalue &= 0xFFL;
-            result = new Short((short) lvalue);
-            break;
-        case UInt16:
-            lvalue = ((Short) o).longValue();
-            lvalue &= 0xFFFFL;
-            result = new Integer((int) lvalue);
-            break;
-        case UInt32:
-            lvalue = ((Integer) o).longValue();
-            lvalue &= 0xFFFFFFFFL;
-            result = new Long(lvalue);
-            break;
-        default:
-            result = o;
-            break;
-        }
-        return result;
-    }
-
-
-    static public int getJavaSize(DapType daptype)
-    {
-        TypeSort atomictype = daptype.getAtomicType();
-        return getJavaSize(atomictype);
-    }
-
-    /* Get the size of an equivalent java object; zero if not defined */
-    static public int getJavaSize(TypeSort atomtype)
-    {
-        switch (atomtype) {
-        case Char:
-        case Int8:
-        case UInt8:
-            return 1;
-        case Int16:
-        case UInt16:
-            return 2;
-        case Int32:
-        case UInt32:
-            return 4;
-        case Int64:
-        case UInt64:
-            return 8;
-        case Float32:
-            return 4;
-        case Float64:
-            return 8;
-        default:
-            break;
-        }
-        return 0;
-    }
-
-    /**
-     * Peg a value to either the min or max
-     * depending on sign.
-     *
-     * @param value the value to peg
-     * @param min   peg to this if value is < min
-     * @param max   peg to this if value is > max
-     * @return pegg'ed value
-     */
-    static long
-    minmax(long value, long min, long max)
-    {
-        if(value < min) return min;
-        if(value > max) return max;
-        return value;
-    }
-
-    /**
      * Convert Object to a value consistent with the given type.
      * This is the primary conversion method.
      *
@@ -217,124 +102,9 @@ public abstract class Convert
         assert (!srcatomtype.isEnumType());
 
         // presage
-        long lvalue = 0;
-        double dvalue = 0.0;
-        if(srcatomtype.isNumericType())
-            lvalue = Convert.longValue(srctype, value);
-        else if(srcatomtype.isFloatType())
-            dvalue = Convert.doubleValue(srctype, value);
 
-        boolean fail = false;
-        switch (dstatomtype) {
-        case Char:
-            if(!srcatomtype.isNumericType()) {
-                fail = true;
-                break;
-            }
-            lvalue &= 0xFFL;
-            result = Character.valueOf((char) lvalue);
-            break;
-        case UInt8:
-            if(!srcatomtype.isNumericType()) {
-                fail = true;
-                break;
-            }
-            lvalue &= 0xFFL;
-            result = Byte.valueOf((byte) lvalue);
-            break;
-        case Int8:
-            if(!srcatomtype.isNumericType()) {
-                fail = true;
-                break;
-            }
-            result = Byte.valueOf((byte) lvalue);
-            break;
-        case UInt16:
-            if(!srcatomtype.isNumericType()) {
-                fail = true;
-                break;
-            }
-            lvalue &= 0xFFFFL;
-            result = Short.valueOf((short) lvalue);
-            break;
-        case Int16:
-            if(!srcatomtype.isNumericType()) {
-                fail = true;
-                break;
-            }
-            result = Short.valueOf((short) lvalue);
-            break;
-        case UInt32:
-            if(!srcatomtype.isNumericType()) {
-                fail = true;
-                break;
-            }
-            lvalue &= 0xFFFFL;
-            result = Integer.valueOf((int) lvalue);
-            break;
-        case Int32:
-            if(!srcatomtype.isNumericType()) {
-                fail = true;
-                break;
-            }
-            result = Integer.valueOf((int) lvalue);
-            break;
-        case Int64:
-        case UInt64:
-            if(!srcatomtype.isNumericType()) {
-                fail = true;
-                break;
-            }
-            result = Long.valueOf(lvalue);
-            break;
-
-        case Float32:
-            if(!srcatomtype.isNumericType()) {
-                fail = true;
-                break;
-            }
-            result = Float.valueOf((float) dvalue);
-            break;
-        case Float64:
-            if(!srcatomtype.isNumericType()) {
-                fail = true;
-                break;
-            }
-            result = Double.valueOf(dvalue);
-            break;
-
-        case String:
-        case URL:
-            if(srcatomtype == TypeSort.Opaque) {
-            } else
-                result = value.toString();
-            break;
-
-        case Opaque:
-            if(srcatomtype != TypeSort.Opaque) {
-                fail = true;
-                break;
-            }
-            result = value;
-            break;
-
-        case Enum:
-            if(!srcatomtype.isIntegerType()) {
-                fail = true;
-                break;
-            }
-            // Check that the src value matches one of the dst enum consts
-            //Coverity[FB.BC_UNCONFIRMED_CAST]
-            DapEnumeration en = (DapEnumeration) dsttype;
-            if(en.lookup(lvalue) == null)
-                throw new ConversionException("Enum constant failure");
-            result = Long.valueOf(lvalue);
-            break;
-        default:
-            fail = true;
-            break;
-        }
-        if(fail) {
+        result = CoreTypeFcns.cvt(dsttype,value);
+        if(result == null) {
             throw new ConversionException(
                 String.format("Cannot convert: %s -> %s", srcatomtype, dstatomtype));
         }
@@ -440,52 +210,6 @@ public abstract class Convert
     }
 
 
-    /**
-     * Force a numeric value to be in a specified range
-     * Only defined for simple integers (ValueClass LONG)
-     * WARNING: unsigned values are forced into the
-     * signed size, but the proper bit pattern is maintained.
-     * The term "force" means that if the value is outside the typed
-     * min/max values, it is pegged to the min or max value depending
-     * on the sign. Note that truncation is not used.
-     *
-     * @param basetype the type to force value to in range
-     * @param value    the value to force
-     * @return forced value
-     * @throws ConversionException if forcing is not possible
-     */
-    static public long forceRange(TypeSort basetype, long value)
-    {
-        assert basetype.isIntegerType() : "Internal error";
-        switch (basetype) {
-        case Char:
-            value = minmax(value, 0, 255);
-            break;
-        case Int8:
-            value = minmax(value, (long) Byte.MIN_VALUE, (long) Byte.MAX_VALUE);
-            break;
-        case UInt8:
-            value = value & 0xFFL;
-            break;
-        case Int16:
-            value = minmax(value, (long) Short.MIN_VALUE, (long) Short.MAX_VALUE);
-            break;
-        case UInt16:
-            value = value & 0xFFFFL;
-            break;
-        case Int32:
-            value = minmax(value, (long) Integer.MIN_VALUE, (long) Integer.MAX_VALUE);
-            break;
-        case UInt32:
-            value = value & 0xFFFFFFFFL;
-            break;
-        case Int64:
-        case UInt64:
-            break; // value = value case Int64:
-        default:
-        }
-        return value;
-    }
 
     /**
      * Force a double value into either float or double range
@@ -533,7 +257,7 @@ public abstract class Convert
                 throw new ConversionException("Expected integer value: " + value);
             }
             // Force into range
-            lvalue = forceRange(atomtype, lvalue);
+            lvalue = CoreTypeFcns.forceRange(atomtype, lvalue);
             switch (atomtype) {
             case UInt8:
             case Int8:

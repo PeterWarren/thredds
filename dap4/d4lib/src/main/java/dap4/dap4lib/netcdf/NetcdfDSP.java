@@ -14,20 +14,16 @@ import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
-import dap4.core.data.*;
-import dap4.core.dmr.*;
-import dap4.core.util.*;
-import dap4.dap4lib.*;
+import dap4.core.data.DSP;
+import dap4.core.data.DataDataset;
+import dap4.core.dmr.DMRFactory;
+import dap4.core.util.DapContext;
+import dap4.core.util.DapException;
+import dap4.dap4lib.AbstractDSP;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-import static dap4.dap4lib.netcdf.DapNetcdf.*;
-import static dap4.dap4lib.netcdf.Nc4DMRFactory.*;
+import static dap4.dap4lib.netcdf.DapNetcdf.NC_NOWRITE;
 
 /**
  * DSP for reading netcdf files through jni interface to netcdf4 library
@@ -77,7 +73,6 @@ public class NetcdfDSP extends AbstractDSP
     }
 
 
-
     //////////////////////////////////////////////////
     // Static variables
 
@@ -107,7 +102,7 @@ public class NetcdfDSP extends AbstractDSP
     protected boolean trace = false;
     protected boolean closed = false;
 
-    protected int ncid = -1;        // file id
+    protected int ncid = -1;        // file id ; also set as DSP.source
     protected int format = 0;       // from nc_inq_format
     protected int mode = 0;
     protected String path = null;
@@ -148,20 +143,21 @@ public class NetcdfDSP extends AbstractDSP
         IntByReference ncidp = new IntByReference();
         try {
             mode = NC_NOWRITE;
-            Nc4Data.errcheck(nc4,ret = nc4.nc_open(path, mode, ncidp));
+            Nc4Data.errcheck(nc4, ret = nc4.nc_open(path, mode, ncidp));
             this.ncid = ncidp.getValue();
+            setSource(this.ncid);
             // Figure out what kind of file
             IntByReference formatp = new IntByReference();
-            Nc4Data.errcheck(nc4,ret = nc4.nc_inq_format(ncid, formatp));
+            Nc4Data.errcheck(nc4, ret = nc4.nc_inq_format(ncid, formatp));
             this.format = formatp.getValue();
             if(DEBUG)
                 System.out.printf("TestNetcdf: open: %s; ncid=%d; format=%d%n",
                         path, ncid, this.format);
             // Compile the DMR 
-	    Nc4DMRCompiler dmrcompiler = new Nc4DMRCompiler(this,ncid,dmrfactory);
-	    this.dmr = dmrcompiler.compile();
-	    Nc4DataCompiler datacompiler = new Nc4DataCompiler(this,nc4,datafactory);
-	    datacompiler.compile(); // returns result via setDataset
+            Nc4DMRCompiler dmrcompiler = new Nc4DMRCompiler(this, ncid, dmrfactory);
+            this.dmr = dmrcompiler.compile();
+            Nc4DataCompiler datacompiler = new Nc4DataCompiler(this, nc4, datafactory);
+            datacompiler.compile(); // returns result via setDataset
             return this;
         } catch (Exception t) {
             t.printStackTrace();
@@ -176,22 +172,30 @@ public class NetcdfDSP extends AbstractDSP
         if(this.closed) return;
         if(this.ncid < 0) return;
         int ret = nc4.nc_close(ncid);
-        Nc4Data.errcheck(nc4,ret);
+        Nc4Data.errcheck(nc4, ret);
         closed = true;
         if(trace)
             System.out.printf("NetcdfDSP: closed: %s%n", path);
     }
 
-    protected DMRFactory getFactory() {return new Nc4DMRFactory();}
+    protected DMRFactory getFactory()
+    {
+        return new Nc4DMRFactory();
+    }
 
     //////////////////////////////////////////////////
     // Accessors
     //////////////////////////////////////////////////
     // Accessors
 
-    public DapNetcdf getJNI() {return this.nc4;}
+    public DapNetcdf getJNI()
+    {
+        return this.nc4;
+    }
 
-    public String getPath() {return path;}
-
+    public String getPath()
+    {
+        return path;
+    }
 
 }

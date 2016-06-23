@@ -40,6 +40,8 @@ public class DapRequest
     static public final String WEBINFPATH = "/WEB-INF";
     static public final String RESOURCEDIRNAME = "resources";
 
+    static public final String CONSTRAINTTAG = "dap4.ce";
+
     //////////////////////////////////////////////////
     // Instance variables
 
@@ -109,11 +111,22 @@ public class DapRequest
     parse()
             throws IOException
     {
-        this.url = request.getRequestURL().toString();// does not include query
-        this.querystring = request.getQueryString();
+        this.url = request.getRequestURL().toString(); // does not include query
+        this.querystring = request.getQueryString();    // raw (undecoded)
+        // When using Spring Mock, the query is part of the parameters
+        if(this.controller.TESTING && this.querystring == null) {
+            String param = request.getParameter(CONSTRAINTTAG); // raw?
+            if(param != null) {
+                StringBuilder buf = new StringBuilder();
+                buf.append(CONSTRAINTTAG);
+                buf.append('=');
+                buf.append(param);
+                this.querystring = buf.toString();
+            }
+        }
         XURI xuri;
         try {
-            xuri = new XURI(this.url);
+            xuri = new XURI(this.url).setQuery(this.querystring);
         } catch (URISyntaxException e) {
             throw new IOException(e);
         }

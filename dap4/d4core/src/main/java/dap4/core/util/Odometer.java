@@ -269,7 +269,9 @@ public class Odometer implements Iterator<Index>
     public boolean
     isContiguous()
     {
-        return slices[slices.length - 1].isContiguous();
+        // currently disabled
+        return false;
+        // return slices[slices.length - 1].isContiguous();
     }
 
     public List<Slice>

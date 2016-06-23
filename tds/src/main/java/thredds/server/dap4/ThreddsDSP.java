@@ -91,6 +91,8 @@ public class ThreddsDSP extends CDMDSP
                 ncfile = TdsRequestedDataset.getNetcdfFile(this.request, this.response, path);
             return ncfile;
         } catch (Exception e) {
+            if(DEBUG)
+                e.printStackTrace();
             return null;
         }
     }

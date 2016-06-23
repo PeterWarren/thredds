@@ -22,6 +22,13 @@ import java.nio.ByteOrder;
 public class FileDSP extends D4DSP
 {
     //////////////////////////////////////////////////
+    // Constants
+
+    static protected final String[] EXTENSIONS = new String[]{
+                ".dap"
+        };
+
+    //////////////////////////////////////////////////
     // Instance variables
 
     //Coverity[FB.URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD]
@@ -50,13 +57,11 @@ public class FileDSP extends D4DSP
      */
     static public boolean dspMatch(String path, DapContext context)
     {
-        try {
-            XURI xuri = new XURI(path);
-            return (xuri.getProtocols().size() == 0
-                    || xuri.getBaseProtocol().equals("file"));
-        } catch (URISyntaxException use) {
-            return false;
-        }
+        for(String ext : EXTENSIONS) {
+                    if(path.endsWith(ext))
+                        return true;
+                }
+                return false;
     }
 
     @Override
@@ -81,15 +86,15 @@ public class FileDSP extends D4DSP
             // Absolutize
             if(!DapUtil.hasDriveLetter(filepath))
                 filepath = "/" + filepath;
-            FileInputStream stream = new FileInputStream(filepath);
-            this.raw = DapUtil.readbinaryfile(stream);
-            stream.close();
-            stream = new FileInputStream(filepath); // == rewind
-            ChunkInputStream rdr = new ChunkInputStream(stream, RequestMode.DAP);
-            String document = rdr.readDMR();
-            byte[] serialdata = DapUtil.readbinaryfile(rdr);
-            stream.close();
-            super.build(document, serialdata, rdr.getByteOrder());
+            try (FileInputStream stream = new FileInputStream(filepath)) {
+                this.raw = DapUtil.readbinaryfile(stream);
+            }
+            try (FileInputStream stream = new FileInputStream(filepath)) { // == rewind
+                ChunkInputStream rdr = new ChunkInputStream(stream, RequestMode.DAP);
+                String document = rdr.readDMR();
+                byte[] serialdata = DapUtil.readbinaryfile(rdr);
+                super.build(document, serialdata, rdr.getByteOrder());
+            }
             return this;
         } catch (IOException ioe) {
             throw new DapException(ioe);

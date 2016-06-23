@@ -36,6 +36,7 @@ import java.nio.charset.Charset;
 
 abstract public class DapController extends HttpServlet
 {
+    static public boolean TESTING = false;
 
     //////////////////////////////////////////////////
     // Constants

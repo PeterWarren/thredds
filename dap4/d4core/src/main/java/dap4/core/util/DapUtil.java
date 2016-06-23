@@ -589,13 +589,15 @@ abstract public class DapUtil // Should only contain static methods
     static public boolean
     isContiguous(List<Slice> slices)
     {
+        return false; // temporary
+        /*
         if(slices == null)
             return false;
         for(Slice s : slices) {
             if(!s.isContiguous())
                 return false;
         }
-        return true;
+        return true; */
     }
 
 

@@ -5,6 +5,7 @@
 package dap4.cdm.dsp;
 
 import dap4.cdm.CDMDataFactory;
+import dap4.cdm.CDMTypeFcns;
 import dap4.cdm.CDMUtil;
 import dap4.cdm.NodeMap;
 import dap4.core.data.*;
@@ -476,7 +477,7 @@ public class CDMDSP extends AbstractDSP
             throws DapException
     {
         // Atomic => not opaque and not enum
-        DapType basetype = CDMUtil.cdmtype2daptype(cdmvar.getDataType());
+        DapType basetype = CDMTypeFcns.cdmtype2daptype(cdmvar.getDataType());
         if(basetype == null)
             throw new DapException("DapFile: illegal CDM variable base type: " + cdmvar.getDataType());
         DapAtomicVariable dapvar = dmrfactory.newAtomicVariable(cdmvar.getShortName(), basetype, cdmvar);
@@ -674,7 +675,7 @@ public class CDMDSP extends AbstractDSP
     buildattribute(Attribute attr)
             throws DapException
     {
-        DapType basetype = CDMUtil.cdmtype2daptype(attr.getDataType());
+        DapType basetype = CDMTypeFcns.cdmtype2daptype(attr.getDataType());
         if(basetype == null)
             throw new DapException("DapFile: illegal CDM variable attribute type: " + attr.getDataType());
         DapAttribute dapattr = dmrfactory.newAttribute(attr.getShortName(), basetype, attr);

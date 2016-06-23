@@ -37,16 +37,15 @@ import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.dap4lib.DapCodes;
+import dap4.dap4lib.FileDSP;
 import dap4.servlet.DSPFactory;
 import dap4.servlet.DapCache;
 import dap4.servlet.DapController;
 import dap4.servlet.DapRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import thredds.core.TdsRequestedDataset;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -77,7 +76,7 @@ public class Dap4Controller extends DapController
             // For TDS, we only need to register one DSP type: ThreddsDSP.
             // This is because we will always serve only NetcdfFile objects.
             // See D4TSServlet for a multiple registration case.
-            registerDSP(ThreddsDSP.class, true);
+            DapCache.registerDSP(ThreddsDSP.class, true);
         }
 
     }
@@ -156,8 +155,8 @@ public class Dap4Controller extends DapController
         // MockServlet, so provide alternate.
         File realfile = null;
         if(TESTDIRS != null) {
-            for(String s: TESTDIRS) {
-                String path = DapUtil.canonjoin(s,relpath);
+            for(String s : TESTDIRS) {
+                String path = DapUtil.canonjoin(s, relpath);
                 File f = new File(path);
                 if(f.exists()) {
                     realfile = f;
@@ -165,7 +164,7 @@ public class Dap4Controller extends DapController
                 }
             }
         } else
-            realfile  = TdsRequestedDataset.getFile(relpath);
+            realfile = TdsRequestedDataset.getFile(relpath);
         if(realfile == null || !realfile.exists())
             throw new DapException("Requested file not found " + relpath)
                     .setCode(DapCodes.SC_NOT_FOUND);

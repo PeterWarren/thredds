@@ -14,6 +14,7 @@ import dap4.core.util.DapUtil;
 import dap4.dap4lib.ChecksumMode;
 import dap4.dap4lib.Dap4Util;
 import dap4.dap4lib.RequestMode;
+import dap4.dap4lib.LibTypeFcns;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -60,7 +61,7 @@ public class D4DataCompiler implements DataCompiler
      */
 
     public D4DataCompiler(DSP dsp, ChecksumMode checksummode,
-                        ByteBuffer databuffer, DAPDataFactory factory)
+                          ByteBuffer databuffer, DAPDataFactory factory)
             throws DapException
     {
         this.dsp = dsp;
@@ -88,7 +89,7 @@ public class D4DataCompiler implements DataCompiler
         if(DEBUG) {
             DapDump.dumpbytes(this.databuffer, false);
         }
-        this.datadataset = factory.newDataset(this.dsp, this.dataset, null);
+        this.datadataset = factory.newDataset(this.dsp, this.dataset, this.databuffer);
         this.dsp.setDataset(this.datadataset);
 
         // iterate over the variables represented in the databuffer
@@ -105,7 +106,7 @@ public class D4DataCompiler implements DataCompiler
         DataVariable array = null;
         boolean isscalar = dapvar.getRank() == 0;
         if(dapvar.getSort() == DapSort.ATOMICVARIABLE) {
-            array = compileAtomicVar((DapAtomicVariable)dapvar);
+            array = compileAtomicVar((DapAtomicVariable) dapvar);
         } else if(dapvar.getSort() == DapSort.STRUCTURE) {
             if(isscalar)
                 array = compileStructure((DapStructure) dapvar, null, 0);
@@ -131,7 +132,8 @@ public class D4DataCompiler implements DataCompiler
             throws DapException
     {
         DapType daptype = atomvar.getBaseType();
-        D4Data.D4DataAtomic data = (D4Data.D4DataAtomic)factory.newAtomicVariable(this.dsp, atomvar, databuffer.position());
+        D4Data.D4DataAtomic data =
+                (D4Data.D4DataAtomic) factory.newAtomicVariable(this.dsp, atomvar, getPos(this.databuffer));
         long total = 0;
         long dimproduct = data.getCount();
         if(!daptype.isEnumType() && !daptype.isFixedSize()) {
@@ -161,7 +163,7 @@ public class D4DataCompiler implements DataCompiler
             throws DapException
     {
         DataCompoundArray structarray
-                = factory.newCompoundArray(this.dsp, dapvar, null);
+                = factory.newCompoundArray(this.dsp, dapvar, getPos(this.databuffer));
         DapStructure struct = (DapStructure) dapvar;
         long dimproduct = structarray.getCount();
         for(int i = 0; i < dimproduct; i++) {
@@ -183,7 +185,8 @@ public class D4DataCompiler implements DataCompiler
     compileStructure(DapStructure dapstruct, DataCompoundArray array, int index)
             throws DapException
     {
-        DataStructure d4ds = factory.newStructure(dsp, dapstruct, array, index);
+        int pos = getPos(this.databuffer);
+        DataStructure d4ds = factory.newStructure(dsp, dapstruct, array, pos);
         List<DapVariable> dfields = dapstruct.getFields();
         for(int m = 0; m < dfields.size(); m++) {
             DapVariable dfield = dfields.get(m);
@@ -206,7 +209,7 @@ public class D4DataCompiler implements DataCompiler
     {
         DapSequence dapseq = (DapSequence) dapvar;
         DataCompoundArray seqarray
-                = factory.newCompoundArray(this.dsp, dapseq, null);
+                = factory.newCompoundArray(this.dsp, dapseq, getPos(this.databuffer));
         long dimproduct = seqarray.getCount();
         for(int i = 0; i < dimproduct; i++) {
             DataSequence dseq = compileSequence(dapseq, seqarray, i);
@@ -230,10 +233,12 @@ public class D4DataCompiler implements DataCompiler
     {
         List<DapVariable> dfields = dapseq.getFields();
         // Get the count of the number of records
-        long nrecs = getCount(databuffer);
-        DataSequence seq = factory.newSequence(this.dsp, dapseq, array, index);
+        long nrecs = getCount(this.databuffer);
+        int pos = getPos(this.databuffer);
+        DataSequence seq = factory.newSequence(this.dsp, dapseq, array, pos);
         for(int r = 0; r < nrecs; r++) {
-            DataRecord rec = factory.newRecord(this.dsp, dapseq, seq, r);
+            pos = getPos(this.databuffer);
+            DataRecord rec = factory.newRecord(this.dsp, dapseq, seq, pos);
             for(int m = 0; m < dfields.size(); m++) {
                 DapVariable dfield = dfields.get(m);
                 DataVariable dvfield = compileVar(dfield);
@@ -273,6 +278,13 @@ public class D4DataCompiler implements DataCompiler
         return (int) count;
     }
 
+    static protected int
+    getPos(ByteBuffer data)
+    {
+        return data.position();
+    }
+
+
     /**
      * Compute the size in databuffer of the serialized form
      *
@@ -282,8 +294,7 @@ public class D4DataCompiler implements DataCompiler
     static protected int
     computeTypeSize(DapType daptype)
     {
-        TypeSort atype = daptype.getAtomicType();
-        return Dap4Util.daptypeSize(atype);
+        return LibTypeFcns.size(daptype);
     }
 
     static protected long

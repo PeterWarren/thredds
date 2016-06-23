@@ -6,7 +6,10 @@ package dap4.dap4lib;
 
 import dap4.core.data.DSP;
 import dap4.core.data.DataDataset;
-import dap4.core.dmr.*;
+import dap4.core.dmr.DMRFactory;
+import dap4.core.dmr.DapAttribute;
+import dap4.core.dmr.DapDataset;
+import dap4.core.dmr.DapNode;
 import dap4.core.dmr.parser.Dap4Parser;
 import dap4.core.dmr.parser.Dap4ParserImpl;
 import dap4.core.util.DapContext;
@@ -28,6 +31,7 @@ abstract public class AbstractDSP implements DSP
     //////////////////////////////////////////////////
     // constants
 
+    static protected final boolean DEBUG = false;
     static protected final boolean PARSEDEBUG = false;
 
     static public final boolean USEDOM = false;
@@ -42,7 +46,7 @@ abstract public class AbstractDSP implements DSP
     protected DapContext context = null;
     protected DapDataset dmr = null;
     protected String path = null;
-    protected ByteBuffer databuffer = null;
+    protected Object source = null;
     protected ByteOrder order = null;
     protected ChecksumMode checksummode = ChecksumMode.DAP;
     protected DataDataset dataset = null;
@@ -129,9 +133,15 @@ abstract public class AbstractDSP implements DSP
         this.path = path;
     }
 
-    public ByteBuffer getData()
+    @Override
+    public Object getSource()
     {
-        return this.databuffer;
+        return this.source;
+    }
+
+    public void setSource(Object src)
+    {
+        this.source = src;
     }
 
     public ByteOrder
