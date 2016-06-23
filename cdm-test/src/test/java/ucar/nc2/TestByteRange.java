@@ -32,23 +32,16 @@
 
 package ucar.nc2;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import ucar.unidata.util.test.UnitTestCommon;
 import ucar.unidata.util.test.category.NeedsExternalResource;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestByteRange extends UnitTestCommon
 {
@@ -71,7 +64,7 @@ public class TestByteRange extends UnitTestCommon
 
     public TestByteRange()
     {
-	super("ByteRange tests");
+        super("ByteRange tests");
         definetestcases();
     }
 
@@ -81,7 +74,8 @@ public class TestByteRange extends UnitTestCommon
         String threddsRoot = getThreddsroot();
         testcases = new ArrayList<Testcase>();
         testcases.add(new Testcase("TestByteRanges",
-                "http://localhost:8081/thredds/fileServer/scanLocal/sss_binned_L3_MON_SCI_V4.0_2011.nc"
+                "http://localhost:8081/thredds/fileServer/localContent/testData.nc"
+                // "http://localhost:8081/thredds/fileServer/scanLocal/sss_binned_L3_MON_SCI_V4.0_2011.nc"
                 //"http://data.nodc.noaa.gov/thredds/fileServer/aquarius/nodc_binned_V4.0/monthly/sss_binned_L3_MON_SCI_V4.0_2011.nc"
         ));
     }
@@ -99,52 +93,127 @@ public class TestByteRange extends UnitTestCommon
     }
 
     void process1(Testcase testcase)
-        throws Exception
+            throws Exception
     {
         NetcdfFile ncfile = NetcdfFile.open(testcase.url);
         if(ncfile == null)
             throw new Exception("Cannot read: " + testcase.url);
         StringWriter ow = new StringWriter();
         PrintWriter pw = new PrintWriter(ow);
-        ncfile.writeCDL(pw, false);
+        ncfile.writeCDL(pw, true);
         pw.close();
         ow.close();
         String captured = ow.toString();
-	if(prop_visual)
+        if(prop_visual)
             visual(testcase.title, captured);
-//	if(prop_diff)
-//            diff(testcase, captured);
-    }
-
-/*
-    void diff(Testcase testcase, String captured)
-        throws Exception
-    {
-        Reader baserdr = new StringReader(testcase.cdl);
-        StringReader resultrdr = new StringReader(captured);
-        // Diff the two files
-        Diff diff = new Diff("Testing " + testcase.title);
-        boolean pass = !diff.doDiff(baserdr, resultrdr);
-        baserdr.close();
-        resultrdr.close();
-    }
-
-    protected void
-    baseline(Testcase testcase, String output)
-    {
-        try {
-            // See if the cdl is in a file or a string.
-            if(!testcase.cdl.startsWith("file://"))
-                return;
-            File f = new File(testcase.cdl.substring("file://".length(), testcase.cdl.length()));
-            Writer w = new FileWriter(f);
-            w.write(output);
-            w.close();
-        } catch (IOException ioe) {
-            System.err.println("IOException");
+        if(prop_diff) {
+            Assert.assertTrue("***Fail: Files are different",
+                    same(getTitle(), testData_baseline, captured));
         }
-
     }
-*/
+
+    //////////////////////////////////////////////////
+    // baseline
+
+    String testData_baseline =
+            "netcdf http\\://localhost\\:8081/thredds/fileServer/localContent/testData {\n"
+                    + "  dimensions:\n"
+                    + "    record = UNLIMITED;   // (1 currently)\n"
+                    + "    x = 135;\n"
+                    + "    y = 95;\n"
+                    + "    datetime_len = 21;\n"
+                    + "    nmodels = 1;\n"
+                    + "    ngrids = 1;\n"
+                    + "    nav = 1;\n"
+                    + "    nav_len = 100;\n"
+                    + "  variables:\n"
+                    + "    double reftime(record);\n"
+                    + "      reftime:long_name = \"reference time\";\n"
+                    + "      reftime:units = \"hours since 1992-1-1\";\n"
+                    + "\n"
+                    + "    double valtime(record);\n"
+                    + "      valtime:long_name = \"valid time\";\n"
+                    + "      valtime:units = \"hours since 1992-1-1\";\n"
+                    + "\n"
+                    + "    char datetime(record, datetime_len);\n"
+                    + "      datetime:long_name = \"reference date and time\";\n"
+                    + "\n"
+                    + "    float valtime_offset(record);\n"
+                    + "      valtime_offset:long_name = \"hours from reference time\";\n"
+                    + "      valtime_offset:units = \"hours\";\n"
+                    + "\n"
+                    + "    int model_id(nmodels);\n"
+                    + "      model_id:long_name = \"generating process ID number\";\n"
+                    + "\n"
+                    + "    char nav_model(nav, nav_len);\n"
+                    + "      nav_model:long_name = \"navigation model name\";\n"
+                    + "\n"
+                    + "    int grid_type_code(nav);\n"
+                    + "      grid_type_code:long_name = \"GRIB-1 GDS data representation type\";\n"
+                    + "\n"
+                    + "    char grid_type(nav, nav_len);\n"
+                    + "      grid_type:long_name = \"GRIB-1 grid type\";\n"
+                    + "\n"
+                    + "    char grid_name(nav, nav_len);\n"
+                    + "      grid_name:long_name = \"grid name\";\n"
+                    + "\n"
+                    + "    int grid_center(nav);\n"
+                    + "      grid_center:long_name = \"GRIB-1 originating center ID\";\n"
+                    + "\n"
+                    + "    int grid_number(nav, ngrids);\n"
+                    + "      grid_number:long_name = \"GRIB-1 catalogued grid numbers\";\n"
+                    + "      grid_number:_FillValue = -9999;\n"
+                    + "\n"
+                    + "    char x_dim(nav, nav_len);\n"
+                    + "      x_dim:long_name = \"x dimension name\";\n"
+                    + "\n"
+                    + "    char y_dim(nav, nav_len);\n"
+                    + "      y_dim:long_name = \"y dimension name\";\n"
+                    + "\n"
+                    + "    int Nx(nav);\n"
+                    + "      Nx:long_name = \"number of points along x-axis\";\n"
+                    + "\n"
+                    + "    int Ny(nav);\n"
+                    + "      Ny:long_name = \"number of points along y-axis\";\n"
+                    + "\n"
+                    + "    float La1(nav);\n"
+                    + "      La1:long_name = \"latitude of first grid point\";\n"
+                    + "      La1:units = \"degrees_north\";\n"
+                    + "\n"
+                    + "    float Lo1(nav);\n"
+                    + "      Lo1:long_name = \"longitude of first grid point\";\n"
+                    + "      Lo1:units = \"degrees_east\";\n"
+                    + "\n"
+                    + "    float Lov(nav);\n"
+                    + "      Lov:long_name = \"orientation of the grid\";\n"
+                    + "      Lov:units = \"degrees_east\";\n"
+                    + "\n"
+                    + "    float Dx(nav);\n"
+                    + "      Dx:long_name = \"x-direction grid length\";\n"
+                    + "      Dx:units = \"km\";\n"
+                    + "\n"
+                    + "    float Dy(nav);\n"
+                    + "      Dy:long_name = \"y-direction grid length\";\n"
+                    + "      Dy:units = \"km\";\n"
+                    + "\n"
+                    + "    byte ProjFlag(nav);\n"
+                    + "      ProjFlag:long_name = \"projection center flag\";\n"
+                    + "\n"
+                    + "    byte ResCompFlag(nav);\n"
+                    + "      ResCompFlag:long_name = \"resolution and component flags\";\n"
+                    + "\n"
+                    + "    float Z_sfc(record, y, x);\n"
+                    + "      Z_sfc:long_name = \"Geopotential height, gpm\";\n"
+                    + "      Z_sfc:units = \"gp m\";\n"
+                    + "      Z_sfc:_FillValue = -9999.0f;\n"
+                    + "      Z_sfc:navigation = \"nav\";\n"
+                    + "\n"
+                    + "  // global attributes:\n"
+                    + "  :record = \"reftime, valtime\";\n"
+                    + "  :history = \"2003-09-25 16:09:26 - created by gribtocdl 1.4 - 12.12.2002\";\n"
+                    + "  :title = \"CMC_reg_HGT_SFC_0_ps60km_2003092500_P000.grib\";\n"
+                    + "  :Conventions = \"NUWG\";\n"
+                    + "  :version = 0.0;\n"
+                    + "}\n";
 
 }
