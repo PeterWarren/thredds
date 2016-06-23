@@ -162,7 +162,7 @@ public class ThreddsWmsCatalogue implements WmsCatalogue {
     @Override
     public Dataset getDatasetFromId(String layerName) {
         /*
-         * This catalogue only has one dataset, so we can ignore the Notes
+         * This catalogue only has one dataset, so we can ignore the ID
          */
         return dataset;
     }
@@ -297,14 +297,14 @@ public class ThreddsWmsCatalogue implements WmsCatalogue {
     @Override
     public LayerNameMapper getLayerNameMapper() {
         /*
-         * Defines the mapping of layer names to dataset Notes / variable Notes.
+         * Defines the mapping of layer names to dataset ID / variable ID.
          * 
          * In ncWMS we map WMS layer names to pairs of datasets/variables.
          * 
-         * In THREDDS, this is not the case. The dataset Notes is essentially
+         * In THREDDS, this is not the case. The dataset ID is essentially
          * encoded in the URL and has already been used to create this
          * ThreddsWmsCatalogue object. The layer name then maps directly to the
-         * variable Notes within that dataset. This implementation reflects that
+         * variable ID within that dataset. This implementation reflects that
          * usage
          */
         return new LayerNameMapper() {
@@ -330,7 +330,7 @@ public class ThreddsWmsCatalogue implements WmsCatalogue {
                     throws EdalLayerNotFoundException {
                 /*
                  * There is one dataset per catalogue, so we ignore the layer
-                 * name and return its Notes here
+                 * name and return its ID here
                  */
                 return dataset.getId();
             }
@@ -364,7 +364,7 @@ public class ThreddsWmsCatalogue implements WmsCatalogue {
         return new EnhancedVariableMetadata() {
 
             /**
-             * @return The Notes of the variable this {@link EnhancedVariableMetadata} is
+             * @return The ID of the variable this {@link EnhancedVariableMetadata} is
              * associated with
              */
             @Override

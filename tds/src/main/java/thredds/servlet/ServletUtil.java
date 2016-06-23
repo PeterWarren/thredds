@@ -569,11 +569,11 @@ public class ServletUtil {
     out.println("<I>(" + new Date(session.getLastAccessedTime()) +
             ")</I><BR>");
 
-    out.println("Requested session Notes from cookie: " +
+    out.println("Requested session ID from cookie: " +
             req.isRequestedSessionIdFromCookie() + "<BR>");
-    out.println("Requested session Notes from URL: " +
+    out.println("Requested session ID from URL: " +
             req.isRequestedSessionIdFromURL() + "<BR>");
-    out.println("Requested session Notes valid: " +
+    out.println("Requested session ID valid: " +
             req.isRequestedSessionIdValid() + "<BR>");
 
     out.println("<H3>Test URL Rewriting</H3>");

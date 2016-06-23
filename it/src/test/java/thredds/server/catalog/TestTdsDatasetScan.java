@@ -131,10 +131,10 @@ public class TestTdsDatasetScan {
   Current State in 4,6:
   1) no encoding in the XML:
 
-  <dataset name="encoding" Notes="scanCdmUnitTests/encoding">
-    <catalogRef xlink:href="d2.nc%3Bchunk%3D0/catalog.xml" xlink:title="d2.nc%3Bchunk%3D0" Notes="scanCdmUnitTests/encoding/d2.nc%3Bchunk%3D0" name=""/>
-    <catalogRef xlink:href="d2.nc;chunk=0/catalog.xml" xlink:title="d2.nc;chunk=0" Notes="scanCdmUnitTests/encoding/d2.nc;chunk=0" name=""/>
-    <catalogRef xlink:href="dir mit blank/catalog.xml" xlink:title="dir mit blank" Notes="scanCdmUnitTests/encoding/dir mit blank" name=""/>
+  <dataset name="encoding" ID="scanCdmUnitTests/encoding">
+    <catalogRef xlink:href="d2.nc%3Bchunk%3D0/catalog.xml" xlink:title="d2.nc%3Bchunk%3D0" ID="scanCdmUnitTests/encoding/d2.nc%3Bchunk%3D0" name=""/>
+    <catalogRef xlink:href="d2.nc;chunk=0/catalog.xml" xlink:title="d2.nc;chunk=0" ID="scanCdmUnitTests/encoding/d2.nc;chunk=0" name=""/>
+    <catalogRef xlink:href="dir mit blank/catalog.xml" xlink:title="dir mit blank" ID="scanCdmUnitTests/encoding/dir mit blank" name=""/>
   </dataset>
 
   2) no url encoding in the HTML:

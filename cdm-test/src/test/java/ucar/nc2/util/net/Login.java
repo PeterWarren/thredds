@@ -64,6 +64,7 @@ public class Login extends JFrame implements CredentialsProvider
 
   private Map<AuthScope, Credentials> creds = new HashMap<>();
 
+
     /**
      * constructor
      */

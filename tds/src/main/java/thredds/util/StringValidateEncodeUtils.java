@@ -162,10 +162,10 @@ public class StringValidateEncodeUtils {
   }
 
   /**
-   * Return true if the given String is a valid Notes string.
+   * Return true if the given String is a valid ID string.
    * <p>
    * <p>
-   * A String is considered a valid Notes string if:
+   * A String is considered a valid ID string if:
    * <ul>
    * <li>it contains no space separator characters (Unicode general
    * category Zs - Separator, Space); and</li>
@@ -174,7 +174,7 @@ public class StringValidateEncodeUtils {
    * </ul>
    *
    * @param id the String to validate
-   * @return true if the given String is a valid Notes string.
+   * @return true if the given String is a valid ID string.
    * @see #validSingleLineString(String)
    */
   public static boolean validIdString(String id) {

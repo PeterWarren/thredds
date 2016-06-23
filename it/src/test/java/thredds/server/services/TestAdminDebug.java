@@ -55,7 +55,7 @@ public class TestAdminDebug
 
     public TestAdminDebug(String path)
     {
-        this.path = path;
+	this.path = path;
         String userpwd = System.getProperty("userpwd");
         String hostport = System.getProperty("host");
         if(userpwd == null) userpwd = DFALTUSERPWD;
