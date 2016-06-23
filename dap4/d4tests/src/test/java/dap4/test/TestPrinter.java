@@ -8,7 +8,7 @@ import dap4.cdm.nc2.DapNetcdfFile;
 import dap4.core.dmr.DapDataset;
 import dap4.core.util.*;
 import dap4.core.data.DSP;
-import dap4.core.dmr.DMRPrint;
+import dap4.dap4lib.DMRPrint;
 import ucar.nc2.*;
 
 import java.io.IOException;

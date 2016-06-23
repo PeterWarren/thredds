@@ -2,7 +2,7 @@
    See the LICENSE file for more information.
 */
 
-package dap4.core.dmr;
+package dap4.dap4lib;
 
 import dap4.core.ce.CEConstraint;
 import dap4.core.dmr.*;

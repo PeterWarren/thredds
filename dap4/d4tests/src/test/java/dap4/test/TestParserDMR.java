@@ -4,12 +4,12 @@
 
 package dap4.test;
 
-import dap4.core.dmr.DMRPrint;
 import dap4.core.dmr.DapDataset;
 import dap4.core.dmr.ErrorResponse;
 import dap4.core.dmr.parser.Dap4Parser;
 import dap4.core.dmr.parser.Dap4ParserImpl;
 import dap4.core.dmr.parser.ParseUtil;
+import dap4.dap4lib.DMRPrint;
 import dap4.dap4lib.serial.D4DMRFactory;
 import org.junit.Assert;
 import org.junit.Test;

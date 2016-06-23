@@ -1,9 +1,10 @@
 /* Copyright 2012, UCAR/Unidata.
    See the LICENSE file for more information.
 */
-package dap4.core.data;
+package dap4.dap4lib;
 
 import dap4.core.ce.CEConstraint;
+import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.core.util.*;
 

@@ -7,6 +7,7 @@ package dap4.servlet;
 import dap4.core.ce.CEConstraint;
 import dap4.core.dmr.*;
 import dap4.core.util.*;
+import dap4.dap4lib.DMRPrint;
 
 import java.io.*;
 import java.nio.ByteBuffer;
