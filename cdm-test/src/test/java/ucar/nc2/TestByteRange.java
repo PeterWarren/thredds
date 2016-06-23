@@ -37,12 +37,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import ucar.unidata.util.test.UnitTestCommon;
 import ucar.unidata.util.test.category.NeedsExternalResource;
+import ucar.unidata.util.test.category.NotJenkins;
+import ucar.unidata.util.test.category.NotTravis;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Test that client side and server side byte range access works.
+ */
+@Category({NotJenkins.class,NotTravis.class}) // Temporary??
 public class TestByteRange extends UnitTestCommon
 {
     // Collect testcases locally
