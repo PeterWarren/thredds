@@ -29,6 +29,7 @@ dependencies {
 
     toolsUI project(':ui')
 
+    dap4lib project(':dap4:d4core')
     dap4lib project(':dap4:d4lib')
     dap4lib libraries["slf4j-jdk14"]
     d4ts project(':dap4:d4ts')
