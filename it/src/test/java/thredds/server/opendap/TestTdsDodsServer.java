@@ -68,18 +68,18 @@ import java.util.List;
 @Category(NeedsCdmUnitTest.class)
 public class TestTdsDodsServer {
 
-  static final String DODSPREFIX = "/dodsC"
-  static final String SCUTSUFFIX = /scanCdmUnitTests/tds";
+  static final String DODSPREFIX = "/dodsC";
+  static final String SCUTSUFFIX = "/scanCdmUnitTests/tds";
   static final String PATHPREFIX = DODSPREFIX+SCUTSUFFIX;
   static final String NCEPPREFIX = PATHPREFIX+"/ncep";
   static final String NAMSUFFIX = "/NAM_CONUS_20km_selectsurface_20100913_0000.grib2";
-  static final string NAMQUERY = "?Visibility_surface[0:1:0][0:1:0][0:1:0]";
+  static final String NAMQUERY = "?Visibility_surface[0:1:0][0:1:0][0:1:0]";
 
   static final String BADPATH = NCEPPREFIX+NAMSUFFIX+".badascii"+NAMQUERY;
   static final String OKPATH = NCEPPREFIX+NAMSUFFIX+".ascii"+NAMQUERY;
   static final String OKRESULT = SCUTSUFFIX+"/ncep"+NAMSUFFIX;
-  static final ALASKA22 = NCEPPREFIX+"/NAM_Alaska_22km_20100504_0000.grib1";
-  static final ALASK45 = NCEPPREFIX+"/NAM_Alaska_45km_conduit_20100913_0000.grib2";
+  static final String ALASKA22 = NCEPPREFIX+"/NAM_Alaska_22km_20100504_0000.grib1";
+  static final String ALASKA45 = NCEPPREFIX+"/NAM_Alaska_45km_conduit_20100913_0000.grib2";
 
   @Test
   public void checkBadRequest() {
