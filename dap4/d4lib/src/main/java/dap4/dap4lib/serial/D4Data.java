@@ -9,7 +9,6 @@ import dap4.core.dmr.*;
 import dap4.core.util.*;
 import dap4.dap4lib.AbstractData;
 import dap4.dap4lib.AbstractDataVariable;
-import dap4.dap4lib.Dap4Util;
 import dap4.dap4lib.LibTypeFcns;
 
 import java.nio.ByteBuffer;
@@ -117,7 +116,7 @@ public class D4Data
         {
             ByteBuffer src = (ByteBuffer) getDSP().getDataset().getSource();
             if(slices == null || slices.size() == 0) { // scalar
-                Object dst = LibTypeFcns.newVector(this.basetype,1);
+                Object dst = LibTypeFcns.newVector(this.basetype, 1);
                 extractObjectVector(this.basetype, src, dst, Index.SCALAR, 0, 1);
                 return dst;
             } else {// dimensioned
@@ -139,14 +138,14 @@ public class D4Data
                     assert lastslice.getStride() == 1;
                     long first = lastslice.getFirst();
                     long extent = lastslice.getCount();
-                    Object data = LibTypeFcns.newVector(this.basetype,extent);
-                    for(int i=0;odom.hasNext();) {
+                    Object data = LibTypeFcns.newVector(this.basetype, extent);
+                    for(int i = 0; odom.hasNext(); ) {
                         Index index = odom.next();
-                        index.indices[index.getRank()-1] += first;
+                        index.indices[index.getRank() - 1] += first;
                         extractObjectVector(this.basetype, src, data, index, 0, extent);
                     }
                 } else { // read one by one
-                    for(int i=0;odom.hasNext();i++) {
+                    for(int i = 0; odom.hasNext(); i++) {
                         Index index = odom.next();
                         extractObjectVector(this.basetype, src, dst, index, i, 1);
                     }
@@ -163,6 +162,13 @@ public class D4Data
             return readHelper(index);
         }
 
+        @Override
+        public Object
+        read(long index)
+                throws DataException
+        {
+            return readHelper(index);
+        }
         //////////////////////////////////////////////////
         // Utilities
 
@@ -196,7 +202,7 @@ public class D4Data
             Object result = null;
             long lvalue = 0;
             TypeSort atomtype = basetype.getTypeSort();
-            moveto(index,dataset);
+            moveto(index, dataset);
             switch (atomtype) {
             case Char:
                 lvalue = dataset.get();
@@ -254,8 +260,8 @@ public class D4Data
          *
          * @param basetype - type of objects being extracted
          * @param dataset  -serialized data
-         * @param dst  - place to store data
-         * @param indices    - index of first object
+         * @param dst      - place to store data
+         * @param indices  - index of first object
          * @param count    - of # of contiguous objects
          * @throws DataException
          */
@@ -265,66 +271,66 @@ public class D4Data
         {
             long xindex = indices.index();
             TypeSort atomtype = basetype.getTypeSort();
-            moveto(xindex,dataset);
+            moveto(xindex, dataset);
             long elemsize = this.varelementsize;
-            int ioffset = (int)offset;
+            int ioffset = (int) offset;
             switch (atomtype) {
             case Char:
                 // need to extract and convert utf8(really ascii) -> utf16
-                char[] cresult = (char[])dst;
+                char[] cresult = (char[]) dst;
                 for(int i = 0; i < count; i++) {
                     int ascii = dataset.get();
                     ascii = ascii & 0x7F;
-                    cresult[i+ioffset] = (char) ascii;
+                    cresult[i + ioffset] = (char) ascii;
                 }
                 break;
             case UInt8:
             case Int8:
-                byte[] bresult = (byte[])dst;
+                byte[] bresult = (byte[]) dst;
                 dataset.get(bresult, ioffset, (int) count);
                 break;
             case Int16:
             case UInt16:
-                short[] shresult = (short[])dst;
+                short[] shresult = (short[]) dst;
                 dataset.asShortBuffer().get(shresult, ioffset, (int) count);
                 break;
             case Int32:
             case UInt32:
-                int[] iresult = (int[])dst;
+                int[] iresult = (int[]) dst;
                 dataset.asIntBuffer().get(iresult, ioffset, (int) count);
                 break;
             case Int64:
             case UInt64:
-                long[] lresult = (long[])dst;
+                long[] lresult = (long[]) dst;
                 dataset.asLongBuffer().get(lresult, ioffset, (int) count);
                 break;
             case Float32:
-                float[] fresult = (float[])dst;
+                float[] fresult = (float[]) dst;
                 dataset.asFloatBuffer().get(fresult, ioffset, (int) count);
                 break;
             case Float64:
-                double[] dresult = (double[])dst;
+                double[] dresult = (double[]) dst;
                 dataset.asDoubleBuffer().get(dresult, ioffset, (int) count);
                 break;
             case String:
             case URL:
-                String[] sresult = (String[])dst;
+                String[] sresult = (String[]) dst;
                 for(int i = 0; i < count; i++) {
                     dataset.position(bytestrings[(int) xindex + i]);
                     long scount = dataset.getLong();
                     byte[] bytes = new byte[(int) scount];
                     dataset.get(bytes);
-                    sresult[i+ioffset] = new String(bytes, DapUtil.UTF8);
+                    sresult[i + ioffset] = new String(bytes, DapUtil.UTF8);
                 }
                 break;
             case Opaque:
-                ByteBuffer[] oresult = (ByteBuffer[])dst;
+                ByteBuffer[] oresult = (ByteBuffer[]) dst;
                 for(int i = 0; i < count; i++) {
                     dataset.position(bytestrings[(int) xindex + i]);
                     long scount = dataset.getLong();
                     byte[] bytes = new byte[(int) scount];
                     dataset.get(bytes);
-                    oresult[i+ioffset] = ByteBuffer.wrap(bytes);
+                    oresult[i + ioffset] = ByteBuffer.wrap(bytes);
                 }
                 break;
             case Enum:
@@ -381,6 +387,7 @@ public class D4Data
 
         // Provide a read of a single value at a given offset in
         // a dimensioned variable.
+        @Override
         public DataCompound
         getElement(Index index)
                 throws DataException
@@ -390,6 +397,19 @@ public class D4Data
                 throw new DataException("D4DataCompoundArray.read(i): index out of range: " + index);
             return instances.get((int) offset);
         }
+
+        // Provide a read of a single value at a given offset in
+        // a dimensioned variable.
+        @Override
+        public DataCompound
+        getElement(long offset)
+                throws DataException
+        {
+            if(offset < 0 || offset >= instances.size())
+                throw new DataException("D4DataCompoundArray.read(i): index out of range: " + offset);
+            return instances.get((int) offset);
+        }
+
 
         //////////////////////////////////////////////////
         // Utilities

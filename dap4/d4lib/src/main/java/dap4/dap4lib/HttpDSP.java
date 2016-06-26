@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 /**
  * Make a request to a server and convert the reply
@@ -60,6 +61,15 @@ public class HttpDSP extends D4DSP
             "dmr", "dap"
     };
 
+    static protected final String[][] DAP4QUERYMARKERS = new String[][]{
+            {"proto", "dap4"},
+            {"dap4.ce", null},
+    };
+    static protected final String[][] DAP4FRAGMARKERS = new String[][]{
+            {"proto", "dap4"},
+            {"dap4", null},
+    };
+
     //////////////////////////////////////////////////
     // Instance variables
 
@@ -96,9 +106,27 @@ public class HttpDSP extends D4DSP
     {
         try {
             XURI xuri = new XURI(url);
-            return (xuri.getLeadProtocol().equals(DAP4PROTO)
-                    || xuri.getParameters().get(PROTOTAG).equals(DAP4PROTO));
+            List<String> protos = xuri.getProtocols();
+            if(protos == null || protos.size() == 0)
+                return false;
+            if(DAP4PROTO.equalsIgnoreCase(protos.get(0)))
+                return true;
+            for(String[] pair : DAP4QUERYMARKERS) {
+                String tag = xuri.getQueryFields().get(pair[0]);
+                if(tag != null
+                        && (pair[1] == null
+                        || pair[1].equalsIgnoreCase(tag)))
+                    return true;
+            }
+            for(String[] pair : DAP4FRAGMARKERS) {
+                String tag = xuri.getQueryFields().get(pair[0]);
+                if(tag != null
+                        && (pair[1] == null
+                        || pair[1].equalsIgnoreCase(tag)))
+                    return true;
+            }
         } catch (URISyntaxException use) {
+            return false;
         }
         return false;
     }
@@ -110,7 +138,7 @@ public class HttpDSP extends D4DSP
         this.originalurl = url;
         // See if this is a local vs remote request
         setURL(url);
-        this.basece = this.xuri.getFields().get(CONSTRAINTTAG);
+        this.basece = this.xuri.getQueryFields().get(CONSTRAINTTAG);
         build();
         return this;
 
@@ -144,7 +172,7 @@ public class HttpDSP extends D4DSP
             throws DapException
     {
         String methodurl = buildURL(this.xuri.assemble(XURI.URLONLY), DATASUFFIX, this.dmr, this.basece);
-        this.checksummode = ChecksumMode.modeFor(xuri.getParameters().get(CHECKSUMTAG));
+        this.checksummode = ChecksumMode.modeFor(xuri.getFragFields().get(CHECKSUMTAG));
         if(this.checksummode == null) {
             this.checksummode = ChecksumMode.DAP;
         }

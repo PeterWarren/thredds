@@ -32,21 +32,21 @@ public class DataToCDM
     //////////////////////////////////////////////////
     // Constants
 
-    static final int COUNTSIZE = 8; // databuffer as specified by the DAP4 spec
+    static protected final int COUNTSIZE = 8; // databuffer as specified by the DAP4 spec
 
-    static String LBRACE = "{";
-    static String RBRACE = "}";
+    static protected final String LBRACE = "{";
+    static protected final String RBRACE = "}";
 
     //////////////////////////////////////////////////
     // Instance variables
 
-    DapNetcdfFile ncfile = null;
-    DSP dsp = null;
-    DapDataset dmr = null;
-    DataDataset d4root = null;
-    Group cdmroot = null;
-    Map<Variable, Array> arraymap = null;
-    NodeMap nodemap = null;
+    protected DapNetcdfFile ncfile = null;
+    protected DSP dsp = null;
+    protected DapDataset dmr = null;
+    protected DataDataset d4root = null;
+    protected Group cdmroot = null;
+    protected Map<Variable, Array> arraymap = null;
+    protected NodeMap nodemap = null;
 
     //////////////////////////////////////////////////
     //Constructor(s)
@@ -195,8 +195,9 @@ public class DataToCDM
             }
             arraystruct = new CDMArrayStructure(this.dsp, this.cdmroot, d4array);
             Odometer odom = isscalar ? Odometer.factoryScalar()
-                    : Odometer.factory(null, dimset, false);
+                    : Odometer.factory(DapUtil.dimsetSlices(dimset), dimset, false);
             while(odom.hasNext()) {
+                odom.next();
                 DataStructure dds = (DataStructure) d4array.getElement(odom.indices());
                 createStructure(dds, odom.index(), arraystruct);
             }

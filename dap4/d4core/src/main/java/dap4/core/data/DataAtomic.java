@@ -97,10 +97,21 @@ public interface DataAtomic extends DataVariable
      */
     public Object read(Index indices) throws DataException;
 
+    /**
+     * Provide a read of a single value at a given offset in a (possibly dimensioned)
+     * atomic valued variable. As mentioned above, unsigned types are returned as a signed version.
+     * The type of the returned value is the obvious one (e.g. int->Integer, opaque->ByteBuffer, etc.).
+     *
+     * @param offset indicate value to read
+     * @return the (single) value
+     * @throws DataException
+     */
+    public Object read(long offset) throws DataException;
+
     //////////////////////////////////////////////////
 
     /**
-     * Helper function for reading
+     * Helper functions for reading
      */
 
     /**
@@ -150,8 +161,23 @@ public interface DataAtomic extends DataVariable
         Object data = read(slices);
         DapType basetype = var.getBaseType();
         if(basetype == null)
-            throw new DataException("Variable has no basetype: "+var);
+            throw new DataException("Variable has no basetype: " + var);
         return CoreTypeFcns.get(var.getBaseType(), data, 0);
+    }
+
+    /**
+     * Helper function for read(Index)
+     *
+     * @param offset
+     * @return
+     * @throws DataException
+     */
+    default public Object readHelper(long offset) throws DataException
+    {
+        DapVariable var = getVariable();
+        List<DapDimension> dims = var.getDimensions();
+        long[] dimsizes = DapUtil.getDimSizes(dims);
+        return read(Index.offsetToIndex(offset,dimsizes));
     }
 
 }

@@ -62,9 +62,9 @@ public class XURI
     protected String frag = null;
 
     // Following are url decoded
-    protected Map<String, String> fields // decomposed query
+    protected Map<String, String> queryfields // decomposed query
             = new HashMap<String, String>();
-    protected Map<String, String> parameters // decomposed fragment
+    protected Map<String, String> fragfields // decomposed fragment
             = new HashMap<String, String>();
 
     //////////////////////////////////////////////////
@@ -206,14 +206,14 @@ public class XURI
         return this.frag;
     }
 
-    public Map<String, String> getFields()
+    public Map<String, String> getQueryFields()
     {
-        return fields;
+        return this.queryfields;
     }
 
-    public Map<String, String> getParameters()
+    public Map<String, String> getFragFields()
     {
-        return parameters;
+        return this.fragfields;
     }
 
     public XURI
@@ -230,7 +230,7 @@ public class XURI
                 String value = "";
                 if(pair.length > 1) {
                     value = Escape.urlDecode(pair[1]);
-                    this.fields.put(name, value);
+                    this.queryfields.put(name, value);
                 }
             }
         }
@@ -250,7 +250,7 @@ public class XURI
                 name = name.toLowerCase(); // for consistent lookup
                 String value = (pair.length == 2 ? Escape.urlDecode(pair[1])
                         : "");
-                this.parameters.put(name, value);
+                this.fragfields.put(name, value);
             }
         }
         return this;

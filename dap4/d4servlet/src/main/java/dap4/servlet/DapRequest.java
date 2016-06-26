@@ -199,9 +199,9 @@ public class DapRequest
             this.format = ResponseFormat.NONE;
 
         // Parse the query string into a Map
-
         if(querystring != null && querystring.length() > 0)
-            this.queries = xuri.getFields();
+            this.queries = xuri.getQueryFields();
+
         if(DEBUG) {
             DapLog.debug("DapRequest: controllerpath =" + this.controllerpath);
             DapLog.debug("DapRequest: extension=" + (this.mode == null ? "null" : this.mode.extension()));

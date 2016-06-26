@@ -33,7 +33,7 @@ import java.util.List;
  * of fields in the sequence.
  */
 
-public class CDMArrayStructure extends ArrayStructure implements CDMArray
+/*package*/ class CDMArrayStructure extends ArrayStructure implements CDMArray
 {
     //////////////////////////////////////////////////
     // Instance variables

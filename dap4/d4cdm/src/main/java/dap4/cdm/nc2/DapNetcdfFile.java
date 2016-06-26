@@ -7,6 +7,7 @@ package dap4.cdm.nc2;
 import dap4.cdm.CDMUtil;
 import dap4.cdm.NodeMap;
 import dap4.core.data.DSP;
+import dap4.core.data.DSPRegistry;
 import dap4.core.util.DapContext;
 import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.HttpDSP;
@@ -63,6 +64,16 @@ public class DapNetcdfFile extends NetcdfFile
 
     static protected final NullCancelTask nullcancel = new NullCancelTask();
 
+    /**
+     * Define a map of known DSP classes.
+     */
+    static protected DSPRegistry dspregistry = new DSPRegistry();
+
+    static {
+        dspregistry.register(FileDSP.class, DSPRegistry.FIRST);
+        dspregistry.register(HttpDSP.class, DSPRegistry.FIRST);
+    }
+
     //////////////////////////////////////////////////
     // Instance Variables
 
@@ -76,7 +87,7 @@ public class DapNetcdfFile extends NetcdfFile
 
     protected CancelTask cancel = null;
 
-    protected NodeMap nodemap = null;
+    // protected NodeMap nodemap = null;  unused?
 
     /**
      * Originally, the array for a variable was stored
@@ -131,10 +142,10 @@ public class DapNetcdfFile extends NetcdfFile
         DapContext cxt = new DapContext();
         cancel = (cancelTask == null ? nullcancel : cancelTask);
         // 1. Get and parse the constrained DMR and Data v-a-v URL
-        if(xuri.isFile())
-            this.dsp = (DSP) new FileDSP().open(url,cxt);
-        else
-            this.dsp = (DSP) new HttpDSP().open(url,cxt);
+        this.dsp = dspregistry.findMatchingDSP(url,cxt);
+        if(this.dsp == null)
+            throw new IOException("No matching DSP: "+url);
+        this.dsp.open(url,cxt);
 
         // 2. Construct an equivalent CDM tree and populate 
         //    this NetcdfFile object.
@@ -143,6 +154,7 @@ public class DapNetcdfFile extends NetcdfFile
         // set the pseudo-location, otherwise we get a name that is full path.
         setLocation(this.dsp.getDMR().getDataset().getShortName());
         finish();
+        this.arraymap = compiler.getArrayMap();
     }
 
     /**
@@ -173,7 +185,7 @@ public class DapNetcdfFile extends NetcdfFile
         if(closed) return;
         closed = true; // avoid circular calls
         dsp = null;
-        nodemap = null;
+        // nodemap = null;  unused?
     }
 
     //////////////////////////////////////////////////

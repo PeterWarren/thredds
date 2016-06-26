@@ -40,6 +40,7 @@ public interface DataCompoundArray extends DataVariable
     public void addElement(DataCompound instance);
 
     public DataCompound getElement(Index indices) throws DataException;
+    public DataCompound getElement(long offset) throws DataException;
 
     /**
         * Default for getElements(Slices)

@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteOrder;
+import java.util.List;
 
 /**
  * Provide a DSP interface to synthetic data (see Generator.java).
@@ -25,8 +26,8 @@ public class FileDSP extends D4DSP
     // Constants
 
     static protected final String[] EXTENSIONS = new String[]{
-                ".dap"
-        };
+            ".dap"
+    };
 
     //////////////////////////////////////////////////
     // Instance variables
@@ -55,13 +56,23 @@ public class FileDSP extends D4DSP
      * @param context Any parameters that may help to decide.
      * @return true if this path appears to be processible by this DSP
      */
-    static public boolean dspMatch(String path, DapContext context)
+    static public boolean dspMatch(String url, DapContext context)
     {
-        for(String ext : EXTENSIONS) {
+        try {
+            XURI xuri = new XURI(url);
+            List<String> protos = xuri.getProtocols();
+            if(protos == null || protos.size() == 0
+                    || protos.get(0).equals("file")) {
+                String path = xuri.getPath();
+                for(String ext : EXTENSIONS) {
                     if(path.endsWith(ext))
                         return true;
                 }
-                return false;
+            }
+        } catch (URISyntaxException use) {
+            return false;
+        }
+        return false;
     }
 
     @Override

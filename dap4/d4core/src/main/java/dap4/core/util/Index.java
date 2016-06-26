@@ -33,12 +33,21 @@ public class Index
         }
     }
 
+    public Index(long[] indices, long[] dimsizes)
+    {
+        this(dimsizes.length);
+        if(this.rank > 0) {
+            System.arraycopy(indices, 0, this.indices, 0, this.rank);
+            System.arraycopy(dimsizes, 0, this.dimsizes, 0, this.rank);
+        }
+    }
+
     public String
     toString()
     {
         StringBuilder buf = new StringBuilder();
         buf.append('[');
-        for(int i=0;i<this.rank;i++) {
+        for(int i = 0; i < this.rank; i++) {
             if(i > 0) buf.append(',');
             buf.append(indices[i]);
             buf.append('/');
@@ -77,6 +86,24 @@ public class Index
         if(i < 0 || i >= this.rank)
             throw new IllegalArgumentException();
         return this.indices[i];
+    }
+
+    /**
+     * Given an offset (single index) and a set of dimensions
+     * compute the set of dimension indices that correspond
+     * to the offset.
+     */
+
+    static public Index
+    offsetToIndex(long offset, long[] dimsizes)
+    {
+        // offset = d3*(d2*(d1*(x1))+x2)+x3
+        long[] indices = new long[dimsizes.length];
+        for(int i = dimsizes.length - 1; i >= 0; i--) {
+            indices[i] = offset % dimsizes[i];
+            offset = (offset - indices[i]) / dimsizes[i];
+        }
+        return new Index(indices, dimsizes);
     }
 
 }

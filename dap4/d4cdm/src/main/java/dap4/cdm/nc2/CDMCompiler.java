@@ -42,13 +42,13 @@ public class CDMCompiler
     //////////////////////////////////////////////////
     // Instance variables
 
-    DapNetcdfFile ncfile = null;
-    DSP dsp = null;
-    DapDataset dmr = null;
-    DataDataset d4root = null;
-    Group cdmroot = null;
-    NodeMap nodemap = null;
-    Map<Variable, Array> arraymap = null;
+    protected DapNetcdfFile ncfile = null;
+    protected DSP dsp = null;
+    protected DapDataset dmr = null;
+    protected DataDataset d4root = null;
+    protected Group cdmroot = null;
+    protected NodeMap nodemap = null;
+    protected Map<Variable, Array> arraymap = null;
 
     //////////////////////////////////////////////////
     //Constructor(s)

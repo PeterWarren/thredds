@@ -326,22 +326,5 @@ public class TestCDMClient extends DapTestCommon
     }
 
 
-    //////////////////////////////////////////////////
-    // Stand alone
-
-    static public void
-    main(String[] argv)
-    {
-        try {
-            new TestCDMClient().testCDMClient();
-        } catch (Exception e) {
-            System.err.println("*** FAIL");
-            e.printStackTrace();
-            System.exit(1);
-        }
-        System.err.println("*** PASS");
-        System.exit(0);
-    }// main
-
 } // class TestCDMClient                                                             b
 

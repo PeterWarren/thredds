@@ -376,6 +376,15 @@ abstract public class DapUtil // Should only contain static methods
         return (path != null && path.length() == 0 ? null : path);
     }
 
+    static public long[]
+    getDimSizes(List<DapDimension> dims)
+    {
+        long[] sizes = new long[dims.size()];
+        for(int i=0;i<dims.size();i++)
+            sizes[i] = dims.get(i).getSize();
+        return sizes;
+    }
+
     static public long dimProduct(List<DapDimension> dimset) // dimension crossproduct
     {
         long count = 1;

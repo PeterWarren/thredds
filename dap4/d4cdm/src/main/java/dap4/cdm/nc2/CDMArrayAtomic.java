@@ -9,8 +9,10 @@ import dap4.cdm.CDMUtil;
 import dap4.core.data.*;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.DapVariable;
-import dap4.core.util.*;
-import dap4.dap4lib.Dap4Util;
+import dap4.core.util.Convert;
+import dap4.core.util.DapException;
+import dap4.core.util.DapSort;
+import dap4.core.util.DapUtil;
 import dap4.dap4lib.LibTypeFcns;
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
@@ -28,7 +30,7 @@ import java.util.List;
  * either top-level or for a member.
  */
 
-public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
+/*package*/ class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
 {
     /////////////////////////////////////////////////////
     // Constants
@@ -79,7 +81,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     /////////////////////////////////////////////////
     // Annotation
 
-    Object annotation = null;
+    protected Object annotation = null;
 
     @Override
     public void annotate(Object o)
@@ -557,69 +559,13 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     read(List<dap4.core.util.Slice> slices)
             throws DataException
     {
-        Array array = (Array) this.data;
-        // If content.getDataType returns object, then we
-        // really do not know its true datatype. So, as a rule,
-        // we will rely on this.basetype.
-        DataType datatype = CDMTypeFcns.daptype2cdmtype(this.basetype);
-        if(datatype == null)
-            throw new DataException("Unknown basetype: " + this.basetype);
-        Class elementclass = CDMTypeFcns.cdmElementClass(datatype);
-        if(elementclass == null)
-            throw new DataException("Attempt to read non-atomic value of type: " + datatype);
-        Object content = array.get1DJavaArray(elementclass); // not very efficient
         try {
-            Odometer odom = Odometer.factory(slices, ((DapVariable) this.getTemplate()).getDimensions(), false);
-            Object[] data = new Object[(int)odom.totalSize()];
-            while(odom.hasNext()) {
-                odom.next();
-                long offset = odom.index();
-                System.arraycopy(content, (int) offset, data, (int) offset, 1);
-            }
-            return data;
+            DataAtomic datasrc = this.data;
+            Object vector = datasrc.read(slices);
+            return vector;
         } catch (DapException de) {
             throw new DataException(de);
         }
-    /*
-        switch (datatype) {
-            case BOOLEAN:
-    	    boolean[] bovector = (boolean[])vector;
-
-    	    break;
-            case BYTE:
-    	    byte[] byvector = (byte[])vector;
-    	    break;
-            case CHAR:
-    	    char[] chvector = (char[])vector;
-    	    break;
-            case SHORT:
-    	    short[] shvector = (short[])vector;
-    	    break;
-            case INT:
-    	    int[] invector = (int[])vector;
-    	    break;
-            case LONG:
-    	    long[] lovector = (long[])vector;
-    	    break;
-            case FLOAT:
-    	    float[] flvector = (float[])vector;
-    	    break;
-            case DOUBLE:
-    	    double[] dovector = (double[])vector;
-    	    break;
-            case STRING:
-    	    string[] stvector = (string[])vector;
-    	    break;
-            case OBJECT:
-    	    object[] obvector = (object[])vector;
-    	    break;
-            case STRUCTURE:
-            case SEQUENCE:
-            default:
-    	    throw new DataException("Attempt to read non-atomic value of type: "+datatype);
-            }
-    	return result;
-    */
     }
 
     @Override
@@ -627,42 +573,29 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
     read(dap4.core.util.Index index)
             throws DataException
     {
-        Array content = (Array) this.data;
-        DataType datatype = content.getDataType();
-        return read(index, datatype, content);
-    }
-
-    protected Object
-    read(dap4.core.util.Index index, DataType datatype, Array content)
-            throws DataException
-    {
-        return read(index.index(), datatype, content);
+        return readHelper(index);
     }
 
     public Object
     read(long index)
             throws DataException
     {
-        Array content = (Array) this.data;
-        DataType datatype = content.getDataType();
-        return read(index, datatype, content);
+        return readHelper(index);
     }
 
+    /*
     protected Object
-    read(long index, DataType datatype, Array content)
+    read(long index, DapType datatype, DataAtomic content)
             throws DataException
     {
         Object result;
         int i = (int) index;
         long tmp = 0;
-        switch (datatype) {
-        case BOOLEAN:
-            result = (Boolean) content.getBoolean(i);
-            break;
-        case BYTE:
+        switch (datatype.getTypeSort()) {
+        case Int8:
             result = (Byte) content.getByte(i);
             break;
-        case CHAR:
+        case Char:
             result = (Character) content.getChar(i);
             break;
         case SHORT:
@@ -720,6 +653,7 @@ public class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
         }
         return result;
     }
+    */
 
     //////////////////////////////////////////////////
     // Utilities

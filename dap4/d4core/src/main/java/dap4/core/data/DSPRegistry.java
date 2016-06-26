@@ -1,9 +1,8 @@
 /* Copyright 2012, UCAR/Unidata.
    See the LICENSE file for more information. */
 
-package dap4.servlet;
+package dap4.core.data;
 
-import dap4.core.data.DSP;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 
@@ -20,6 +19,10 @@ public class DSPRegistry
     // Constants
 
     static public final String MATCHMETHOD = "dspMatch";
+
+    // MNemonics
+    static public final boolean LAST = true;
+    static public final boolean FIRST = false;
 
     //////////////////////////////////////////////////
     // Type Decls
@@ -41,6 +44,11 @@ public class DSPRegistry
     }
 
     //////////////////////////////////////////////////
+
+    static protected ClassLoader loader = DSPRegistry.class.getClassLoader();
+
+
+    //////////////////////////////////////////////////
     // Instance Variables
 
     /**
@@ -59,6 +67,14 @@ public class DSPRegistry
 
 
     //////////////////////////////////////////////////
+    // Accessors
+
+    static public void setLoader(ClassLoader ldr)
+    {
+        loader = ldr;
+    }
+
+    //////////////////////////////////////////////////
     // API
 
     /**
@@ -73,7 +89,7 @@ public class DSPRegistry
             throws DapException
     {
         try {
-            Class<? extends DSP> klass = (Class<? extends DSP>) DapCache.class.getClassLoader().loadClass(className);
+            Class<? extends DSP> klass = (Class<? extends DSP>) loader.loadClass(className);
             register(klass, last);
         } catch (ClassNotFoundException e) {
             throw new DapException(e);
@@ -138,13 +154,13 @@ public class DSPRegistry
      */
 
     synchronized public DSP
-    findMatchingDSP(String path)
+    findMatchingDSP(String path, DapContext cxt)
             throws DapException
     {
         for(int i = 0; i < registry.size(); i++) {
             try {
                 Registration tester = registry.get(i);
-                boolean ismatch = (Boolean) tester.matcher.invoke(null, path, (DapContext) null);
+                boolean ismatch = (Boolean) tester.matcher.invoke(null, path, cxt);
                 if(ismatch) {
                     DSP dsp = (DSP) tester.dspclass.newInstance();
                     return dsp;

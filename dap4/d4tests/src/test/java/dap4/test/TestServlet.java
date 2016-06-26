@@ -1,5 +1,6 @@
 package dap4.test;
 
+import dap4.core.data.DSPRegistry;
 import dap4.core.util.DapDump;
 import dap4.dap4lib.AbstractDSP;
 import dap4.dap4lib.ChunkInputStream;
@@ -181,8 +182,8 @@ public class TestServlet extends DapTestCommon
         this.mockMvc = mvcbuilder.build();
         setTESTDIRS(RESOURCEPATH);
         AbstractDSP.TESTING = true;
-        DapCache.registerDSP(FileDSP.class);
-        DapCache.registerDSP(SynDSP.class);
+        DapCache.dspregistry.register(FileDSP.class, DSPRegistry.FIRST);
+        DapCache.dspregistry.register(SynDSP.class, DSPRegistry.LAST);
         if(prop_ascii)
             Generator.setASCII(true);
         ServletTest.setRoots(canonjoin(getResourceRoot(), TESTINPUTDIR),

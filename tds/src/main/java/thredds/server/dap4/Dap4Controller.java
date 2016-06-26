@@ -33,6 +33,7 @@
 
 package thredds.server.dap4;
 
+import dap4.core.data.DSPRegistry;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
@@ -76,7 +77,7 @@ public class Dap4Controller extends DapController
             // For TDS, we only need to register one DSP type: ThreddsDSP.
             // This is because we will always serve only NetcdfFile objects.
             // See D4TSServlet for a multiple registration case.
-            DapCache.registerDSP(ThreddsDSP.class, true);
+            DapCache.dspregistry.register(ThreddsDSP.class, DSPRegistry.LAST);
         }
 
     }

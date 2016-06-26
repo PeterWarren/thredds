@@ -45,7 +45,7 @@ import java.util.List;
  * code.
  */
 
-public class CDMArraySequence extends ArraySequence implements CDMArray
+/*package*/ class CDMArraySequence extends ArraySequence implements CDMArray
 {
 
     //////////////////////////////////////////////////

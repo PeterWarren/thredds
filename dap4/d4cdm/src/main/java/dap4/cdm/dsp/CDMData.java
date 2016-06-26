@@ -5,20 +5,17 @@
 package dap4.cdm.dsp;
 
 import dap4.cdm.CDMTypeFcns;
-import dap4.cdm.CDMUtil;
 import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.core.util.*;
 import dap4.core.util.Index;
 import dap4.dap4lib.AbstractData;
 import dap4.dap4lib.AbstractDataVariable;
-import dap4.dap4lib.Dap4Util;
 import dap4.dap4lib.LibTypeFcns;
 import ucar.ma2.*;
 import ucar.nc2.CDMNode;
 import ucar.nc2.Variable;
 
-import java.nio.ByteBuffer;
 import java.util.*;
 
 public class CDMData
@@ -92,7 +89,7 @@ public class CDMData
             try {
                 Odometer odom = Odometer.factory(slices, ((DapVariable) this.getTemplate()).getDimensions(), false);
                 Object data = CDMTypeFcns.createVector(this.basetype, odom.totalSize());
-                for(int dstoffset=0; odom.hasNext();dstoffset++) {
+                for(int dstoffset = 0; odom.hasNext(); dstoffset++) {
                     Index index = odom.next();
                     long srcoffset = index.index();
                     CDMTypeFcns.vectorcopy(this.basetype, content, data, srcoffset, dstoffset);
@@ -168,6 +165,14 @@ public class CDMData
                 throw new DataException("Attempt to read non-atomic value of type: " + datatype);
             }
             return result;
+        }
+
+        @Override
+        public Object
+        read(long offset)
+                throws DataException
+        {
+            return readHelper(offset);
         }
 
         //////////////////////////////////////////////////
@@ -292,6 +297,18 @@ public class CDMData
                 throws DataException
         {
             int i = (int) index.index();
+            ArrayStructure array = (ArrayStructure) getSource();
+            if(instances[i] == null)
+                instances[i] = new CDMDataStructure(this.dsp, (DapStructure) this.getTemplate(), this, array.getStructureData(i));
+            return instances[i];
+        }
+
+        @Override
+        public DataCompound
+        getElement(long offset)
+                throws DataException
+        {
+            int i = (int) offset;
             ArrayStructure array = (ArrayStructure) getSource();
             if(instances[i] == null)
                 instances[i] = new CDMDataStructure(this.dsp, (DapStructure) this.getTemplate(), this, array.getStructureData(i));

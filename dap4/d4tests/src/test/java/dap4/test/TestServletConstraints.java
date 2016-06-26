@@ -1,5 +1,6 @@
 package dap4.test;
 
+import dap4.core.data.DSPRegistry;
 import dap4.core.util.DapDump;
 import dap4.core.util.Escape;
 import dap4.dap4lib.AbstractDSP;
@@ -186,8 +187,8 @@ public class TestServletConstraints extends DapTestCommon
         setTESTDIRS(RESOURCEPATH);
         AbstractDSP.TESTING = true;
         DapController.TESTING = true;
-        DapCache.registerDSP(FileDSP.class);
-        DapCache.registerDSP(SynDSP.class);
+        DapCache.dspregistry.register(FileDSP.class, DSPRegistry.LAST);
+        DapCache.dspregistry.register(SynDSP.class, DSPRegistry.LAST);
         if(prop_ascii)
             Generator.setASCII(true);
         ConstraintTest.setRoots(canonjoin(getResourceRoot(), TESTINPUTDIR),

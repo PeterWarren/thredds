@@ -14,7 +14,7 @@ a common "parent" interface for all
 the CDM array classes
 */
 
-public interface CDMArray
+/*package*/ interface CDMArray
 {
     public DSP getDSP();
     public DataDataset getRoot();

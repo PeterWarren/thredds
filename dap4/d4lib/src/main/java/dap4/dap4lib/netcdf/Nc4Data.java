@@ -162,6 +162,14 @@ public class Nc4Data
 
         @Override
         public Object
+        read(long index)
+                throws DataException
+        {
+            return readHelper(index);
+        }
+
+        @Override
+        public Object
         read(List<Slice> slices)
                 throws DataException
         {
@@ -296,6 +304,16 @@ public class Nc4Data
             long offset = index.index();
             if(offset < 0 || offset >= instances.size())
                 throw new DataException("Nc4DataCompoundArray.read(i): index out of range: " + index);
+            return instances.get((int) offset);
+        }
+
+        @Override
+        public DataCompound
+        getElement(long offset)
+                throws DataException
+        {
+            if(offset < 0 || offset >= instances.size())
+                throw new DataException("Nc4DataCompoundArray.read(i): index out of range: " + offset);
             return instances.get((int) offset);
         }
     }

@@ -116,7 +116,7 @@ public class TestConstraints extends DapTestCommon
     chooseTestcases()
     {
         if(false) {
-            chosentests.add(locate1(6));
+            chosentests.add(locate1(8));
             prop_visual = true;
         } else {
             for(ClientTest tc : alltestcases) {
@@ -149,19 +149,16 @@ public class TestConstraints extends DapTestCommon
             throws Exception
     {
         for(ClientTest testcase : chosentests) {
-            if(!doOneTest(testcase)) {
-                Assert.assertTrue(false);
-            }
+            doOneTest(testcase);
         }
     }
 
     //////////////////////////////////////////////////
     // Primary test method
-    boolean
+    void
     doOneTest(ClientTest testcase)
             throws Exception
     {
-        boolean pass = true;
         int testcounter = 0;
 
         System.out.println("Testcase: " + testcase.testinputpath);
@@ -192,10 +189,8 @@ public class TestConstraints extends DapTestCommon
             // Read the baseline file(s)
             String baselinecontent = readfile(testcase.baselinepath);
             System.out.println("Comparison:");
-            pass = pass && same(getTitle(),baselinecontent, testoutput);
-            System.out.println(pass ? "Pass" : "Fail");
+            Assert.assertTrue("***Fail",same(getTitle(),baselinecontent, testoutput));
         }
-        return pass;
     }
 
     //////////////////////////////////////////////////
@@ -294,22 +289,5 @@ public class TestConstraints extends DapTestCommon
         System.err.println(msg);
         return false;
     }
-
-
-    //////////////////////////////////////////////////
-    // Stand alone
-
-    static public void
-    main(String[] argv)
-    {
-        try {
-            new TestConstraints().testConstraints();
-        } catch (Exception e) {
-            System.err.println("*** FAIL");
-            e.printStackTrace();
-        }
-        System.err.println("*** PASS");
-        System.exit(0);
-    }// main
 
 } // class TestConstraints

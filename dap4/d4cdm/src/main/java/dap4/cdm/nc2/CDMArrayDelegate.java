@@ -19,7 +19,7 @@ import dap4.core.data.DSP;
  * must be propagated to the CDMArray implementing classes.
  */
 
-class CDMArrayDelegate implements CDMArray
+/*package*/ class CDMArrayDelegate implements CDMArray
 {
     protected DataDataset root = null;
     protected DSP dsp = null;

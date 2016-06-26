@@ -4,6 +4,7 @@
 
 package dap4.d4ts;
 
+import dap4.core.data.DSPRegistry;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
@@ -50,9 +51,9 @@ public class D4TSServlet extends DapController
             // in event that two or more dsps can match a given file
             // (e.q. FileDSP vs NetcdfDSP).
             // Only used in server
-            DapCache.registerDSP(NetcdfDSP.class, true);
-            DapCache.registerDSP(SynDSP.class, true);
-            DapCache.registerDSP(FileDSP.class, true);
+            DapCache.dspregistry.register(NetcdfDSP.class, DSPRegistry.LAST);
+            DapCache.dspregistry.register(SynDSP.class, DSPRegistry.LAST);
+            DapCache.dspregistry.register(FileDSP.class, DSPRegistry.LAST);
         }
 
     }
