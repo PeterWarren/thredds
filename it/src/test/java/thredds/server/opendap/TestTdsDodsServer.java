@@ -68,39 +68,26 @@ import java.util.List;
 @Category(NeedsCdmUnitTest.class)
 public class TestTdsDodsServer {
 
-  static final String DODSPREFIX = "/dodsC";
-  static final String SCUTSUFFIX = "/scanCdmUnitTests/tds";
-  static final String PATHPREFIX = DODSPREFIX+SCUTSUFFIX;
-  static final String NCEPPREFIX = PATHPREFIX+"/ncep";
-  static final String NAMSUFFIX = "/NAM_CONUS_20km_selectsurface_20100913_0000.grib2";
-  static final String NAMQUERY = "?Visibility_surface[0:1:0][0:1:0][0:1:0]";
-
-  static final String BADPATH = NCEPPREFIX+NAMSUFFIX+".badascii"+NAMQUERY;
-  static final String OKPATH = NCEPPREFIX+NAMSUFFIX+".ascii"+NAMQUERY;
-  static final String OKRESULT = SCUTSUFFIX+"/ncep"+NAMSUFFIX;
-  static final String ALASKA22 = NCEPPREFIX+"/NAM_Alaska_22km_20100504_0000.grib1";
-  static final String ALASKA45 = NCEPPREFIX+"/NAM_Alaska_45km_conduit_20100913_0000.grib2";
-
   @Test
   public void checkBadRequest() {
-    String endpoint = TestWithLocalServer.withPath(BADPATH);
+    String endpoint = TestWithLocalServer.withPath("/dodsC/scanCdmUnitTests/tds/ncep/NAM_CONUS_20km_selectsurface_20100913_0000.grib2.badascii?Visibility_surface[0:1:0][0:1:0][0:1:0]");
     byte[] result = TestWithLocalServer.getContent(endpoint, 400, null);
   }
 
   @Test
   public void testGridArrayAscii() {
-    String endpoint = TestWithLocalServer.withPath(OKPATH);
+    String endpoint = TestWithLocalServer.withPath("/dodsC/scanCdmUnitTests/tds/ncep/NAM_CONUS_20km_selectsurface_20100913_0000.grib2.ascii?Visibility_surface[0:1:0][0:1:0][0:1:0]");
     byte[] result = TestWithLocalServer.getContent(endpoint, 200, null);
     Assert.assertNotNull(result);
     String results = new String(result, CDM.utf8Charset);
-    assert results.contains(OKRESULT);
+    assert results.contains("scanCdmUnitTests/tds/ncep/NAM_CONUS_20km_selectsurface_20100913_0000.grib2");
     assert results.contains("15636.879");
   }
 
   @Test
   public void testUrlReading() throws IOException {
-    doOne(TestWithLocalServer.withPath(ALASKA22));
-    doOne(TestWithLocalServer.withPath(ALASKA45));
+    doOne(TestWithLocalServer.withPath("dodsC/scanCdmUnitTests/tds/ncep/NAM_Alaska_22km_20100504_0000.grib1"));
+    doOne(TestWithLocalServer.withPath("dodsC/scanCdmUnitTests/tds/ncep/NAM_Alaska_45km_conduit_20100913_0000.grib2"));
   }
 
   /*
@@ -182,7 +169,7 @@ public class TestTdsDodsServer {
 
   @Test
   public void testCompareWithFile() throws IOException {
-    final String urlPrefix = TestWithLocalServer.withPath(PATHPREFIX+"/opendap/");
+    final String urlPrefix = TestWithLocalServer.withPath("/dodsC/scanCdmUnitTests/tds/opendap/");
     final String dirName = TestDir.cdmUnitTestDir + "tds/opendap/";  // read all files from this dir
 
     TestDir.actOnAll(dirName, new TestDir.FileFilterNoWant(".gbx8 .gbx9 .ncx .ncx2 .ncx3"), new TestDir.Act() {
