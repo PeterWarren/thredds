@@ -183,7 +183,7 @@ public class TestServlet extends DapTestCommon
         setTESTDIRS(RESOURCEPATH);
         AbstractDSP.TESTING = true;
         DapCache.dspregistry.register(FileDSP.class, DSPRegistry.FIRST);
-        DapCache.dspregistry.register(SynDSP.class, DSPRegistry.LAST);
+        DapCache.dspregistry.register(SynDSP.class, DSPRegistry.FIRST);
         if(prop_ascii)
             Generator.setASCII(true);
         ServletTest.setRoots(canonjoin(getResourceRoot(), TESTINPUTDIR),
@@ -199,8 +199,8 @@ public class TestServlet extends DapTestCommon
     protected void
     chooseTestcases()
     {
-        if(false) {
-            chosentests = locate("test_atomic_array.syn");
+        if(true) {
+            chosentests = locate("test_sequence_1.syn");
             prop_visual = true;
             prop_debug = true;
 	    prop_generate = false;
