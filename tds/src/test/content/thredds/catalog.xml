@@ -6,12 +6,6 @@
 
   <service name="latest" serviceType="Resolver" base=""/>
   <service name="opendapOnly" serviceType="OpenDAP" base="/thredds/dodsC/"/>
-  <service name="dap" base="" serviceType="compound">
-    <service name="odap" serviceType="OpenDAP" base="/thredds/dodsC/"/>
-    <service name="dap4" serviceType="DAP4" base="/thredds/dap4/"/>
-    <service name="http" serviceType="HTTPServer" base="/thredds/fileServer/"/>
-  </service>
-
   <service name="all" base="" serviceType="compound">
     <service name="odap" serviceType="OpenDAP" base="/thredds/dodsC/"/>
     <service name="dap4" serviceType="DAP4" base="/thredds/dap4/"/>
@@ -33,8 +27,8 @@
   <!-- urls intended to test container auth without spring -->
   <datasetRoot path="containerauth" location="content/testdata"/>
 
-  <dataset name="Test Single Dataset" ID="testDataset" serviceName="dap" urlPath="localContent/testData.nc" dataType="Grid"/>
-  <dataset name="Test Dap4 Dataset" ID="testDap4Dataset" serviceName="dap4" urlPath="cdmUnitTest/ft/coverage/03061219_ruc.nc" dataType="Grid"/>
+  <dataset name="Test Single Dataset" ID="testDataset" serviceName="all" urlPath="localContent/testData.nc" dataType="Grid"/>
+  <dataset name="Test Dap4 Dataset" ID="testDap4Dataset" serviceName="all" urlPath="cdmUnitTest/ft/coverage/03061219_ruc.nc" dataType="Grid"/>
   <dataset name="Test Restricted Dataset" ID="testRestrictedDataset" serviceName="all" urlPath="testRestrictedDataset/testData2.nc" restrictAccess="tiggeData"/>
   <!-- Actual dataset intended to test container auth without spring -->
   <dataset name="Test Container Authorization" ID="testcontainerauth" serviceName="all" urlPath="containerauth/testData2.nc" restrictAccess="containerauth"/>
