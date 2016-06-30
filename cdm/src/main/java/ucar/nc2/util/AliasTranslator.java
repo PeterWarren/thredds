@@ -22,6 +22,9 @@ public class AliasTranslator {
 
   public static String translateAlias(String scanDir) {
     for (Map.Entry<String, String> entry : alias.entrySet()) {
+       System.err.printf("alias: %s => %s%n",entry.getKey(),entry.getValue());
+    }
+      for (Map.Entry<String, String> entry : alias.entrySet()) {
       if (scanDir.startsWith(entry.getKey()))  {   // only at the front
         StringBuilder sb = new StringBuilder(scanDir);
         return sb.replace(0, entry.getKey().length(), entry.getValue()).toString();
