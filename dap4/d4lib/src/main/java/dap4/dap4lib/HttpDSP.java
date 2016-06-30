@@ -109,25 +109,28 @@ public class HttpDSP extends D4DSP
             List<String> protos = xuri.getProtocols();
             if(protos == null || protos.size() == 0)
                 return false;
-            if(DAP4PROTO.equalsIgnoreCase(protos.get(0)))
+            if(false) {
+                if(DAP4PROTO.equalsIgnoreCase(protos.get(0)))
+                    return true;
+                for(String[] pair : DAP4QUERYMARKERS) {
+                    String tag = xuri.getQueryFields().get(pair[0]);
+                    if(tag != null
+                            && (pair[1] == null
+                            || pair[1].equalsIgnoreCase(tag)))
+                        return true;
+                }
+                for(String[] pair : DAP4FRAGMARKERS) {
+                    String tag = xuri.getQueryFields().get(pair[0]);
+                    if(tag != null
+                            && (pair[1] == null
+                            || pair[1].equalsIgnoreCase(tag)))
+                        return true;
+                }
+            } else
                 return true;
-            for(String[] pair : DAP4QUERYMARKERS) {
-                String tag = xuri.getQueryFields().get(pair[0]);
-                if(tag != null
-                        && (pair[1] == null
-                        || pair[1].equalsIgnoreCase(tag)))
-                    return true;
+            }catch(URISyntaxException use){
+                return false;
             }
-            for(String[] pair : DAP4FRAGMARKERS) {
-                String tag = xuri.getQueryFields().get(pair[0]);
-                if(tag != null
-                        && (pair[1] == null
-                        || pair[1].equalsIgnoreCase(tag)))
-                    return true;
-            }
-        } catch (URISyntaxException use) {
-            return false;
-        }
         return false;
     }
 
