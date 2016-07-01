@@ -85,7 +85,7 @@ public class TestDatasetScan {
     List<DatasetRootConfig> roots = cat.getDatasetRoots();
     for (DatasetRootConfig root : roots)
       System.out.printf("DatasetRoot %s -> %s%n", root.path, root.location);
-    Assert.assertTrue("Incorrect # of catalog roots: expect 4 found "+roots.size(),roots.size() == 4);
+    Assert.assertTrue("Incorrect # of catalog roots: expect 5 found "+roots.size(),roots.size() == 5);
 
     Dataset ds = cat.findDatasetByID("scanCdmUnitTests");
     Assert.assertTrue("Null dataset", ds != null);
