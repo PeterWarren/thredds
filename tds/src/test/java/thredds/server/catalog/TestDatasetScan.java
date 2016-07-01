@@ -88,11 +88,11 @@ public class TestDatasetScan {
     Assert.assertTrue("Incorrect # of catalog roots: expect 4 found "+roots.size(),roots.size() == 4);
 
     Dataset ds = cat.findDatasetByID("scanCdmUnitTests");
-    assert ds != null;
-    assert (ds instanceof DatasetScan);
+    Assert.assertTrue("Null dataset", ds != null);
+    Assert.assertTrue("dataset not DatasetScan", ds instanceof DatasetScan);
     DatasetScan dss = (DatasetScan) ds;
     String serviceName = dss.getServiceNameDefault();
-    assert serviceName.equals("all");
+    Assert.assertTrue("Servicename default is not 'all'",serviceName.equals("all"));
     Assert.assertTrue("has DatasetScan property", ds.hasProperty("DatasetScan"));
 
     DatasetScanConfig config = dss.getConfig();
