@@ -59,7 +59,20 @@ import static org.junit.Assert.assertEquals;
  *
  * @author caron
  * @since 1/21/2015
+ * 
+ * Excution notes:
+ * If you plan to run this under Intellij IDE,
+ * you will need to modify the 'Before Launch' window
+ * in the Edit Configuration window and add the following
+ * two gradle tasks in the thredds:tds project
+ * 1. processResources
+ * 2. processTestResources
+ * For both of them, you will need to ensure that the following
+ * VM arguments are defined.
+ * 1. -Dunidata.testdata.path=...
+ * 2. -Dtds.content.root.path=.../tds/src/test/content
  */
+
 @Category(NeedsCdmUnitTest.class)
 public class TestDatasetScan {
   static private final boolean showCats = true;
