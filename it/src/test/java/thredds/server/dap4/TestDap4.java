@@ -29,9 +29,8 @@ public class TestDap4 {
     DataFactory fac = new DataFactory();
     try (DataFactory.Result dataResult = fac.openFeatureDataset( ds, null)) {
       Assert.assertNotNull("dataResult", dataResult);
-      if (dataResult.fatalError) {
-        System.out.printf("fatalError= %s%n", dataResult.errLog);
-        assert false;
+      if(dataResult.fatalError) {
+        Assert.assertFalse(String.format("fatalError= %s%n", dataResult.errLog),dataResult.fatalError);
       }
       Assert.assertNotNull("GridDataset", dataResult.featureDataset);
       Assert.assertEquals("dap4 service", ServiceType.DAP4, dataResult.accessUsed.getService().getType());
