@@ -19,9 +19,13 @@ import dap4.core.data.DataDataset;
 import dap4.core.dmr.DMRFactory;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
+import dap4.core.util.DapUtil;
 import dap4.dap4lib.AbstractDSP;
+import dap4.dap4lib.DapCodes;
+import dap4.dap4lib.XURI;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import static dap4.dap4lib.netcdf.DapNetcdf.NC_NOWRITE;
 
@@ -120,6 +124,7 @@ public class NetcdfDSP extends AbstractDSP
     public NetcdfDSP()
             throws DapException
     {
+        super();
         if(this.nc4 == null) {
             try {
                 this.nc4 = NetcdfLoader.load();
@@ -135,11 +140,23 @@ public class NetcdfDSP extends AbstractDSP
 
     @Override
     public DSP
-    open(String path, DapContext cxt)
+    open(String url)
             throws DapException
     {
         int ret, mode;
-        this.path = path;
+        String realpath = null;
+        try {
+            XURI xuri = new XURI(path);
+            if("file".equalsIgnoreCase(xuri.getBaseProtocol())) {
+                realpath = xuri.getPath();
+                realpath = getRealPath(realpath);
+            } else
+                realpath = url;
+        } catch (URISyntaxException use) {
+            throw new DapException("Malformed url: " + url)
+                    .setCode(DapCodes.SC_NOT_FOUND);
+        }
+        this.path = realpath;
         IntByReference ncidp = new IntByReference();
         try {
             mode = NC_NOWRITE;
@@ -181,6 +198,26 @@ public class NetcdfDSP extends AbstractDSP
     protected DMRFactory getFactory()
     {
         return new Nc4DMRFactory();
+    }
+
+    /**
+     * convert path to actual path
+     *
+     * @param path - return path
+     * @return real file path
+     */
+    @Override
+    protected String
+    getRealPath(String path)
+            throws DapException
+    {
+        String realpath = null;
+        String prefix = (String) this.context.get("RESOURCEDIR");
+        if(prefix == null)
+            throw new DapException("No resourcedir specified")
+                    .setCode(DapCodes.SC_INTERNAL_SERVER_ERROR);
+        realpath = DapUtil.canonjoin(prefix, path);
+        return realpath;
     }
 
     //////////////////////////////////////////////////

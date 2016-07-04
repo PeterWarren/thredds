@@ -101,7 +101,7 @@ public class Dap4Controller extends DapController
 
     public Dap4Controller()
     {
-        super("dap4");
+        super();
     }
 
     //////////////////////////////////////////////////////////
@@ -154,18 +154,7 @@ public class Dap4Controller extends DapController
     {
         // For some reason, I cannot get Spring autowiring to work with
         // MockServlet, so provide alternate.
-        File realfile = null;
-        if(TESTDIRS != null) {
-            for(String s : TESTDIRS) {
-                String path = DapUtil.canonjoin(s, relpath);
-                File f = new File(path);
-                if(f.exists()) {
-                    realfile = f;
-                    break;
-                }
-            }
-        } else
-            realfile = TdsRequestedDataset.getFile(relpath);
+        File realfile = realfile = TdsRequestedDataset.getFile(relpath);
         if(realfile == null || !realfile.exists())
             throw new DapException("Requested file not found " + relpath)
                     .setCode(DapCodes.SC_NOT_FOUND);

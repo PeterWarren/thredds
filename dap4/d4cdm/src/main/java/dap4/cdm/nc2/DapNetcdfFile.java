@@ -142,10 +142,10 @@ public class DapNetcdfFile extends NetcdfFile
         DapContext cxt = new DapContext();
         cancel = (cancelTask == null ? nullcancel : cancelTask);
         // 1. Get and parse the constrained DMR and Data v-a-v URL
-        this.dsp = dspregistry.findMatchingDSP(url,cxt);
+        this.dsp = dspregistry.findMatchingDSP(url,cxt); // will set dsp context
         if(this.dsp == null)
             throw new IOException("No matching DSP: "+url);
-        this.dsp.open(url,cxt);
+        this.dsp.open(url);
 
         // 2. Construct an equivalent CDM tree and populate 
         //    this NetcdfFile object.

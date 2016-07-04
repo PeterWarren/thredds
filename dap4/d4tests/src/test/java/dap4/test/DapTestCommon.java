@@ -6,6 +6,7 @@ package dap4.test;
 
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
+import dap4.dap4lib.AbstractDSP;
 import dap4.servlet.DapController;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -161,20 +162,19 @@ abstract public class DapTestCommon extends UnitTestCommon
         dap4root = locateDAP4Root(threddsroot);
         if(dap4root == null)
             System.err.println("Cannot locate /dap4 parent dir");
-        dap4testroot = canonjoin(dap4root,D4TESTDIRNAME);
-        dap4resourcedir = canonjoin(dap4testroot,DFALTRESOURCEPATH);
+        dap4testroot = canonjoin(dap4root, D4TESTDIRNAME);
+        dap4resourcedir = canonjoin(dap4testroot, DFALTRESOURCEPATH);
     }
 
     //////////////////////////////////////////////////
     // Static methods
 
-    static protected void setTESTDIRS(String... dirs)
+    static protected void testSetup(String dir)
     {
-        String[] realdirs = new String[dirs.length];
-        for(int i = 0; i < realdirs.length; i++) {
-            realdirs[i] = canonjoin(dap4testroot,dirs[i]);
-        }
-        DapController.TESTDIRS = realdirs;
+        String realdir = null;
+        realdir = canonjoin(dap4testroot, dir);
+        DapController.TESTDIR = realdir;
+        AbstractDSP.TESTING = true;
     }
 
     static protected String getD4TestsRoot()

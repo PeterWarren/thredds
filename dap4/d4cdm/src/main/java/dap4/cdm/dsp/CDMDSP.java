@@ -105,20 +105,12 @@ public class CDMDSP extends AbstractDSP
     {
     }
 
-    public CDMDSP(String path, DapContext cxt)
+    public CDMDSP(String path)
             throws DapException
     {
         super();
+        setPath(path);
     }
-
-    public CDMDSP(NetcdfFile ncd, DapContext cxt)
-            throws DapException
-    {
-        super();
-        setContext(cxt);
-        setRequestResponse();
-    }
-
 
     //////////////////////////////////////////////////
 
@@ -144,8 +136,14 @@ public class CDMDSP extends AbstractDSP
         return true;
     }
 
+    /**
+     * @param path    - absolute path to a file
+     * @param context - context info; arbitrary map
+     * @return CDMDSP instance
+     * @throws DapException
+     */
     @Override
-    public DSP open(String path, DapContext context) throws DapException
+    public DSP open(String path) throws DapException
     {
         setContext(context);
         setRequestResponse();
@@ -1012,12 +1010,32 @@ public class CDMDSP extends AbstractDSP
             throws DapException
     {
         try {
-            path = DapUtil.canonicalpath(location);
-            NetcdfFile ncfile = NetcdfFile.open(location, canceltask);
+            String realpath = getRealPath(location);
+            realpath = DapUtil.canonicalpath(realpath);
+            NetcdfFile ncfile = NetcdfFile.open(realpath, canceltask);
             return ncfile;
+        } catch (DapException de) {
+            if(DEBUG)
+                de.printStackTrace();
+            throw de;
         } catch (Exception e) {
-            return null;
+            if(DEBUG)
+                e.printStackTrace();
+            throw new DapException(e);
         }
+    }
+
+    /**
+     * convert path to actual path
+     *
+     * @param path - return path
+     * @return real file path
+     */
+    protected String
+    getRealPath(String path)
+            throws DapException
+    {
+        return path;
     }
 
     //////////////////////////////////////////////////

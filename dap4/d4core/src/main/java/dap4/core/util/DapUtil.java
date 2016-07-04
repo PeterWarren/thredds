@@ -5,13 +5,14 @@ package dap4.core.util;
 
 import dap4.core.dmr.*;
 
-import java.awt.*;
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 /**
@@ -380,8 +381,9 @@ abstract public class DapUtil // Should only contain static methods
     getDimSizes(List<DapDimension> dims)
     {
         long[] sizes = new long[dims.size()];
-        for(int i=0;i<dims.size();i++)
+        for(int i = 0; i < dims.size(); i++) {
             sizes[i] = dims.get(i).getSize();
+        }
         return sizes;
     }
 
@@ -621,13 +623,32 @@ abstract public class DapUtil // Should only contain static methods
 
     static public String canonjoin(String prefix, String suffix)
     {
-        StringBuilder result = new StringBuilder(prefix);
+        StringBuilder result = new StringBuilder();
         if(prefix == null) prefix = "";
         if(suffix == null) suffix = "";
+        result.append(prefix);
         if(!prefix.endsWith("/"))
             result.append("/");
         result.append(suffix.startsWith("/") ? suffix.substring(1) : suffix);
         return result.toString();
+    }
+
+    static public boolean
+    hasWindowsDrive(final String path)
+    {
+        if(path != null && path.length() >= 2 && path.charAt(1) == ':') {
+            final char c = path.charAt(0);
+            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+        }
+        return false;
+    }
+
+    static public boolean
+    isAbsolutePath(final String path)
+    {
+        return path != null && (hasWindowsDrive(path)
+                || path.charAt(0) == '/'
+                || path.charAt(0) == '\\');
     }
 
 } // class DapUtil

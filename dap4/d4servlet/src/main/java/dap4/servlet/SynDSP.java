@@ -9,13 +9,17 @@ import dap4.core.util.DapContext;
 import dap4.core.util.DapDump;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
-import dap4.dap4lib.*;
+import dap4.dap4lib.ChunkInputStream;
+import dap4.dap4lib.DapCodes;
+import dap4.dap4lib.RequestMode;
+import dap4.dap4lib.XURI;
 import dap4.dap4lib.serial.D4DSP;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -72,14 +76,24 @@ public class SynDSP extends D4DSP
 
     @Override
     public DSP
-    open(String path, DapContext context)
+    open(String filepath)
             throws DapException
     {
-        setPath(path);
+        // convert the relative path to real path
+        assert this.context != null;
+        if(filepath.startsWith("file:")) try {
+            XURI xuri = new XURI(filepath);
+            filepath = xuri.getPath();
+        } catch (URISyntaxException use) {
+            throw new DapException("Malformed filepath: " + filepath)
+                    .setCode(DapCodes.SC_NOT_FOUND);
+        }
+        String realpath = getRealPath(filepath);
+        setPath(realpath);
         // Read the .dmr/.syn file
         String document;
         try {
-            try (FileInputStream stream = new FileInputStream(path);) {
+            try (FileInputStream stream = new FileInputStream(realpath);) {
                 document = DapUtil.readtextfile(stream);
             }
         } catch (IOException ioe) {
@@ -110,4 +124,29 @@ public class SynDSP extends D4DSP
             throw new DapException(ioe);
         }
     }
+
+    /**
+     * convert path to actual path
+     *
+     * @param path - return path
+     * @return real file path
+     */
+    @Override
+    protected String
+    getRealPath(String path)
+            throws DapException
+    {
+        String realpath;
+        if(DapUtil.isAbsolutePath(path))
+            realpath = DapUtil.canonicalpath(path);
+        else {
+            String prefix = (String) getContext().get("RESOURCEDIR");
+            if(prefix == null)
+                throw new DapException("No resourcedir specified")
+                        .setCode(DapCodes.SC_INTERNAL_SERVER_ERROR);
+            realpath = DapUtil.canonjoin(prefix, path);
+        }
+        return realpath;
+    }
+
 }

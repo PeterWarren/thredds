@@ -14,7 +14,7 @@ import java.io.IOException;
 public interface DSP
 {
     /* Unfortunately, Java does not (yet, sigh!, as of java 7) allow
-       including static methods in an interface.
+       including static methods (with no body) in an interface.
        As with IOSPs, we need a quick match function to indicate
        that this DSP is likely to be able to process this file.
      */
@@ -25,10 +25,11 @@ public interface DSP
 
     // static public boolean dspMatch(String path, DapContext context);
 
-    public DSP open(String path, DapContext context) throws DapException;
+    public DSP open(String path) throws DapException;
 
     public String getPath();
     public Object getContext();
+    public void setContext(DapContext cxt);
     public DapDataset getDMR() throws DapException;
     public DataDataset getDataset() throws DataException;
     public void setDataset(DataDataset ds);

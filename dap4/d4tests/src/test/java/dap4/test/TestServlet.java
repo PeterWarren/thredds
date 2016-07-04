@@ -12,7 +12,6 @@ import dap4.servlet.SynDSP;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -24,7 +23,6 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import thredds.server.dap4.Dap4Controller;
 
-import javax.servlet.ServletContext;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -37,9 +35,9 @@ import java.util.List;
 
 /**
  * TestServlet has multiple purposes.
- * 1. It test the d4tsservlet.
- * 2. It generates into files, the serialized databuffer
- * for datasets. These files are then used to
+ * 1. It tests the d4tsservlet.
+ * 2. It (optionally) stores the serialized databuffer
+ * for datasets into files., These files are then used to
  * test client side deserialization.
  */
 
@@ -50,7 +48,7 @@ public class TestServlet extends DapTestCommon
     //////////////////////////////////////////////////
     // Constants
 
-    static protected final String RESOURCEPATH = "/src/test/data/resources"; // wrt getTestInputFilesDIr
+    static protected final String RESOURCEPATH = "/src/test/data/resources"; // wrt getTestInputFilesDir
     static protected final String TESTINPUTDIR = "/testfiles";
     static protected final String BASELINEDIR = "/TestServlet/baseline";
     static protected final String GENERATEDIR = "/TestCDMClient/testinput";
@@ -66,7 +64,7 @@ public class TestServlet extends DapTestCommon
     //////////////////////////////////////////////////
     // Type Declarations
 
-    static protected class ServletTest
+    static protected class TestCase
     {
         static String inputroot = null;
         static String baselineroot = null;
@@ -90,20 +88,20 @@ public class TestServlet extends DapTestCommon
         String baselinepath;
         String generatepath;
 
-        ServletTest(String dataset, String extensions, boolean checksumming,
-                    Dump.Commands template)
+        TestCase(String dataset, String extensions, boolean checksumming,
+                 Dump.Commands template)
         {
             this(dataset, extensions, checksumming, false, template);
         }
 
-        ServletTest(String dataset, String extensions, boolean checksumming)
+        TestCase(String dataset, String extensions, boolean checksumming)
         {
             this(dataset, extensions, checksumming, true, null);
         }
 
-        protected ServletTest(String dataset, String extensions,
-                              boolean checksumming, boolean xfail,
-                              Dump.Commands template)
+        protected TestCase(String dataset, String extensions,
+                           boolean checksumming, boolean xfail,
+                           Dump.Commands template)
         {
             this.title = dataset;
             this.dataset = dataset;
@@ -118,7 +116,7 @@ public class TestServlet extends DapTestCommon
 
         String makeurl(RequestMode ext)
         {
-            String u = canonjoin(FAKEURLPREFIX,canonjoin(TESTINPUTDIR, dataset)) + "." + ext.toString();
+            String u = canonjoin(FAKEURLPREFIX, canonjoin(TESTINPUTDIR, dataset)) + "." + ext.toString();
             return u;
         }
 
@@ -128,7 +126,7 @@ public class TestServlet extends DapTestCommon
         }
     }
 
-    static protected class GenerateFilter implements FileFilter
+    static /*package*/ class GenerateFilter implements FileFilter
     {
         boolean debug;
 
@@ -156,6 +154,19 @@ public class TestServlet extends DapTestCommon
 
     }
 
+    static /*package*/ class NullValidator implements Validator
+    {
+        public boolean supports(Class<?> clazz)
+        {
+            return true;
+        }
+
+        public void validate(Object target, Errors errors)
+        {
+            return;
+        }
+    }
+
     //////////////////////////////////////////////////
     // Instance variables
 
@@ -163,9 +174,9 @@ public class TestServlet extends DapTestCommon
 
     // Test cases
 
-    protected List<ServletTest> alltestcases = new ArrayList<ServletTest>();
+    protected List<TestCase> alltestcases = new ArrayList<TestCase>();
 
-    protected List<ServletTest> chosentests = new ArrayList<ServletTest>();
+    protected List<TestCase> chosentests = new ArrayList<TestCase>();
 
     //////////////////////////////////////////////////.
 
@@ -174,19 +185,14 @@ public class TestServlet extends DapTestCommon
     {
         StandaloneMockMvcBuilder mvcbuilder =
                 MockMvcBuilders.standaloneSetup(new Dap4Controller());
-        Validator v = new Validator() {
-            public boolean supports(Class<?> clazz) {return true;}
-            public void validate(Object target, Errors errors) {return;}
-        };
-        mvcbuilder.setValidator(v);
+        mvcbuilder.setValidator(new NullValidator());
         this.mockMvc = mvcbuilder.build();
-        setTESTDIRS(RESOURCEPATH);
-        AbstractDSP.TESTING = true;
+        testSetup(RESOURCEPATH);
         DapCache.dspregistry.register(FileDSP.class, DSPRegistry.FIRST);
         DapCache.dspregistry.register(SynDSP.class, DSPRegistry.FIRST);
         if(prop_ascii)
             Generator.setASCII(true);
-        ServletTest.setRoots(canonjoin(getResourceRoot(), TESTINPUTDIR),
+        TestCase.setRoots(canonjoin(getResourceRoot(), TESTINPUTDIR),
                 canonjoin(getResourceRoot(), BASELINEDIR),
                 canonjoin(getResourceRoot(), GENERATEDIR));
         defineAllTestcases();
@@ -199,13 +205,13 @@ public class TestServlet extends DapTestCommon
     protected void
     chooseTestcases()
     {
-        if(true) {
+        if(false) {
             chosentests = locate("test_sequence_1.syn");
             prop_visual = true;
             prop_debug = true;
-	    prop_generate = false;
+            prop_generate = false;
         } else {
-            for(ServletTest tc : alltestcases) {
+            for(TestCase tc : alltestcases) {
                 chosentests.add(tc);
             }
         }
@@ -215,7 +221,7 @@ public class TestServlet extends DapTestCommon
     defineAllTestcases()
     {
         this.alltestcases.add(
-                new ServletTest("test_fill.nc", "dmr,dap", true,  //0
+                new TestCase("test_fill.nc", "dmr,dap", true,  //0
                         // S4
                         new Dump.Commands()
                         {
@@ -230,7 +236,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_one_var.nc", "dmr,dap", true,  //0
+                new TestCase("test_one_var.nc", "dmr,dap", true,  //0
                         // S4
                         new Dump.Commands()
                         {
@@ -241,7 +247,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_opaque.nc", "dmr,dap", true,  //0
+                new TestCase("test_opaque.nc", "dmr,dap", true,  //0
                         // S4
                         new Dump.Commands()
                         {
@@ -252,7 +258,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_opaque_array.nc", "dmr,dap", true,  //0
+                new TestCase("test_opaque_array.nc", "dmr,dap", true,  //0
                         // S4
                         new Dump.Commands()
                         {
@@ -265,7 +271,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_one_vararray.nc", "dmr,dap", true,  //1
+                new TestCase("test_one_vararray.nc", "dmr,dap", true,  //1
                         // S4
                         new Dump.Commands()
                         {
@@ -277,7 +283,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_enum.nc", "dmr,dap", true,   //
+                new TestCase("test_enum.nc", "dmr,dap", true,   //
                         // S1
                         new Dump.Commands()
                         {
@@ -288,7 +294,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_enum_2.nc", "dmr,dap", true,   //
+                new TestCase("test_enum_2.nc", "dmr,dap", true,   //
                         // S1
                         new Dump.Commands()
                         {
@@ -299,7 +305,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_enum_array.nc", "dmr,dap", true, //3
+                new TestCase("test_enum_array.nc", "dmr,dap", true, //3
                         // 5 S1
                         new Dump.Commands()
                         {
@@ -312,7 +318,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_atomic_types.nc", "dmr,dap", true, //4
+                new TestCase("test_atomic_types.nc", "dmr,dap", true, //4
                         // S1 U1 S2 U2 S4 U4 S8 U8 F4 F8 C1 T O S1 S1
                         new Dump.Commands()
                         {
@@ -351,7 +357,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_atomic_array.nc", "dmr,dap", true,  //5
+                new TestCase("test_atomic_array.nc", "dmr,dap", true,  //5
                         // 6 U1 4 S2 6 U4 2 F8 2 C1 4 T 2 O 5 S1
                         new Dump.Commands()
                         {
@@ -392,7 +398,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_groups1.nc", "dmr,dap", true,   //6
+                new TestCase("test_groups1.nc", "dmr,dap", true,   //6
                         //5 S4 3 F4 5 S4 7 F4",
                         new Dump.Commands()
                         {
@@ -417,7 +423,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_struct_type.nc", "dmr,dap", true,  //7
+                new TestCase("test_struct_type.nc", "dmr,dap", true,  //7
                         // { S4 S4 }
                         new Dump.Commands()
                         {
@@ -429,7 +435,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_utf8.nc", "dmr,dap", true,  //9
+                new TestCase("test_utf8.nc", "dmr,dap", true,  //9
                         // 2 { S4 S4 }
                         new Dump.Commands()
                         {
@@ -443,7 +449,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_struct_nested.hdf5", "dmr,dap", true,    // 10
+                new TestCase("test_struct_nested.hdf5", "dmr,dap", true,    // 10
                         // { { S4 S4 } { S4 S4 } }
                         new Dump.Commands()
                         {
@@ -457,7 +463,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_struct_nested3.hdf5", "dmr,dap", true,
+                new TestCase("test_struct_nested3.hdf5", "dmr,dap", true,
                         // { { {S4 } } }
                         new Dump.Commands()
                         {
@@ -468,7 +474,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_sequence_1.syn", "dmr,dap", true,  //0
+                new TestCase("test_sequence_1.syn", "dmr,dap", true,  //0
                         // S4
                         new Dump.Commands()
                         {
@@ -483,7 +489,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_sequence_2.syn", "dmr,dap", true,  //0
+                new TestCase("test_sequence_2.syn", "dmr,dap", true,  //0
                         // S4
                         new Dump.Commands()
                         {
@@ -501,7 +507,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_sequence_1.syn", "dmr,dap", true,  //0
+                new TestCase("test_sequence_1.syn", "dmr,dap", true,  //0
                         // S4
                         new Dump.Commands()
                         {
@@ -516,7 +522,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_sequence_2.syn", "dmr,dap", true,  //0
+                new TestCase("test_sequence_2.syn", "dmr,dap", true,  //0
                         // S4
                         new Dump.Commands()
                         {
@@ -535,7 +541,7 @@ public class TestServlet extends DapTestCommon
                         }));
 /*Not currently working
         this.alltestcases.add(
-            new ServletTest("test_vlen1.nc", "dmr,dap", true,
+            new TestCase("test_vlen1.nc", "dmr,dap", true,
                 new Dump.Commands()
                 {
                     public void run(Dump printer) throws IOException
@@ -549,7 +555,7 @@ public class TestServlet extends DapTestCommon
                     }
                 }));
         this.alltestcases.add(
-            new ServletTest("test_vlen2.nc", "dmr,dap", true,
+            new TestCase("test_vlen2.nc", "dmr,dap", true,
                 new Dump.Commands()
                 {
                     public void run(Dump printer) throws IOException
@@ -568,7 +574,7 @@ public class TestServlet extends DapTestCommon
                     }
                 }));
         this.alltestcases.add(
-            new ServletTest("test_vlen3.hdf5", "dmr,dap", true,
+            new TestCase("test_vlen3.hdf5", "dmr,dap", true,
                 new Dump.Commands()
                 {
                     public void run(Dump printer) throws IOException
@@ -583,7 +589,7 @@ public class TestServlet extends DapTestCommon
                 }));
         //*hdf5 iosp is not doing this correctly
             this.alltestcases.add(
-            new ServletTest("test_vlen4.hdf5", "dmr,dap", true,
+            new TestCase("test_vlen4.hdf5", "dmr,dap", true,
                 new Dump.Commands()
                 {
                     public void run(Dump printer) throws IOException
@@ -599,7 +605,7 @@ public class TestServlet extends DapTestCommon
                     }
                 }));
         this.alltestcases.add(
-            new ServletTest("test_vlen5.hdf5", "dmr,dap", true,
+            new TestCase("test_vlen5.hdf5", "dmr,dap", true,
                 new Dump.Commands()
                 {
                     public void run(Dump printer) throws IOException
@@ -616,7 +622,7 @@ public class TestServlet extends DapTestCommon
                 }));
 */
         this.alltestcases.add(
-                new ServletTest("test_anon_dim.syn", "dmr,dap", true,  //0
+                new TestCase("test_anon_dim.syn", "dmr,dap", true,  //0
                         // S4
                         new Dump.Commands()
                         {
@@ -629,7 +635,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_atomic_types.syn", "dmr,dap", true, //4
+                new TestCase("test_atomic_types.syn", "dmr,dap", true, //4
                         // S1 U1 S2 U2 S4 U4 S8 U8 F4 F8 C1 T O S1 S1
                         new Dump.Commands()
                         {
@@ -668,7 +674,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_atomic_array.syn", "dmr,dap", true,  //5
+                new TestCase("test_atomic_array.syn", "dmr,dap", true,  //5
                         // 6 U1 4 S2 6 U4 2 F8 2 C1 4 T 2 O 5 S1
                         new Dump.Commands()
                         {
@@ -709,7 +715,7 @@ public class TestServlet extends DapTestCommon
                             }
                         }));
         this.alltestcases.add(
-                new ServletTest("test_struct_array.syn", "dmr,dap", true,  //8
+                new TestCase("test_struct_array.syn", "dmr,dap", true,  //8
                         // 12 { S4 S4 }
                         new Dump.Commands()
                         {
@@ -728,7 +734,7 @@ public class TestServlet extends DapTestCommon
                         }));
         // XFAIL tests
         this.alltestcases.add(
-                new ServletTest("test_struct_array.nc", "dmr", true)
+                new TestCase("test_struct_array.nc", "dmr", true)
         );
     }
 
@@ -741,7 +747,7 @@ public class TestServlet extends DapTestCommon
             throws Exception
     {
         DapCache.flush();
-        for(ServletTest testcase : chosentests) {
+        for(TestCase testcase : chosentests) {
             doOneTest(testcase);
         }
     }
@@ -750,7 +756,7 @@ public class TestServlet extends DapTestCommon
     // Primary test method
 
     void
-    doOneTest(ServletTest testcase)
+    doOneTest(TestCase testcase)
             throws Exception
     {
         System.out.println("Testcase: " + testcase.testinputpath);
@@ -766,27 +772,29 @@ public class TestServlet extends DapTestCommon
                 dodata(testcase);
                 break;
             default:
-                Assert.assertTrue("Unknown extension",false);
+                Assert.assertTrue("Unknown extension", false);
             }
         }
     }
 
     void
-    dodmr(ServletTest testcase)
+    dodmr(TestCase testcase)
             throws Exception
     {
         String url = testcase.makeurl(RequestMode.DMR);
+
         RequestBuilder rb = MockMvcRequestBuilders
                 .get(url)
                 .servletPath(url);
         MvcResult result = this.mockMvc.perform(rb).andReturn();
+
         // Collect the output
         MockHttpServletResponse res = result.getResponse();
         byte[] byteresult = res.getContentAsByteArray();
 
         // Test by converting the raw output to a string
-
         String sdmr = new String(byteresult, UTF8);
+
         if(prop_visual)
             visual(testcase.title + ".dmr", sdmr);
         if(!testcase.xfail && prop_baseline) {
@@ -795,12 +803,12 @@ public class TestServlet extends DapTestCommon
             // Read the baseline file
             String baselinecontent = readfile(testcase.baselinepath + ".dmr");
             System.out.println("DMR Comparison: vs " + testcase.baselinepath + ".dmr");
-            Assert.assertTrue("***Fail",same(getTitle(), baselinecontent, sdmr));
+            Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdmr));
         }
     }
 
     void
-    dodata(ServletTest testcase)
+    dodata(TestCase testcase)
             throws Exception
     {
         String baseline;
@@ -810,6 +818,7 @@ public class TestServlet extends DapTestCommon
                 .get(url)
                 .servletPath(url);
         MvcResult result = this.mockMvc.perform(rb).andReturn();
+
         // Collect the output
         MockHttpServletResponse res = result.getResponse();
         byte[] byteresult = res.getContentAsByteArray();
@@ -851,7 +860,7 @@ public class TestServlet extends DapTestCommon
             // Read the baseline file
             System.out.println("Note Comparison:");
             String baselinecontent = readfile(testcase.baselinepath + ".dap");
-            Assert.assertTrue("***Fail",same(getTitle(), baselinecontent, sdata));
+            Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdata));
         }
     }
 
@@ -859,11 +868,11 @@ public class TestServlet extends DapTestCommon
     // Utility methods
 
     // Locate the test cases with given prefix
-    List<ServletTest>
+    List<TestCase>
     locate(String prefix)
     {
-        List<ServletTest> results = new ArrayList<ServletTest>();
-        for(ServletTest ct : this.alltestcases) {
+        List<TestCase> results = new ArrayList<TestCase>();
+        for(TestCase ct : this.alltestcases) {
             if(ct.dataset.startsWith(prefix))
                 results.add(ct);
         }

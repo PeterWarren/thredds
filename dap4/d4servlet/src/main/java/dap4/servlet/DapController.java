@@ -31,7 +31,8 @@ import java.nio.charset.Charset;
 
 abstract public class DapController extends HttpServlet
 {
-    static public boolean TESTING = false;
+    // Provide a way for test programs to pass info into the controller
+    static public String TESTDIR = null;
 
     //////////////////////////////////////////////////
     // Constants
@@ -68,8 +69,6 @@ abstract public class DapController extends HttpServlet
 
     static protected long binarywritelimit = ChunkWriter.DEFAULTWRITELIMIT;
 
-    static public String[] TESTDIRS = null;
-
     //////////////////////////////////////////////////
     // Static accessors
 
@@ -93,15 +92,14 @@ abstract public class DapController extends HttpServlet
     //////////////////////////////////////////////////
     // Instance variables
 
+    transient protected DapContext context = new DapContext();
+
     protected boolean compress = true;
 
     transient protected ByteOrder byteorder = ByteOrder.nativeOrder();
 
     transient protected DapDSR dsrbuilder = new DapDSR();
 
-    transient protected String controllerpath = null;
-
-    transient protected String resourcepath = null;
 
     //////////////////////////////////////////////////
     // ServletContextAware
@@ -117,9 +115,8 @@ abstract public class DapController extends HttpServlet
     //////////////////////////////////////////////////
     // Constructor(s)
 
-    public DapController(String controllerpath)
+    public DapController()
     {
-        this.controllerpath = DapUtil.canonjoin("", controllerpath);
     }
 
     //////////////////////////////////////////////////////////
@@ -189,6 +186,23 @@ abstract public class DapController extends HttpServlet
     }
 
     //////////////////////////////////////////////////////////
+    // Accessors
+
+    public DapController setControllerPath(String controllerpath)
+    {
+        this.context.put("controllerpath", DapUtil.canonjoin("", controllerpath));
+        return this;
+    }
+
+    public DapController setResourcePath(String resourcepath)
+    {
+        this.context.put("resourcepath", DapUtil.canonjoin("", resourcepath));
+        return this;
+    }
+
+    public DapContext getContext() {return this.context;}
+
+    //////////////////////////////////////////////////////////
     // Primary Controller Entry Point
 
     public void handleRequest(HttpServletRequest req, HttpServletResponse res)
@@ -201,7 +215,7 @@ abstract public class DapController extends HttpServlet
         String url = drq.getOriginalURL();
         StringBuilder info = new StringBuilder("doGet():");
         info.append(" dataset = ");
-        info.append(this.resourcepath);
+        info.append(this.context.get("resourcepath"));
         info.append(" url = ");
         info.append(url);
         if(DEBUG) {
@@ -211,7 +225,8 @@ abstract public class DapController extends HttpServlet
         DapContext cxt = new DapContext();
         cxt.put(HttpServletRequest.class, req);
         cxt.put(HttpServletResponse.class, res);
-
+        if(TESTDIR != null)
+            cxt.put("RESOURCEDIR",TESTDIR);
         if(url.endsWith(FAVICON)) {
             doFavicon(drq, FAVICON, cxt);
             return;
@@ -223,7 +238,7 @@ abstract public class DapController extends HttpServlet
                 // This is the case where a request was made without a dataset;
                 // According to the spec, I think we should return the
                 // services/capabilities document
-                doCapabilities(drq,cxt);
+                doCapabilities(drq, cxt);
             } else {
                 RequestMode mode = drq.getMode();
                 if(mode == null)
@@ -302,7 +317,7 @@ abstract public class DapController extends HttpServlet
     doDMR(DapRequest drq, DapContext cxt)
             throws IOException
     {
-        DSP dsp = DapCache.open(drq.getResourcePath(), cxt);
+        DSP dsp = DapCache.open(drq.getDatasetPath(), cxt);
         DapDataset dmr = dsp.getDMR();
 
         // Process any constraint view
@@ -347,7 +362,7 @@ abstract public class DapController extends HttpServlet
     doData(DapRequest drq, DapContext cxt)
             throws IOException
     {
-        DSP dsp = DapCache.open(drq.getResourcePath(), cxt);
+        DSP dsp = DapCache.open(drq.getDatasetPath(), cxt);
         if(dsp == null)
             throw new IOException("No such file: " + drq.getResourcePath());
         DapDataset dmr = dsp.getDMR();

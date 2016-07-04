@@ -163,6 +163,7 @@ public class DSPRegistry
                 boolean ismatch = (Boolean) tester.matcher.invoke(null, path, cxt);
                 if(ismatch) {
                     DSP dsp = (DSP) tester.dspclass.newInstance();
+                    dsp.setContext(cxt);
                     return dsp;
                 }
             } catch (Exception e) {

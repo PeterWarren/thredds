@@ -8,6 +8,7 @@ import dap4.core.data.DataCompiler;
 import dap4.core.data.DataDataset;
 import dap4.core.dmr.DMRFactory;
 import dap4.core.dmr.DapDataset;
+import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.dap4lib.AbstractDSP;
 

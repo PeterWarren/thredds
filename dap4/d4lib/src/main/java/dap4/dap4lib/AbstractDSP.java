@@ -28,6 +28,8 @@ import java.util.Map;
 
 abstract public class AbstractDSP implements DSP
 {
+    static public boolean TESTING = false; /* Turned on by test programs */
+
     //////////////////////////////////////////////////
     // constants
 
@@ -37,15 +39,11 @@ abstract public class AbstractDSP implements DSP
     static public final boolean USEDOM = false;
 
     //////////////////////////////////////////////////
-
-    static public boolean TESTING = false;
-
-    //////////////////////////////////////////////////
     // Instance variables
 
     protected DapContext context = null;
     protected DapDataset dmr = null;
-    protected String path = null;
+    protected String realpath = null;
     protected Object source = null;
     protected ByteOrder order = null;
     protected ChecksumMode checksummode = ChecksumMode.DAP;
@@ -63,12 +61,21 @@ abstract public class AbstractDSP implements DSP
 
     abstract protected DMRFactory getFactory();
 
+    abstract protected String getRealPath(String path) throws DapException;
+
     //////////////////////////////////////////////////
     // DSP Interface
 
     // Subclass defined
 
-    abstract public DSP open(String path, DapContext context) throws DapException;
+    /**
+     * "open" a reference to a data source and return the DSP wrapper.
+     * @param path  - path to the data source; may be relative (from a url)
+     *              or absolute.
+     * @return  = wrapping dsp
+     * @throws DapException
+     */
+    abstract public DSP open(String path) throws DapException;
 
     //////////////////////////////////////////////////
 
@@ -83,7 +90,7 @@ abstract public class AbstractDSP implements DSP
     }
 
     @Override
-    public Object getContext()
+    public DapContext getContext()
     {
         return this.context;
     }
@@ -91,7 +98,7 @@ abstract public class AbstractDSP implements DSP
     public String
     getPath()
     {
-        return path;
+        return realpath;
     }
 
     @Override
@@ -109,7 +116,8 @@ abstract public class AbstractDSP implements DSP
 
     // DSP Extensions
 
-    protected void setContext(DapContext context)
+    @Override
+    public void setContext(DapContext context)
     {
         this.context = context;
     }
@@ -130,7 +138,7 @@ abstract public class AbstractDSP implements DSP
     setPath(String path)
             throws DapException
     {
-        this.path = path;
+        this.realpath = path;
     }
 
     @Override

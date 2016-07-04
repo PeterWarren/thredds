@@ -12,6 +12,7 @@ import dap4.dap4lib.serial.D4DSP;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -35,8 +36,6 @@ public class FileDSP extends D4DSP
     //Coverity[FB.URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD]
     protected byte[] raw = null; // Complete serialized binary databuffer
 
-    protected Object context = null;
-
     //////////////////////////////////////////////////
     // Constructor(s)
 
@@ -52,7 +51,7 @@ public class FileDSP extends D4DSP
     /**
      * A path is file if it has no base protocol or is file:
      *
-     * @param path
+     * @param url     - or possibly an absolute path
      * @param context Any parameters that may help to decide.
      * @return true if this path appears to be processible by this DSP
      */
@@ -82,22 +81,19 @@ public class FileDSP extends D4DSP
 
     @Override
     public DSP
-    open(String path, DapContext context)
+    open(String filepath)
             throws DapException
     {
-        setPath(DapUtil.canonicalpath(path));
         try {
-            String filepath = this.path;
-            if(filepath.startsWith("file:"))
-                filepath = filepath.substring("file:".length());
-            while(filepath.startsWith("/")) // remove all leading slashes
-            {
-                filepath = filepath.substring(1);
+            if(filepath.startsWith("file:")) try {
+                XURI xuri = new XURI(filepath);
+                filepath = xuri.getPath();
+            }  catch (URISyntaxException use) {
+                throw new DapException("Malformed filepath: "+filepath)
+                        .setCode(DapCodes.SC_NOT_FOUND);
             }
-            // Absolutize
-            if(!DapUtil.hasDriveLetter(filepath))
-                filepath = "/" + filepath;
-            try (FileInputStream stream = new FileInputStream(filepath)) {
+            String realpath = getRealPath(filepath);
+            try (FileInputStream stream = new FileInputStream(realpath)) {
                 this.raw = DapUtil.readbinaryfile(stream);
             }
             try (FileInputStream stream = new FileInputStream(filepath)) { // == rewind
@@ -108,8 +104,32 @@ public class FileDSP extends D4DSP
             }
             return this;
         } catch (IOException ioe) {
-            throw new DapException(ioe);
+            throw new DapException(ioe).setCode(DapCodes.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * convert path to actual path
+     *
+     * @param path - return path
+     * @return real file path
+     */
+    @Override
+    protected String
+    getRealPath(String path)
+            throws DapException
+    {
+        String realpath;
+        if(DapUtil.isAbsolutePath(path))
+            realpath = DapUtil.canonicalpath(path);
+        else {
+            String prefix = (String) getContext().get("RESOURCEDIR");
+            if(prefix == null)
+                throw new DapException("No resourcedir specified")
+                        .setCode(DapCodes.SC_INTERNAL_SERVER_ERROR);
+            realpath = DapUtil.canonjoin(prefix, path);
+        }
+        return realpath;
     }
 
 }

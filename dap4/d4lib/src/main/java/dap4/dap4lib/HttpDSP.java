@@ -128,16 +128,15 @@ public class HttpDSP extends D4DSP
                 }
             } else
                 return true;
-            }catch(URISyntaxException use){
-                return false;
-            }
+        } catch (URISyntaxException use) {
+            return false;
+        }
         return false;
     }
 
     @Override
-    public DSP open(String url, DapContext context) throws DapException
+    public DSP open(String url) throws DapException
     {
-        setContext(context);
         this.originalurl = url;
         // See if this is a local vs remote request
         setURL(url);
@@ -145,6 +144,20 @@ public class HttpDSP extends D4DSP
         build();
         return this;
 
+    }
+
+    /**
+     * convert path to actual path: noop
+     *
+     * @param path -  path
+     * @return real file path
+     */
+    @Override
+    protected String
+    getRealPath(String path)
+            throws DapException
+    {
+        return path;
     }
 
     @Override

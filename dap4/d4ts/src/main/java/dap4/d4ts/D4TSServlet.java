@@ -74,7 +74,7 @@ public class D4TSServlet extends DapController
 
     public D4TSServlet()
     {
-        super("d4ts");
+        super();
     }
 
     @Override

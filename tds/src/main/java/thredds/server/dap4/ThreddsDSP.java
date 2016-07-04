@@ -37,10 +37,11 @@ import dap4.cdm.dsp.CDMDSP;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
+import dap4.dap4lib.DapCodes;
 import thredds.core.TdsRequestedDataset;
 import ucar.nc2.NetcdfFile;
-import ucar.nc2.dataset.NetcdfDataset;
-import ucar.nc2.util.CancelTask;
+
+import java.io.File;
 
 /**
  * CDM->DAP DSP
@@ -60,41 +61,43 @@ public class ThreddsDSP extends CDMDSP
     {
     }
 
-    public ThreddsDSP(String path, DapContext cxt)
+    public ThreddsDSP(String path)
             throws DapException
     {
-        super(path, cxt);
-//        init(createNetcdfFile(path, null));
+        super(path);
     }
-
-    public ThreddsDSP(NetcdfFile ncd, DapContext cxt)
-            throws DapException
-    {
-        super(ncd, cxt);
-//        init(ncd);
-    }
-
 
     //////////////////////////////////////////////////
 
+    /**
+     * convert path to actual path
+     *
+     * @param path - return path
+     * @return real file path
+     */
     @Override
-    protected NetcdfFile
-    createNetcdfFile(String location, CancelTask canceltask)
+    protected String
+    getRealPath(String path)
             throws DapException
     {
-        try {
-            path = DapUtil.canonicalpath(location);
-            NetcdfFile ncfile;
-            if(TESTING)
-                ncfile = NetcdfDataset.openDataset(path);
-            else
-                ncfile = TdsRequestedDataset.getNetcdfFile(this.request, this.response, path);
-            return ncfile;
-        } catch (Exception e) {
-            if(DEBUG)
-                e.printStackTrace();
-            return null;
+        String realpath = null;
+        String prefix = (String)this.context.get("RESOURCEDIR");
+        if(prefix != null) {
+          realpath = DapUtil.canonjoin(prefix,path);
+        } else
+            realpath = TdsRequestedDataset.getLocationFromRequestPath(path);
+        File f = new File(realpath);
+        if(!f.exists() || !f.canRead())
+            throw new DapException("Not found: " + path)
+                                  .setCode(DapCodes.SC_NOT_FOUND);
+        if(!TESTING) {
+            if(!TdsRequestedDataset.resourceControlOk(this.request, this.response, realpath))
+                throw new DapException("Not authorized: " + path)
+                        .setCode(DapCodes.SC_FORBIDDEN);
         }
+        //ncfile = TdsRequestedDataset.getNetcdfFile(this.request, this.response, path);
+        return realpath;
     }
+
 
 }

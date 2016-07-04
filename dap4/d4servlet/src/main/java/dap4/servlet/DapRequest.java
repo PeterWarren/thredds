@@ -114,7 +114,7 @@ public class DapRequest
         this.url = request.getRequestURL().toString(); // does not include query
         this.querystring = request.getQueryString();    // raw (undecoded)
         // When using Spring Mock, the query is part of the parameters
-        if(this.controller.TESTING && this.querystring == null) {
+        if(this.controller.TESTDIR != null && this.querystring == null) {
             String param = request.getParameter(CONSTRAINTTAG); // raw?
             if(param != null) {
                 StringBuilder buf = new StringBuilder();
