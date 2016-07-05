@@ -65,6 +65,7 @@ public class DapSerializer
             throws IOException
     {
         writer = new SerialWriter(this.stream, this.order);
+	    writer.flush(); // If stream is ChunkWriter, then dump DMR
         // Iterate over the top-level variables in the constraint
         for(DapVariable var : dmr.getTopVariables()) {
             DataVariable dv = data.getVariableData(var);

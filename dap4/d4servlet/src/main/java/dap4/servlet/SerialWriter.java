@@ -441,5 +441,12 @@ public class SerialWriter
             checksum.update(bytes, 0, bytes.length);
     }
 
+    public void
+    flush()
+        throws IOException
+    {
+        output.flush();
+    }
+
 
 }//SerialWriter

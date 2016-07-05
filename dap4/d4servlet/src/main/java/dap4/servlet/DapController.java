@@ -67,8 +67,6 @@ abstract public class DapController extends HttpServlet
 
     static protected DapCache cache = null;
 
-    static protected long binarywritelimit = ChunkWriter.DEFAULTWRITELIMIT;
-
     //////////////////////////////////////////////////
     // Static accessors
 
@@ -82,11 +80,6 @@ abstract public class DapController extends HttpServlet
     getCache()
     {
         return DapController.cache;
-    }
-
-    static public void setBinaryWritelimit(long limit)
-    {
-        binarywritelimit = limit;
     }
 
     //////////////////////////////////////////////////
@@ -179,7 +172,6 @@ abstract public class DapController extends HttpServlet
             charset.setAccessible(true);
             charset.set(null, null);
             initialize();
-            setBinaryWritelimit(getBinaryWriteLimit());
         } catch (Exception e) {
             throw new ServletException(e);
         }
@@ -388,7 +380,7 @@ abstract public class DapController extends HttpServlet
         // Wrap the outputstream with a Chunk writer
         OutputStream out = drq.getOutputStream();
         ChunkWriter cw = new ChunkWriter(out, RequestMode.DAP, this.byteorder);
-        cw.setWriteLimit(this.binarywritelimit);
+        cw.setWriteLimit(getBinaryWriteLimit());
         cw.writeDMR(sdmr);
         cw.flush();
 

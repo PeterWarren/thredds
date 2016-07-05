@@ -5,11 +5,17 @@
 package dap4.servlet;
 
 import dap4.core.dmr.ErrorResponse;
-import dap4.core.util.*;
+import dap4.core.util.DapDump;
+import dap4.core.util.DapException;
+import dap4.core.util.DapUtil;
+import dap4.dap4lib.DapCodes;
 import dap4.dap4lib.RequestMode;
 
-import java.io.*;
-import java.nio.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class ChunkWriter extends OutputStream
 {
@@ -20,7 +26,7 @@ public class ChunkWriter extends OutputStream
 
     static final int MAXCHUNKSIZE = 0xFFFF;
 
-    static final long DEFAULTWRITELIMIT = 1*1000000;
+    static final long DEFAULTWRITELIMIT = 1 * 1000000;
 
     static final int SIZEOF_INTEGER = 4;
 
@@ -141,7 +147,8 @@ public class ChunkWriter extends OutputStream
     /**
      * Write the DMR. What it really does is
      * cache the DMR and write it at the point
-     * where it is needed.
+     * where it is needed; either in close(), if writing
+     * the DMR only, or in writeChunk() if writing data as well.
      *
      * @param dmr The DMR string
      * @throws IOException on IO related errors
@@ -244,23 +251,65 @@ public class ChunkWriter extends OutputStream
         state = State.ERROR;
     }
 
-    //////////////////////////////////////////////////
-    // OutputStream methods
 
     /**
-     * Flushes this output stream and forces any buffered output
-     * bytes to be written out.
+     * Write out the current chunk (with given set of flags).
      *
+     * @param flags The flags for the header
      * @throws IOException on IO related errors
      */
-
-    public void flush()
+    void writeChunk(int flags)
             throws IOException
     {
-        // Flush currently does nothing
-        // Actual flushing occurs inline
-        // and at close().
+        // If flags indicate CHUNK_END
+        // and amount to write is zero,
+        // go ahead and write the zero size chunk.
+        if(chunk == null)
+            chunk = ByteBuffer.allocate(maxbuffersize);
+
+        int buffersize = chunk.position();
+        chunkheader(buffersize, flags, header);
+        // output the header followed by the data (if any)
+        // Zero size chunk is ok.
+        output.write(DapUtil.extract(header));
+        if(buffersize > 0)
+            output.write(chunk.array(), 0, buffersize);
+        if(DEBUG)
+            DapDump.dumpbytestream(chunk, getOrder(), "ChunkWriter.writechunk");
+        chunk.clear();// reset
     }
+
+
+    static public void
+    chunkheader(int length, int flags, ByteBuffer hdrbuf)
+            throws DapException
+    {
+        if(length > MAXCHUNKSIZE || length < 0)
+            throw new DapException("Illegal chunk size: " + length);
+        int hdr = ((flags << 24) | length);
+        hdrbuf.clear();
+        hdrbuf.putInt(hdr);
+    }
+
+    void verifystate()
+            throws DapException
+    {
+        // Verify that we are in a proper state to write data
+        switch (state) {
+        case INITIAL:
+            throw new DapException("Attempt to write data before DMR");
+        case END:
+            throw new DapException("Attempt to write data after END");
+        case ERROR:
+            throw new DapException("Attempt to write data after ERROR");
+        case DMR:
+        case DATA:
+            break;
+        }
+    }
+
+    //////////////////////////////////////////////////
+    // OutputStream API
 
     /**
      * Closes this output stream and releases any system resources
@@ -302,29 +351,21 @@ public class ChunkWriter extends OutputStream
     }
 
     /**
-     * Write out the current chunk (with given set of flags).
+     *  Overload flush to also write out the DMR
      *
-     * @param flags The flags for the header
-     * @throws IOException on IO related errors
+     * @throws IOException
      */
-    void writeChunk(int flags)
+    @Override
+    public void
+    flush()
             throws IOException
     {
-        // If flags indicate CHUNK_END
-        // and amount to write is zero,
-        // go ahead and write the zero size chunk.
-        if(chunk == null)
-            chunk = ByteBuffer.allocate(maxbuffersize);
-        int buffersize = chunk.position();
-        chunkheader(buffersize, flags, header);
-        // output the header followed by the data (if any)
-        // Zero size chunk is ok.
-        output.write(DapUtil.extract(header));
-        if(buffersize > 0)
-            output.write(chunk.array(), 0, buffersize);
-        if(DEBUG)
-            DapDump.dumpbytestream(chunk, getOrder(), "ChunkWriter.writechunk");
-        chunk.clear();// reset
+        if(mode == RequestMode.DMR)
+            return; // leave to close() to do this
+        if(dmr8 != null) {
+            sendDXR(dmr8);
+            dmr8 = null;
+        }
     }
 
     /**
@@ -360,7 +401,7 @@ public class ChunkWriter extends OutputStream
     /**
      * Writes len bytes from the specified byte array starting at
      * offset off to this output stream.
-     * <p/>
+     * <p>
      * If this write fills up the chunk buffer,
      * then write out the buffer and put
      * the remaining bytes into the reset buffer.
@@ -377,8 +418,10 @@ public class ChunkWriter extends OutputStream
     {
         verifystate();
         if(writecount + len >= writelimit)
-            throw new DapException("Attempt to write too much data: limit=%d");
-        if(chunk == null) chunk = ByteBuffer.allocate(maxbuffersize).order(getOrder());
+            throw new DapException("Attempt to write too much data: limit=" + writecount + len)
+                    .setCode(DapCodes.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+        if(chunk == null)
+            chunk = ByteBuffer.allocate(maxbuffersize).order(getOrder());
         if(state == State.DMR) {
             chunk.clear(); // reset
             state = State.DATA;
@@ -403,33 +446,4 @@ public class ChunkWriter extends OutputStream
         }
         writecount += len;
     }
-
-    static public void
-    chunkheader(int length, int flags, ByteBuffer hdrbuf)
-            throws DapException
-    {
-        if(length > MAXCHUNKSIZE || length < 0)
-            throw new DapException("Illegal chunk size: " + length);
-        int hdr = ((flags << 24) | length);
-        hdrbuf.clear();
-        hdrbuf.putInt(hdr);
-    }
-
-    void verifystate()
-            throws DapException
-    {
-        // Verify that we are in a proper state to write data
-        switch (state) {
-        case INITIAL:
-            throw new DapException("Attempt to write data before DMR");
-        case END:
-            throw new DapException("Attempt to write data after END");
-        case ERROR:
-            throw new DapException("Attempt to write data after ERROR");
-        case DMR:
-        case DATA:
-            break;
-        }
-    }
-
 }
