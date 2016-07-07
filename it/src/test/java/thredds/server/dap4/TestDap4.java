@@ -20,7 +20,6 @@ import ucar.nc2.util.Misc;
 import java.io.IOException;
 
 // There is a problem with this test that I cannot figure out yet; DMH
-@Ignore
 public class TestDap4
 {
 
