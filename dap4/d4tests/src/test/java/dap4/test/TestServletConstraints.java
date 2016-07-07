@@ -13,6 +13,7 @@ import dap4.servlet.Generator;
 import dap4.servlet.SynDSP;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
@@ -335,6 +336,7 @@ public class TestServletConstraints extends DapTestCommon
     // Junit test methods
 
     @Test
+    @Ignore
     public void testServletConstraints()
             throws Exception
     {
