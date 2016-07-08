@@ -113,8 +113,8 @@ public class TestNc4Iosp extends DapTestCommon
     void
     chooseTestcases()
     {
-        if(false) {
-            chosentests = locate("test_vlen5.nc");
+        if(true) {
+            chosentests = locate("test_atomic_types.nc");
             prop_visual = true;
             prop_debug = true;
             //chosentests.add(new Nc4IospTest("test_test.nc"));
@@ -151,23 +151,17 @@ public class TestNc4Iosp extends DapTestCommon
     public void testNc4Iosp()
             throws Exception
     {
-        boolean allpass = true;
         for(Nc4IospTest testcase : chosentests) {
-            boolean ok = doOneTest(testcase);
-            if(!ok)
-                allpass = false;
+            doOneTest(testcase);
         }
-        Assert.assertTrue("At least one test failed", allpass);
     }
 
     //////////////////////////////////////////////////
     // Primary test method
-    boolean
+    void
     doOneTest(Nc4IospTest testcase)
             throws Exception
     {
-        boolean pass = true;
-
         System.out.println("Testcase: " + testcase.testinputpath);
 
         NetcdfDataset ncfile = openDataset(testcase.testinputpath);
@@ -186,6 +180,8 @@ public class TestNc4Iosp extends DapTestCommon
         }
 
         String baselinefile = String.format("%s", testcase.baselinepath);
+        System.err.println("Testpath: "+testcase.testinputpath);
+        System.err.println("Baseline: "+baselinefile);
         if(prop_baseline) {
             if(mode == Mode.DMR || mode == Mode.BOTH)
                 writefile(baselinefile + ".dmr", metadata);
@@ -198,26 +194,22 @@ public class TestNc4Iosp extends DapTestCommon
                 System.out.println("DMR Comparison:");
                 try {
                     baselinecontent = readfile(baselinefile + ".dmr");
-                    pass = pass && same(getTitle(), baselinecontent, metadata);
+                    Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, metadata));
                 } catch (IOException ioe) {
-                    System.err.println("baselinefile" + ".dmr: " + ioe.getMessage());
-                    pass = false;
+                    Assert.assertTrue("baselinefile" + ".dmr: " + ioe.getMessage(),false);
                 }
-                System.out.println(pass ? "Pass" : "Fail");
             }
             if(mode == Mode.DATA || mode == Mode.BOTH) {
                 System.out.println("DATA Comparison:");
                 try {
                     baselinecontent = readfile(baselinefile + ".dap");
-                    pass = pass && same(getTitle(), baselinecontent, data);
+                    Assert.assertTrue("***Data Fail", same(getTitle(), baselinecontent, data));
+
                 } catch (IOException ioe) {
-                    System.err.println("baselinefile" + ".dap: " + ioe.getMessage());
-                    pass = false;
+                    Assert.assertTrue("baselinefile" + ".dap: " + ioe.getMessage(),false);
                 }
-                System.out.println(pass ? "Pass" : "Fail");
             }
         }
-        return pass;
     }
 
     //////////////////////////////////////////////////

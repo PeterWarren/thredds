@@ -18,6 +18,7 @@ netcdf test_atomic_types.nc {
     long v64;
 
     ulong vu64;
+      :_FillValue = -2; // ulong
 
     float vf;
 
