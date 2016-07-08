@@ -206,7 +206,7 @@ public class TestServlet extends DapTestCommon
     chooseTestcases()
     {
         if(false) {
-            chosentests = locate("test_sequence_1.syn");
+            chosentests = locate("test_atomic_types.nc");
             prop_visual = true;
             prop_debug = true;
             prop_generate = false;
@@ -802,7 +802,7 @@ public class TestServlet extends DapTestCommon
         } else if(prop_diff) { //compare with baseline
             // Read the baseline file
             String baselinecontent = readfile(testcase.baselinepath + ".dmr");
-            System.out.println("DMR Comparison: vs " + testcase.baselinepath + ".dmr");
+            System.out.println("DMR Comparison");
             Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdmr));
         }
     }

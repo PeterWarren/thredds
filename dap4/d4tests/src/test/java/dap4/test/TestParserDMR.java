@@ -84,7 +84,7 @@ public class TestParserDMR extends DapTestCommon
     chooseTestcases()
     {
         if(false) {
-            chosentests = locate("test_atomic_array");
+            chosentests = locate("test_atomic_types");
         } else {
             for(TestCase tc : alltestcases) {
                 chosentests.add(tc);
@@ -204,8 +204,9 @@ public class TestParserDMR extends DapTestCommon
         String testinput = testcase.input;
         String baseline = testcase.baseline;
 
-        System.out.println("Testcase: " + testinput);
-        System.out.flush();
+        System.err.println("Testcase: " + testinput);
+        System.err.println("Baseline: " + baseline);
+        System.err.flush();
 
         document = readfile(testinput);
 
