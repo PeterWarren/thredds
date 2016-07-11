@@ -3,26 +3,23 @@ package dap4.test;
 import dap4.core.data.DSPRegistry;
 import dap4.core.util.DapDump;
 import dap4.core.util.Escape;
-import dap4.dap4lib.AbstractDSP;
 import dap4.dap4lib.ChunkInputStream;
 import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.RequestMode;
 import dap4.servlet.DapCache;
-import dap4.servlet.DapController;
 import dap4.servlet.Generator;
 import dap4.servlet.SynDSP;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder;
-import org.springframework.validation.Errors;
-import org.springframework.validation.Validator;
 import thredds.server.dap4.Dap4Controller;
 
 import java.io.ByteArrayInputStream;
@@ -42,20 +39,20 @@ import java.util.List;
 
 public class TestServletConstraints extends DapTestCommon
 {
-    static final boolean DEBUG = false;
+    static protected final boolean DEBUG = false;
 
     //////////////////////////////////////////////////
     // Constants
 
     static protected final String RESOURCEPATH = "/src/test/data/resources"; // wrt getTestInputFilesDir
     static protected final String TESTINPUTDIR = "/testfiles";
-    static protected String BASELINEDIR = "/TestServletConstraints/baseline";
-    static protected String GENERATEDIR = "/TestCDMClient/testinput";
+    static protected final String BASELINEDIR = "/TestServletConstraints/baseline";
+    static protected final String GENERATEDIR = "/TestCDMClient/testinput";
 
     // constants for Fake Request
-    static String FAKEURLPREFIX = "/dap4";
+    static protected final String FAKEURLPREFIX = "/dap4";
 
-    static final BigInteger MASK = new BigInteger("FFFFFFFFFFFFFFFF", 16);
+    static protected final BigInteger MASK = new BigInteger("FFFFFFFFFFFFFFFF", 16);
 
     //////////////////////////////////////////////////
     // Type Declarations
@@ -103,13 +100,13 @@ public class TestServletConstraints extends DapTestCommon
         }
 
         TestCase(int id, String dataset, String extensions, String ce,
-                       Dump.Commands template)
+                 Dump.Commands template)
         {
             this(id, dataset, extensions, ce, template, false);
         }
 
         TestCase(int id, String dataset, String extensions, String ce,
-                       Dump.Commands template, boolean xfail)
+                 Dump.Commands template, boolean xfail)
         {
             if(alltests[id] != null)
                 throw new IllegalStateException("two tests with same id");
@@ -155,6 +152,7 @@ public class TestServletConstraints extends DapTestCommon
     // Instance variables
 
     protected MockMvc mockMvc;
+    protected MockServletContext mockContext;
 
     // Test cases
 
@@ -172,7 +170,8 @@ public class TestServletConstraints extends DapTestCommon
                 MockMvcBuilders.standaloneSetup(new Dap4Controller());
         mvcbuilder.setValidator(new TestServlet.NullValidator());
         this.mockMvc = mvcbuilder.build();
-        testSetup(RESOURCEPATH);
+        this.mockContext = new MockServletContext();
+        testSetup();
         DapCache.dspregistry.register(FileDSP.class, DSPRegistry.FIRST);
         DapCache.dspregistry.register(SynDSP.class, DSPRegistry.FIRST);
         if(prop_ascii)
@@ -194,7 +193,7 @@ public class TestServletConstraints extends DapTestCommon
             chosentests = locate(1);
             prop_visual = true;
             prop_debug = true;
-	    prop_generate = false;
+            prop_generate = false;
         } else {
             for(TestCase tc : alltestcases) {
                 chosentests.add(tc);
@@ -376,11 +375,7 @@ public class TestServletConstraints extends DapTestCommon
         String url = testcase.makeurl(RequestMode.DMR);
         String query = testcase.makequery(RequestMode.DMR);
 
-        RequestBuilder rb = MockMvcRequestBuilders
-                .get(url)
-                .servletPath(url)
-                .param(CONSTRAINTTAG, query);
-        MvcResult result = this.mockMvc.perform(rb).andReturn();
+        MvcResult result = perform(url,RESOURCEPATH,query,this.mockMvc);
 
         // Collect the output
         MockHttpServletResponse res = result.getResponse();
@@ -410,11 +405,7 @@ public class TestServletConstraints extends DapTestCommon
         String url = testcase.makeurl(mode);
         String query = testcase.makequery(RequestMode.DMR);
 
-        RequestBuilder rb = MockMvcRequestBuilders
-                .get(url)
-                .servletPath(url)
-                .param(CONSTRAINTTAG, query);
-        MvcResult result = this.mockMvc.perform(rb).andReturn();
+        MvcResult result = perform(url,RESOURCEPATH,query,this.mockMvc);
 
         // Collect the output
         MockHttpServletResponse res = result.getResponse();

@@ -6,13 +6,16 @@ package dap4.test;
 
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
-import dap4.dap4lib.AbstractDSP;
 import dap4.servlet.DapController;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import thredds.core.DatasetManager;
 import thredds.core.TdsRequestedDataset;
 import thredds.server.dap4.Dap4Controller;
@@ -169,13 +172,6 @@ abstract public class DapTestCommon extends UnitTestCommon
     //////////////////////////////////////////////////
     // Static methods
 
-    static protected void testSetup(String dir)
-    {
-        String realdir = null;
-        realdir = canonjoin(dap4testroot, dir);
-        DapController.TESTDIR = realdir;
-        AbstractDSP.TESTING = true;
-    }
 
     static protected String getD4TestsRoot()
     {
@@ -321,5 +317,27 @@ abstract public class DapTestCommon extends UnitTestCommon
         TdsRequestedDataset.setDatasetManager(new DatasetManager());
     }
 
+
+    static protected void
+    testSetup()
+    {
+        DapController.TESTING = true;
+    }
+
+    static protected MvcResult
+    perform(String url, String respath, String query,
+            MockMvc mockMvc)
+            throws Exception
+    {
+        MockHttpServletRequestBuilder rb = MockMvcRequestBuilders
+                .get(url)
+                .servletPath(url);
+        if(query != null)
+            rb.param(CONSTRAINTTAG, query);
+        String realdir = canonjoin(dap4testroot, respath);
+        rb.requestAttr("RESOURCEDIR", realdir);
+        MvcResult result = mockMvc.perform(rb).andReturn();
+        return result;
+    }
 }
 

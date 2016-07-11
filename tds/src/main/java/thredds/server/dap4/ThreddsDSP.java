@@ -45,6 +45,7 @@ import java.io.File;
 
 /**
  * CDM->DAP DSP
+ * Used (for now) only on server side.
  */
 
 public class ThreddsDSP extends CDMDSP
@@ -68,36 +69,5 @@ public class ThreddsDSP extends CDMDSP
     }
 
     //////////////////////////////////////////////////
-
-    /**
-     * convert path to actual path
-     *
-     * @param path - return path
-     * @return real file path
-     */
-    @Override
-    protected String
-    getRealPath(String path)
-            throws DapException
-    {
-        String realpath = null;
-        String prefix = (String)this.context.get("RESOURCEDIR");
-        if(prefix != null) {
-          realpath = DapUtil.canonjoin(prefix,path);
-        } else
-            realpath = TdsRequestedDataset.getLocationFromRequestPath(path);
-        File f = new File(realpath);
-        if(!f.exists() || !f.canRead())
-            throw new DapException("Not found: " + path)
-                                  .setCode(DapCodes.SC_NOT_FOUND);
-        if(!TESTING) {
-            if(!TdsRequestedDataset.resourceControlOk(this.request, this.response, realpath))
-                throw new DapException("Not authorized: " + path)
-                        .setCode(DapCodes.SC_FORBIDDEN);
-        }
-        //ncfile = TdsRequestedDataset.getNetcdfFile(this.request, this.response, path);
-        return realpath;
-    }
-
 
 }

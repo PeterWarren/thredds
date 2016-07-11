@@ -25,15 +25,22 @@ public interface DSP
 
     // static public boolean dspMatch(String path, DapContext context);
 
+    /**
+     *
+     * @param path  It is assumed that the path is appropriate to the dsp
+     *              E.g. an absolute path or a url.
+     * @return  DSP wrapping the path source
+     * @throws DapException
+     */
     public DSP open(String path) throws DapException;
 
-    public String getPath();
+    public String getLocation();
     public Object getContext();
     public void setContext(DapContext cxt);
     public DapDataset getDMR() throws DapException;
     public DataDataset getDataset() throws DataException;
     public void setDataset(DataDataset ds);
     public void close() throws IOException;
-    public Object getSource();
+    public Object getAnnotation();
 
 }

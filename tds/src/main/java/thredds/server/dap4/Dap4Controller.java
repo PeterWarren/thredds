@@ -38,7 +38,7 @@ import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.dap4lib.DapCodes;
-import dap4.dap4lib.FileDSP;
+import dap4.dap4lib.XURI;
 import dap4.servlet.DSPFactory;
 import dap4.servlet.DapCache;
 import dap4.servlet.DapController;
@@ -50,6 +50,7 @@ import thredds.core.TdsRequestedDataset;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.net.URISyntaxException;
 
 @Controller
 @RequestMapping("/dap4")
@@ -149,19 +150,26 @@ public class Dap4Controller extends DapController
 
     @Override
     public String
-    getResourcePath(DapRequest drq, String relpath)
+    getResourcePath(DapRequest drq, String location)
             throws IOException
     {
-        // For some reason, I cannot get Spring autowiring to work with
-        // MockServlet, so provide alternate.
-        File realfile = realfile = TdsRequestedDataset.getFile(relpath);
-        if(realfile == null || !realfile.exists())
-            throw new DapException("Requested file not found " + relpath)
+        String prefix = (String) this.context.get("RESOURCEDIR");
+        String realpath;
+        if(prefix != null) {
+            realpath = DapUtil.canonjoin(prefix, location);
+        } else
+            realpath = TdsRequestedDataset.getLocationFromRequestPath(location);
+
+        if(!TESTING) {
+            if(!TdsRequestedDataset.resourceControlOk(drq.getRequest(), drq.getResponse(), realpath))
+                throw new DapException("Not authorized: " + location)
+                        .setCode(DapCodes.SC_FORBIDDEN);
+        }
+        File f = new File(realpath);
+        if(!f.exists() || !f.canRead())
+            throw new DapException("Not found: " + location)
                     .setCode(DapCodes.SC_NOT_FOUND);
-        if(!realfile.canRead())
-            throw new DapException("Requested file not readable " + relpath)
-                    .setCode(DapCodes.SC_FORBIDDEN);
-        String realpath = DapUtil.canonicalpath(realfile.getAbsolutePath());
+        //ncfile = TdsRequestedDataset.getNetcdfFile(this.request, this.response, path);
         return realpath;
     }
 

@@ -32,7 +32,7 @@ import java.nio.charset.Charset;
 abstract public class DapController extends HttpServlet
 {
     // Provide a way for test programs to pass info into the controller
-    static public String TESTDIR = null;
+    static public boolean TESTING = false;
 
     //////////////////////////////////////////////////
     // Constants
@@ -134,11 +134,15 @@ abstract public class DapController extends HttpServlet
 
     /**
      * Convert a URL path into an absolute file path
+     * Note that it is assumed than any leading servlet prefix has been removed.
      *
-     * @param drq The wrapped request info
+     * @param drq  for context
+     * @param location suffix of url path
+     * @return
+     * @throws IOException
      */
 
-    abstract public String getResourcePath(DapRequest drq, String relpath) throws IOException;
+    abstract public String getResourcePath(DapRequest drq, String location) throws IOException;
 
     /**
      * Get the maximum # of bytes per request
@@ -186,13 +190,10 @@ abstract public class DapController extends HttpServlet
         return this;
     }
 
-    public DapController setResourcePath(String resourcepath)
+    public DapContext getContext()
     {
-        this.context.put("resourcepath", DapUtil.canonjoin("", resourcepath));
-        return this;
+        return this.context;
     }
-
-    public DapContext getContext() {return this.context;}
 
     //////////////////////////////////////////////////////////
     // Primary Controller Entry Point
@@ -201,13 +202,14 @@ abstract public class DapController extends HttpServlet
             throws IOException
     {
         DapLog.debug("doGet(): User-Agent = " + req.getHeader("User-Agent"));
-        if(this.servletcontext == null)
-            this.servletcontext = req.getServletContext();
+        if(TESTING) {
+            String resourcedir = (String)req.getAttribute("RESOURCEDIR");
+            this.context.put("RESOURCEDIR",resourcedir);
+        }
         DapRequest drq = getRequestState(req, res);
         String url = drq.getOriginalURL();
         StringBuilder info = new StringBuilder("doGet():");
         info.append(" dataset = ");
-        info.append(this.context.get("resourcepath"));
         info.append(" url = ");
         info.append(url);
         if(DEBUG) {
@@ -217,8 +219,6 @@ abstract public class DapController extends HttpServlet
         DapContext cxt = new DapContext();
         cxt.put(HttpServletRequest.class, req);
         cxt.put(HttpServletResponse.class, res);
-        if(TESTDIR != null)
-            cxt.put("RESOURCEDIR",TESTDIR);
         if(url.endsWith(FAVICON)) {
             doFavicon(drq, FAVICON, cxt);
             return;
@@ -309,7 +309,10 @@ abstract public class DapController extends HttpServlet
     doDMR(DapRequest drq, DapContext cxt)
             throws IOException
     {
-        DSP dsp = DapCache.open(drq.getDatasetPath(), cxt);
+        // Convert the url to an absolute path
+        String realpath = getResourcePath(drq, drq.getDatasetPath());
+
+        DSP dsp = DapCache.open(realpath, cxt);
         DapDataset dmr = dsp.getDMR();
 
         // Process any constraint view
@@ -354,7 +357,10 @@ abstract public class DapController extends HttpServlet
     doData(DapRequest drq, DapContext cxt)
             throws IOException
     {
-        DSP dsp = DapCache.open(drq.getDatasetPath(), cxt);
+        // Convert the url to an absolute path
+        String realpath = getResourcePath(drq, drq.getDatasetPath());
+
+        DSP dsp = DapCache.open(realpath, cxt);
         if(dsp == null)
             throw new IOException("No such file: " + drq.getResourcePath());
         DapDataset dmr = dsp.getDMR();

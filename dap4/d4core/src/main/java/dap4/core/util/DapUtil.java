@@ -535,33 +535,37 @@ abstract public class DapUtil // Should only contain static methods
      * Return the set of leading protocols for a url; may be more than one.
      *
      * @param url the url whose protocols to return
+     * @param breakpoint return the index past last protocol
      * @return list of leading protocols without the trailing :
      */
     static public List<String>
-    getProtocols(String url)
+    getProtocols(String url, int[] breakpoint)
     {
         // break off any leading protocols;
         // there may be more than one.
         // Watch out for Windows paths starting with a drive letter.
-        // Each protocol does not have trailing :
+        // Each protocol has trailing ':'  removed
 
         List<String> allprotocols = new ArrayList<>(); // all leading protocols upto path or host
 
         // Note, we cannot use split because of the context sensitivity
         StringBuilder buf = new StringBuilder(url);
+        int protosize = 0;
         for(; ; ) {
             int index = buf.indexOf(":");
             if(index < 0) break; // no more protocols
             String protocol = buf.substring(0, index);
             // Check for windows drive letter
-            if(index == 1 //=>|protocol| == 1
+            if(index == 1 //=>|protocol| == 1 => windows drive letter
                     && "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
                     .indexOf(buf.charAt(0)) >= 0) break;
             allprotocols.add(protocol);
             buf.delete(0, index + 1); // remove the leading protocol
+            protosize += (index + 1);
             if(buf.indexOf("/") == 0)
                 break; // anything after this is not a protocol
         }
+        breakpoint[0] = protosize;
         return allprotocols;
     }
 
@@ -651,5 +655,12 @@ abstract public class DapUtil // Should only contain static methods
                 || path.charAt(0) == '\\');
     }
 
-} // class DapUtil
+    static public String canonFileURL(String url)
+    {
+        if(url == null || url.startsWith("file:"))
+            return url;
+        return "file:" + absolutize(url);
+    }
+
+}
 

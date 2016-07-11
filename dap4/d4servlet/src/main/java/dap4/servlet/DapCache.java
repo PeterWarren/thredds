@@ -17,6 +17,7 @@ import java.util.List;
 
 /**
  * Provide an LRU cache of DSPs.
+ * It is expected (for now) that this is only used on the server side.
  * The cache key is assumed to be the DSP object.
  * The cache is synchronized to avoid race conditions.
  * Note that we do not have to release because Java
@@ -68,7 +69,7 @@ abstract public class DapCache
         int lrusize = lru.size();
         for(int i = lrusize - 1; i >= 0; i--) {
             DSP dsp = lru.get(i);
-            String dsppath = dsp.getPath();
+            String dsppath = dsp.getLocation();
             if(dsppath.equals(path)) {
                 // move to the front of the queue to maintain LRU property
                 lru.remove(i);
@@ -88,6 +89,7 @@ abstract public class DapCache
         if(dsp == null)
             throw new DapException("Resource has no matching DSP: " + path)
                     .setCode(DapCodes.SC_FORBIDDEN);
+        dsp.setContext(cxt);
         dsp.open(path);
         lru.add(dsp);
         return dsp;

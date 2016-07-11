@@ -35,6 +35,7 @@ import java.util.*;
  * This basically means wrapping various (CDM)Array
  * object to look like DataVariable objects. This
  * requires a specific subclass of DataFactory.
+ * Currently only used on server side
  */
 
 public class CDMDSP extends AbstractDSP
@@ -109,7 +110,7 @@ public class CDMDSP extends AbstractDSP
             throws DapException
     {
         super();
-        setPath(path);
+        setLocation(path);
     }
 
     //////////////////////////////////////////////////
@@ -137,25 +138,24 @@ public class CDMDSP extends AbstractDSP
     }
 
     /**
-     * @param path    - absolute path to a file
-     * @param context - context info; arbitrary map
+     * @param filepath    - absolute path to a file
      * @return CDMDSP instance
      * @throws DapException
      */
     @Override
-    public DSP open(String path) throws DapException
+    public DSP open(String filepath) throws DapException
     {
-        setContext(context);
+        assert this.context != null;
         setRequestResponse();
         this.dmrfactory = new CDMDMRFactory();
         this.datafactory = new CDMDataFactory();
         try {
-            NetcdfFile ncfile = createNetcdfFile(path, null);
+            NetcdfFile ncfile = createNetcdfFile(filepath, null);
             this.ncdfile = new NetcdfDataset(ncfile, ENHANCEMENT);
         } catch (IOException ioe) {
-            throw new DapException("CDMDSP: cannot open: " + path, ioe);
+            throw new DapException("CDMDSP: cannot open: " + filepath, ioe);
         }
-        setPath(this.ncdfile.getLocation());
+        setLocation(this.ncdfile.getLocation());
         build();
         buildDataDataset();
         return this;
@@ -1010,9 +1010,7 @@ public class CDMDSP extends AbstractDSP
             throws DapException
     {
         try {
-            String realpath = getRealPath(location);
-            realpath = DapUtil.canonicalpath(realpath);
-            NetcdfFile ncfile = NetcdfFile.open(realpath, canceltask);
+            NetcdfFile ncfile = NetcdfFile.open(location, canceltask);
             return ncfile;
         } catch (DapException de) {
             if(DEBUG)
@@ -1023,19 +1021,6 @@ public class CDMDSP extends AbstractDSP
                 e.printStackTrace();
             throw new DapException(e);
         }
-    }
-
-    /**
-     * convert path to actual path
-     *
-     * @param path - return path
-     * @return real file path
-     */
-    protected String
-    getRealPath(String path)
-            throws DapException
-    {
-        return path;
     }
 
     //////////////////////////////////////////////////

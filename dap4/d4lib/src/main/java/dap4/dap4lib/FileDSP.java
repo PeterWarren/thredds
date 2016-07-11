@@ -51,17 +51,16 @@ public class FileDSP extends D4DSP
     /**
      * A path is file if it has no base protocol or is file:
      *
-     * @param url     - or possibly an absolute path
+     * @param location  file:/ or possibly an absolute path
      * @param context Any parameters that may help to decide.
      * @return true if this path appears to be processible by this DSP
      */
-    static public boolean dspMatch(String url, DapContext context)
+    static public boolean dspMatch(String location, DapContext context)
     {
         try {
-            XURI xuri = new XURI(url);
-            List<String> protos = xuri.getProtocols();
-            if(protos == null || protos.size() == 0
-                    || protos.get(0).equals("file")) {
+            XURI xuri = new XURI(location);
+            String baseproto = xuri.getBaseProtocol();
+            if("file".equalsIgnoreCase(baseproto)) {
                 String path = xuri.getPath();
                 for(String ext : EXTENSIONS) {
                     if(path.endsWith(ext))
@@ -92,8 +91,7 @@ public class FileDSP extends D4DSP
                 throw new DapException("Malformed filepath: "+filepath)
                         .setCode(DapCodes.SC_NOT_FOUND);
             }
-            String realpath = getRealPath(filepath);
-            try (FileInputStream stream = new FileInputStream(realpath)) {
+            try (FileInputStream stream = new FileInputStream(filepath)) {
                 this.raw = DapUtil.readbinaryfile(stream);
             }
             try (FileInputStream stream = new FileInputStream(filepath)) { // == rewind
@@ -106,30 +104,6 @@ public class FileDSP extends D4DSP
         } catch (IOException ioe) {
             throw new DapException(ioe).setCode(DapCodes.SC_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * convert path to actual path
-     *
-     * @param path - return path
-     * @return real file path
-     */
-    @Override
-    protected String
-    getRealPath(String path)
-            throws DapException
-    {
-        String realpath;
-        if(DapUtil.isAbsolutePath(path))
-            realpath = DapUtil.canonicalpath(path);
-        else {
-            String prefix = (String) getContext().get("RESOURCEDIR");
-            if(prefix == null)
-                throw new DapException("No resourcedir specified")
-                        .setCode(DapCodes.SC_INTERNAL_SERVER_ERROR);
-            realpath = DapUtil.canonjoin(prefix, path);
-        }
-        return realpath;
     }
 
 }

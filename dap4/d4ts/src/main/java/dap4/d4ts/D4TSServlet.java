@@ -16,8 +16,6 @@ import ucar.httpservices.HTTPUtil;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -34,10 +32,6 @@ public class D4TSServlet extends DapController
     static final boolean DEBUG = false;
 
     static final boolean PARSEDEBUG = false;
-
-    // Intellij refuses to place this correctly
-    // static final String TESTDATADIR = "/WEB-INF/resources/testfiles"; // relative to resource path
-    static final String TESTDATADIR = "/WEB-INF/testfiles"; // relative to resource path
 
     //////////////////////////////////////////////////
     // Type Decls
@@ -144,15 +138,19 @@ public class D4TSServlet extends DapController
 
     @Override
     public String
-    getResourcePath(DapRequest drq, String relativepath)
+    getResourcePath(DapRequest drq, String location)
             throws IOException
     {
-        // Using context information, we need to
-        // construct a file path to the specified dataset
-        String suffix = DapUtil.denullify(HTTPUtil.canonicalpath(relativepath));
-        String datasetfilepath = TESTDATADIR + HTTPUtil.abspath(suffix);
-        datasetfilepath = cxt.getRealPath(datasetfilepath);
-
+        String prefix = (String) this.context.get("RESOURCEDIR");
+        String datasetfilepath;
+        location = DapUtil.canonicalpath(location);
+        if(prefix != null) {
+            datasetfilepath = DapUtil.canonjoin(prefix, location);
+        } else {
+            // Using context information, we need to
+            // construct a file path to the specified dataset
+            datasetfilepath = cxt.getRealPath(location);
+        }
         // See if it really exists and is readable and of proper type
         File dataset = new File(datasetfilepath);
         if(!dataset.exists())

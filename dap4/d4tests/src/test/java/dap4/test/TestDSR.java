@@ -81,22 +81,5 @@ public class TestDSR extends DapTestCommon
     //////////////////////////////////////////////////
     // Utility methods
 
-    //////////////////////////////////////////////////
-    // Stand alone
-
-    static public void
-    main(String[] argv)
-    {
-        try {
-            new TestFrontPage().testFrontPage();
-        } catch (Exception e) {
-            System.err.println("*** FAIL");
-            e.printStackTrace();
-            System.exit(1);
-        }
-        System.err.println("*** PASS");
-        System.exit(0);
-    }// main
-
 }
 

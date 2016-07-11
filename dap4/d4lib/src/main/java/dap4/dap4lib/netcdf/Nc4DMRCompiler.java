@@ -96,7 +96,7 @@ public class Nc4DMRCompiler
     {
         this.dsp = dsp;
         this.nc4 = dsp.getJNI();
-        this.path = dsp.getPath();
+        this.path = dsp.getLocation();
         this.ncid = ncid;
         this.factory = factory;
     }

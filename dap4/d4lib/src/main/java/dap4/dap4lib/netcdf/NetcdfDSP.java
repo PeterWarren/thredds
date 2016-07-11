@@ -109,9 +109,7 @@ public class NetcdfDSP extends AbstractDSP
     protected int ncid = -1;        // file id ; also set as DSP.source
     protected int format = 0;       // from nc_inq_format
     protected int mode = 0;
-    protected String path = null;
-
-    protected String pathprefix = null;
+    protected String filepath = null; // real path to the dataset
 
     protected Nc4DMRFactory dmrfactory = null;
     protected Nc4DataFactory datafactory = null;
@@ -140,27 +138,14 @@ public class NetcdfDSP extends AbstractDSP
 
     @Override
     public DSP
-    open(String url)
+    open(String filepath)
             throws DapException
     {
         int ret, mode;
-        String realpath = null;
-        try {
-            XURI xuri = new XURI(path);
-            if("file".equalsIgnoreCase(xuri.getBaseProtocol())) {
-                realpath = xuri.getPath();
-                realpath = getRealPath(realpath);
-            } else
-                realpath = url;
-        } catch (URISyntaxException use) {
-            throw new DapException("Malformed url: " + url)
-                    .setCode(DapCodes.SC_NOT_FOUND);
-        }
-        this.path = realpath;
         IntByReference ncidp = new IntByReference();
         try {
             mode = NC_NOWRITE;
-            Nc4Data.errcheck(nc4, ret = nc4.nc_open(path, mode, ncidp));
+            Nc4Data.errcheck(nc4, ret = nc4.nc_open(this.filepath, mode, ncidp));
             this.ncid = ncidp.getValue();
             setSource(this.ncid);
             // Figure out what kind of file
@@ -169,7 +154,7 @@ public class NetcdfDSP extends AbstractDSP
             this.format = formatp.getValue();
             if(DEBUG)
                 System.out.printf("TestNetcdf: open: %s; ncid=%d; format=%d%n",
-                        path, ncid, this.format);
+                        this.filepath, ncid, this.format);
             // Compile the DMR 
             Nc4DMRCompiler dmrcompiler = new Nc4DMRCompiler(this, ncid, dmrfactory);
             this.dmr = dmrcompiler.compile();
@@ -192,32 +177,12 @@ public class NetcdfDSP extends AbstractDSP
         Nc4Data.errcheck(nc4, ret);
         closed = true;
         if(trace)
-            System.out.printf("NetcdfDSP: closed: %s%n", path);
+            System.out.printf("NetcdfDSP: closed: %s%n", this.filepath);
     }
 
     protected DMRFactory getFactory()
     {
         return new Nc4DMRFactory();
-    }
-
-    /**
-     * convert path to actual path
-     *
-     * @param path - return path
-     * @return real file path
-     */
-    @Override
-    protected String
-    getRealPath(String path)
-            throws DapException
-    {
-        String realpath = null;
-        String prefix = (String) this.context.get("RESOURCEDIR");
-        if(prefix == null)
-            throw new DapException("No resourcedir specified")
-                    .setCode(DapCodes.SC_INTERNAL_SERVER_ERROR);
-        realpath = DapUtil.canonjoin(prefix, path);
-        return realpath;
     }
 
     //////////////////////////////////////////////////
@@ -230,9 +195,10 @@ public class NetcdfDSP extends AbstractDSP
         return this.nc4;
     }
 
-    public String getPath()
+    @Override
+    public String getLocation()
     {
-        return path;
+        return this.filepath;
     }
 
 }

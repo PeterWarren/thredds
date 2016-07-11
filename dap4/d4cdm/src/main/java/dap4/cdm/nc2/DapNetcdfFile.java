@@ -9,6 +9,9 @@ import dap4.cdm.NodeMap;
 import dap4.core.data.DSP;
 import dap4.core.data.DSPRegistry;
 import dap4.core.util.DapContext;
+import dap4.core.util.DapException;
+import dap4.core.util.DapUtil;
+import dap4.dap4lib.DapCodes;
 import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.HttpDSP;
 import dap4.dap4lib.XURI;
@@ -80,8 +83,8 @@ public class DapNetcdfFile extends NetcdfFile
     protected boolean allowCompression = true;
     protected boolean closed = false;
 
-    protected String originalurl = null;
-    protected String finalurl = null;
+    protected String location = null; // original argument passed to open
+    protected String dsplocation = null; // what is passed to DSP
     protected XURI xuri = null;
     protected DSP dsp = null;
 
@@ -103,49 +106,39 @@ public class DapNetcdfFile extends NetcdfFile
     /**
      * Open a Dap4 connection or file via a D4DSP.
      *
-     * @param url        URL for the request.
+     * @param location   URL for the request. Note that if this is
+     *                   intended to send to a file oriented
+     *                   DSP, then if must be converted to an absolute path.
      * @param cancelTask check if task is cancelled; may be null.
      * @throws IOException
      */
-    public DapNetcdfFile(String url, CancelTask cancelTask)
+    public DapNetcdfFile(String location, CancelTask cancelTask)
             throws IOException
     {
         super();
-        this.originalurl = url;
-        // url may have leading dap4:
+        this.location = location;
+        // Figure out the location: url vs path
         XURI xuri;
         try {
-            xuri = new XURI(url);
+            xuri = new XURI(location);
         } catch (URISyntaxException use) {
             throw new IOException(use);
         }
-        List<String> protocols = xuri.getProtocols();
-        url = xuri.assemble(XURI.URLALL);
-        switch (protocols.size()) {
-        case 0:
-            if(xuri.isFile())
-                url = "file://" + url;
-            break;
-        case 1:
-            if(protocols.get(0).equalsIgnoreCase("dap4"))
-                url = "http" + url.substring(4/*dap4*/, url.length());
-            break;
-        case 2:
-            if(protocols.get(0).equalsIgnoreCase("dap4"))
-                url = url.substring(5/*dap4:*/, url.length());
-            break;
-        default:
-            break;
-
+        boolean isfile = false;
+        if(xuri.isFile()) {
+            this.dsplocation = DapUtil.absolutize(xuri.getPath());
+            isfile = true;
+        } else { // Not a file url
+            this.dsplocation = xuri.assemble(XURI.URLBASE);
         }
-        this.finalurl = url;
         DapContext cxt = new DapContext();
         cancel = (cancelTask == null ? nullcancel : cancelTask);
         // 1. Get and parse the constrained DMR and Data v-a-v URL
-        this.dsp = dspregistry.findMatchingDSP(url,cxt); // will set dsp context
+        this.dsp = dspregistry.findMatchingDSP(this.dsplocation,cxt); // will set dsp context
         if(this.dsp == null)
-            throw new IOException("No matching DSP: "+url);
-        this.dsp.open(url);
+            throw new IOException("No matching DSP: "+this.location);
+        this.dsp.setContext(cxt);
+        this.dsp.open(this.dsplocation);
 
         // 2. Construct an equivalent CDM tree and populate 
         //    this NetcdfFile object.
@@ -199,9 +192,9 @@ public class DapNetcdfFile extends NetcdfFile
         return true;
     }
 
-    public String getURL()
+    public String getLocation()
     {
-        return originalurl;
+        return location;
     }
 
     public DSP getDSP()

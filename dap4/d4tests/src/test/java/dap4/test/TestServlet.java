@@ -13,9 +13,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder;
@@ -23,6 +25,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import thredds.server.dap4.Dap4Controller;
 
+import javax.servlet.ServletContext;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -187,7 +190,7 @@ public class TestServlet extends DapTestCommon
                 MockMvcBuilders.standaloneSetup(new Dap4Controller());
         mvcbuilder.setValidator(new NullValidator());
         this.mockMvc = mvcbuilder.build();
-        testSetup(RESOURCEPATH);
+        testSetup();
         DapCache.dspregistry.register(FileDSP.class, DSPRegistry.FIRST);
         DapCache.dspregistry.register(SynDSP.class, DSPRegistry.FIRST);
         if(prop_ascii)
@@ -783,10 +786,7 @@ public class TestServlet extends DapTestCommon
     {
         String url = testcase.makeurl(RequestMode.DMR);
 
-        RequestBuilder rb = MockMvcRequestBuilders
-                .get(url)
-                .servletPath(url);
-        MvcResult result = this.mockMvc.perform(rb).andReturn();
+        MvcResult result = perform(url,RESOURCEPATH,null,this.mockMvc);
 
         // Collect the output
         MockHttpServletResponse res = result.getResponse();
@@ -811,13 +811,9 @@ public class TestServlet extends DapTestCommon
     dodata(TestCase testcase)
             throws Exception
     {
-        String baseline;
         String url = testcase.makeurl(RequestMode.DAP);
 
-        RequestBuilder rb = MockMvcRequestBuilders
-                .get(url)
-                .servletPath(url);
-        MvcResult result = this.mockMvc.perform(rb).andReturn();
+        MvcResult result = perform(url,RESOURCEPATH,null,this.mockMvc);
 
         // Collect the output
         MockHttpServletResponse res = result.getResponse();
@@ -866,6 +862,7 @@ public class TestServlet extends DapTestCommon
 
     //////////////////////////////////////////////////
     // Utility methods
+
 
     // Locate the test cases with given prefix
     List<TestCase>

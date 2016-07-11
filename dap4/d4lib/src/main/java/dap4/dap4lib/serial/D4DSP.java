@@ -5,10 +5,8 @@
 package dap4.dap4lib.serial;
 
 import dap4.core.data.DataCompiler;
-import dap4.core.data.DataDataset;
 import dap4.core.dmr.DMRFactory;
 import dap4.core.dmr.DapDataset;
-import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.dap4lib.AbstractDSP;
 
@@ -80,7 +78,7 @@ abstract public class D4DSP extends AbstractDSP
         setDMR(dmr);
         // "Compile" the databuffer section of the server response
         setSource(ByteBuffer.wrap(serialdata).order(order));
-        this.databuffer = (ByteBuffer)getSource();
+        this.databuffer = (ByteBuffer) getAnnotation();
         DataCompiler compiler = new D4DataCompiler(this, checksummode, this.databuffer, new D4DataFactory());
         compiler.compile();
     }

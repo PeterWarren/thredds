@@ -73,7 +73,6 @@ public class HttpDSP extends D4DSP
     //////////////////////////////////////////////////
     // Instance variables
 
-    protected String originalurl = null;
     protected boolean allowCompression = true;
     protected String basece = null; // the constraint(s) from the original url
 
@@ -106,11 +105,9 @@ public class HttpDSP extends D4DSP
     {
         try {
             XURI xuri = new XURI(url);
-            List<String> protos = xuri.getProtocols();
-            if(protos == null || protos.size() == 0)
-                return false;
+            String formatproto = xuri.getFormatProtocol();
             if(false) {
-                if(DAP4PROTO.equalsIgnoreCase(protos.get(0)))
+                if(DAP4PROTO.equalsIgnoreCase(formatproto))
                     return true;
                 for(String[] pair : DAP4QUERYMARKERS) {
                     String tag = xuri.getQueryFields().get(pair[0]);
@@ -137,27 +134,13 @@ public class HttpDSP extends D4DSP
     @Override
     public DSP open(String url) throws DapException
     {
-        this.originalurl = url;
+        setLocation(url);
         // See if this is a local vs remote request
-        setURL(url);
+        parseURL(url);
         this.basece = this.xuri.getQueryFields().get(CONSTRAINTTAG);
         build();
         return this;
 
-    }
-
-    /**
-     * convert path to actual path: noop
-     *
-     * @param path -  path
-     * @return real file path
-     */
-    @Override
-    protected String
-    getRealPath(String path)
-            throws DapException
-    {
-        return path;
     }
 
     @Override
@@ -286,7 +269,7 @@ public class HttpDSP extends D4DSP
     {
         // Save the original url
         String saveurl = this.xuri.getOriginal();
-        setURL(url);
+        parseURL(url);
         String fdsurl = buildURL(this.xuri.assemble(XURI.URLALL), DSRSUFFIX, null, null);
         try {
             // Make the request and return an input stream for accessing the databuffer
@@ -297,7 +280,7 @@ public class HttpDSP extends D4DSP
             String document = new String(bytes, DapUtil.UTF8);
             return document;
         } finally {
-            setURL(saveurl);
+            parseURL(saveurl);
         }
     }
 
@@ -323,7 +306,7 @@ public class HttpDSP extends D4DSP
     }
 
     protected void
-    setURL(String url)
+    parseURL(String url)
             throws DapException
     {
         try {

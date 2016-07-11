@@ -141,23 +141,6 @@ public class URLMapDefault implements URLMap
         return result;
     }
 
-
-    protected StringBuilder
-    canonURL(XURI xurl)
-    {
-        String proto = xurl.getLeadProtocol();
-        String host = xurl.getHost();
-        String path = DapUtil.canonicalpath(xurl.getPath());
-        StringBuilder urlbuf = new StringBuilder();
-        if(proto != null && proto.length() > 0)
-            urlbuf.append(proto + "://");
-        urlbuf.append(host);
-        if(path == null)
-            path = "";
-        urlbuf.append("/" + path);
-        return urlbuf;
-    }
-
     public String toString()
     {
         StringBuilder buf = new StringBuilder();

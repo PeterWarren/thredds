@@ -43,7 +43,7 @@ abstract public class AbstractDSP implements DSP
 
     protected DapContext context = null;
     protected DapDataset dmr = null;
-    protected String realpath = null;
+    protected String location = null;
     protected Object source = null;
     protected ByteOrder order = null;
     protected ChecksumMode checksummode = ChecksumMode.DAP;
@@ -61,8 +61,6 @@ abstract public class AbstractDSP implements DSP
 
     abstract protected DMRFactory getFactory();
 
-    abstract protected String getRealPath(String path) throws DapException;
-
     //////////////////////////////////////////////////
     // DSP Interface
 
@@ -70,12 +68,11 @@ abstract public class AbstractDSP implements DSP
 
     /**
      * "open" a reference to a data source and return the DSP wrapper.
-     * @param path  - path to the data source; may be relative (from a url)
-     *              or absolute.
+     * @param location  - path to the data source; must be abolute file path or url.
      * @return  = wrapping dsp
      * @throws DapException
      */
-    abstract public DSP open(String path) throws DapException;
+    abstract public DSP open(String location) throws DapException;
 
     //////////////////////////////////////////////////
 
@@ -96,9 +93,9 @@ abstract public class AbstractDSP implements DSP
     }
 
     public String
-    getPath()
+    getLocation()
     {
-        return realpath;
+        return this.location;
     }
 
     @Override
@@ -135,14 +132,14 @@ abstract public class AbstractDSP implements DSP
     }
 
     public void
-    setPath(String path)
+    setLocation(String loc)
             throws DapException
     {
-        this.realpath = path;
+        this.location = loc;
     }
 
     @Override
-    public Object getSource()
+    public Object getAnnotation()
     {
         return this.source;
     }
