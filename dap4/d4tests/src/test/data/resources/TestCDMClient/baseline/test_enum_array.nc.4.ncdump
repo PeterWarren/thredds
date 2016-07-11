@@ -1,15 +1,34 @@
-netcdf test_enum_array.nc {
-  types:
-    byte enum cloud_class_t { 'Clear' = 0, 'Cumulonimbus' = 1, 'Stratus' = 2, 'Stratocumulus' = 3, 'Cumulus' = 4, 'Altostratus' = 5, 'Nimbostratus' = 6, 'Altocumulus' = 7, 'Cirrostratus' = 8, 'Cirrocumulus' = 9, 'Cirrus' = 10, 'Missing' = 127};
+<Dataset
+         name="test_enum_array.nc?dap4.ce=primary_cloud[1:2:4]"
+         dapVersion="4.0"
+         dmrVersion="1.0"
+         xmlns="http://xml.opendap.org/ns/DAP/4.0#"
+         xmlns:dap="http://xml.opendap.org/ns/DAP/4.0#">
 
-  variables:
-    enum cloud_class_t primary_cloud(2);
-      :_FillValue = "Missing";
-      :_DAP4_Checksum_CRC32 = "0xe041e203";
+    <Enumeration name="cloud_class_t" basetype="Int8">
+        <EnumConst name="Clear" value="0"/>
+        <EnumConst name="Cumulonimbus" value="1"/>
+        <EnumConst name="Stratus" value="2"/>
+        <EnumConst name="Stratocumulus" value="3"/>
+        <EnumConst name="Cumulus" value="4"/>
+        <EnumConst name="Altostratus" value="5"/>
+        <EnumConst name="Nimbostratus" value="6"/>
+        <EnumConst name="Altocumulus" value="7"/>
+        <EnumConst name="Cirrostratus" value="8"/>
+        <EnumConst name="Cirrocumulus" value="9"/>
+        <EnumConst name="Cirrus" value="10"/>
+        <EnumConst name="Missing" value="127"/>
+    </Enumeration>
+    <Enum name="primary_cloud" enum="/cloud_class_t">
+        <Dim size="2"/>
+        <Attribute name="_FillValue" type="String">
+            <Value value="Missing"/>
+        </Attribute>
+        <Attribute name="_DAP4_Checksum_CRC32" type="String">
+            <Value value="0xe041e203"/>
+        </Attribute>
+    </Enum>
+</Dataset>
+/primary_cloud[0] = 2
+/primary_cloud[1] = 1
 
-  // global attributes:
-  :_CoordSysBuilder = "ucar.nc2.dataset.conv.DefaultConvention";
- data:
-primary_cloud =
-  {2, 1}
-}

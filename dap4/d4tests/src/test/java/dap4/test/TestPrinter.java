@@ -118,7 +118,7 @@ public class TestPrinter
     {
         printer.setIndent(0);
         DMRPrint dmrprinter = new DMRPrint(writer);
-        dmrprinter.printDMR(this.dmr);
+        dmrprinter.print(this.dmr);
         dmrprinter.flush();
     }
 

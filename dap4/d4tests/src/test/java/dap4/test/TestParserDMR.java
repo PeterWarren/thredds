@@ -229,7 +229,7 @@ public class TestParserDMR extends DapTestCommon
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         DMRPrint dapprinter = new DMRPrint(pw);
-        dapprinter.printDMR(dmr);
+        dapprinter.print(dmr);
         pw.close();
         sw.close();
         String testresult = sw.toString();

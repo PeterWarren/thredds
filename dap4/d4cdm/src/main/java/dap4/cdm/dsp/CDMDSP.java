@@ -138,28 +138,44 @@ public class CDMDSP extends AbstractDSP
     }
 
     /**
-     * @param filepath    - absolute path to a file
+     * @param filepath - absolute path to a file
      * @return CDMDSP instance
      * @throws DapException
      */
     @Override
-    public DSP open(String filepath) throws DapException
+    public DSP
+    open(String filepath)
+            throws DapException
+    {
+        try {
+            NetcdfFile ncfile = createNetcdfFile(filepath, null);
+            NetcdfDataset ncd = new NetcdfDataset(ncfile, ENHANCEMENT);
+            return open(ncd);
+        } catch (IOException ioe) {
+            throw new DapException("CDMDSP: cannot open: " + filepath, ioe);
+        }
+    }
+
+    /**
+     * Provide an extra API for use in testing
+     * @param ncd
+     * @return
+     * @throws DapException
+     */
+    public DSP open(NetcdfDataset ncd)
+            throws DapException
     {
         assert this.context != null;
         setRequestResponse();
         this.dmrfactory = new CDMDMRFactory();
         this.datafactory = new CDMDataFactory();
-        try {
-            NetcdfFile ncfile = createNetcdfFile(filepath, null);
-            this.ncdfile = new NetcdfDataset(ncfile, ENHANCEMENT);
-        } catch (IOException ioe) {
-            throw new DapException("CDMDSP: cannot open: " + filepath, ioe);
-        }
+        this.ncdfile = ncd;
         setLocation(this.ncdfile.getLocation());
         build();
         buildDataDataset();
         return this;
     }
+
 
     @Override
     public void close()

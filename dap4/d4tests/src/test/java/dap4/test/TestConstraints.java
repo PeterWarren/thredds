@@ -1,5 +1,11 @@
 package dap4.test;
 
+import dap4.cdm.dsp.CDMDSP;
+import dap4.core.data.DSP;
+import dap4.core.util.DapContext;
+import dap4.core.util.DapException;
+import dap4.dap4lib.DAPPrint;
+import dap4.dap4lib.DMRPrint;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -8,6 +14,7 @@ import ucar.nc2.dataset.NetcdfDataset;
 import ucar.unidata.util.test.category.NeedsExternalResource;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,9 +28,7 @@ public class TestConstraints extends DapTestCommon
     static final boolean DMRPARSEDEBUG = false;
     static final boolean CEPARSEDEBUG = false;
 
-    static final boolean NCDUMP = true; // Use NcDumpW instead of D4Print
-
-    static final String EXTENSION = (NCDUMP ? "ncdump" : "dmp");
+    static final String EXTENSION = "dmp";
 
     //////////////////////////////////////////////////
     // Constants
@@ -95,7 +100,8 @@ public class TestConstraints extends DapTestCommon
     //////////////////////////////////////////////////
 
     @Before
-    public void setup() throws Exception {
+    public void setup() throws Exception
+    {
         this.resourceroot = getResourceRoot();
         // Check for windows path
         if(alpha.indexOf(this.resourceroot.charAt(0)) >= 0 && this.resourceroot.charAt(1) == ':') {
@@ -116,7 +122,7 @@ public class TestConstraints extends DapTestCommon
     chooseTestcases()
     {
         if(false) {
-            chosentests.add(locate1(8));
+            chosentests.add(locate1(6));
             prop_visual = true;
         } else {
             for(ClientTest tc : alltestcases) {
@@ -162,25 +168,23 @@ public class TestConstraints extends DapTestCommon
         int testcounter = 0;
 
         System.out.println("Testcase: " + testcase.testinputpath);
-        System.out.println("Baseline: "+testcase.baselinepath);
+        System.out.println("Baseline: " + testcase.baselinepath);
 
         String url = testcase.makeurl();
-        NetcdfDataset ncfile = null;
-        try {
-            ncfile = openDataset(url);
-        } catch (Exception e) {
-            throw e;
-        }
+        CDMDSP dsp = new CDMDSP(testcase.dataset);
+        NetcdfDataset ncfile = openDataset(url);
+        dsp.setContext(new DapContext());
+        dsp.open(ncfile);
 
-        String metadata = (NCDUMP ? ncdumpmetadata(ncfile) : null);
-        String data = (NCDUMP ? ncdumpdata(ncfile) : null);
+        String metadata = dumpmetadata(dsp);
+        String data = dumpdata(dsp);
 
         if(prop_visual) {
             visual("DMR: " + url, metadata);
             visual("DAP: " + url, data);
         }
 
-        String testoutput = (NCDUMP ? data : metadata + data);
+        String testoutput = metadata + data;
 
         if(prop_baseline)
             writefile(testcase.baselinepath, testoutput);
@@ -189,60 +193,40 @@ public class TestConstraints extends DapTestCommon
             // Read the baseline file(s)
             String baselinecontent = readfile(testcase.baselinepath);
             System.out.println("Comparison:");
-            Assert.assertTrue("***Fail",same(getTitle(),baselinecontent, testoutput));
+            Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, testoutput));
         }
     }
 
     //////////////////////////////////////////////////
     // Dump methods
 
-    String ncdumpmetadata(NetcdfDataset ncfile)
+    String
+    dumpmetadata(DSP dsp)
+            throws IOException
     {
-        boolean ok = false;
         String metadata = null;
         StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
 
-        // Print the meta-databuffer using these args to NcdumpW
-        ok = false;
-        try {
-            ok = ucar.nc2.NCdumpW.print(ncfile, "-unsigned", sw, null);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            ok = false;
-        }
-        try {
-            sw.close();
-        } catch (IOException e) {
-        }
-        ;
-        if(!ok) {
-            System.err.println("NcdumpW failed");
-        }
+        DMRPrint dp = new DMRPrint(pw);
+        dp.print(dsp.getDMR());
+        pw.close();
+        sw.close();
         return sw.toString();
     }
 
-    String ncdumpdata(NetcdfDataset ncfile)
+    String
+    dumpdata(DSP dsp)
+            throws IOException
     {
         boolean ok = false;
         StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
 
-        // Dump the databuffer
-        sw = new StringWriter();
-        ok = false;
-        try {
-            ok = ucar.nc2.NCdumpW.print(ncfile, "-vall -unsigned", sw, null);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            ok = false;
-        }
-        try {
-            sw.close();
-        } catch (IOException e) {
-        }
-        ;
-        if(!ok) {
-            System.err.println("NcdumpW failed");
-        }
+        DAPPrint dp = new DAPPrint(pw);
+        dp.print(dsp.getDataset());
+        pw.close();
+        sw.close();
         return sw.toString();
     }
 

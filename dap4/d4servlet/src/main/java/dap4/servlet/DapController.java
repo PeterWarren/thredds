@@ -326,7 +326,7 @@ abstract public class DapController extends HttpServlet
 
         // Get the DMR as a string
         DMRPrint dapprinter = new DMRPrint(pw);
-        dapprinter.printDMR(ce, dmr);
+        dapprinter.print(ce, dmr);
         pw.close();
         sw.close();
 
@@ -375,7 +375,7 @@ abstract public class DapController extends HttpServlet
 
         // Get the DMR as a string
         DMRPrint dapprinter = new DMRPrint(pw);
-        dapprinter.printDMR(ce, dmr);
+        dapprinter.print(ce, dmr);
         pw.close();
         sw.close();
 

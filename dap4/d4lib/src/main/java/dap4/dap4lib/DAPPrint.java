@@ -182,11 +182,12 @@ public class DAPPrint
     }
 
     protected void
-    printLeaf(DataVariable datav, Index pos, DapSort sort, CEConstraint ce)
+    printLeaf(DataVariable datav, Index pos, CEConstraint ce)
             throws DapException
     {
+        DataSort sort = datav.getSort();
         switch (sort) {
-        case ATOMICTYPE:
+        case ATOMIC:
             DataAtomic atom = (DataAtomic) datav;
             DapAtomicVariable av = (DapAtomicVariable) atom.getTemplate();
             Object value = atom.read(pos);
@@ -198,7 +199,10 @@ public class DAPPrint
             printer.eol();
             break;
 
-        case STRUCTURE:
+        case COMPOUNDARRAY:
+            break;
+
+        case STRUCTURE:// Might be singleton Structure or DataCompoundArray
             DataStructure stdata = (DataStructure) datav;
             DapStructure dstruct = (DapStructure) datav.getTemplate();
             List<DapVariable> dfields = dstruct.getFields();
@@ -211,7 +215,6 @@ public class DAPPrint
             break;
 
         case SEQUENCE:
-            ;
             DataSequence sqdata = (DataSequence) datav;
             DapSequence dseq = (DapSequence) datav.getTemplate();
             printer.indent();
@@ -223,6 +226,8 @@ public class DAPPrint
             }
             printer.outdent();
             break;
+
+        case RECORD:
 
         default:
             throw new DataException("Attempt to treat non-variable as variable:" + datav.getTemplate().getFQN());

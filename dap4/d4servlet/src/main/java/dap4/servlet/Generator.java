@@ -157,7 +157,7 @@ public class Generator extends DapSerializer
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             DMRPrint dp = new DMRPrint(pw);
-            dp.print(dmr, this.ce);
+            dp.print(this.ce, dmr);
             pw.close();
             sw.close();
             String tmp = sw.toString();

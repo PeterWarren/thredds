@@ -81,21 +81,21 @@ public class DMRPrint
      */
 
     public void
-    printDMR(DapDataset dataset)
+    print(DapDataset dataset)
             throws IOException
     {
         CEConstraint ce = CEConstraint.getUniversal(dataset);
         assert(ce != null);
-        printDMR(ce,dataset);
+        print(ce,dataset);
     }
 
 
     public void
-    printDMR(CEConstraint ce, DapDataset dmr)
+    print(CEConstraint ce, DapDataset dmr)
             throws IOException
     {
         this.printer.setIndent(0);
-        print(dmr, ce); // start printing at the root
+        printNode(dmr, ce); // start printing at the root
         printer.eol();
     }
 
@@ -124,7 +124,7 @@ public class DMRPrint
      */
 
     public void
-    print(DapNode node, CEConstraint ce)
+    printNode(DapNode node, CEConstraint ce)
             throws IOException
     {
         if (node == null)
@@ -147,28 +147,28 @@ public class DMRPrint
             if (group.getDimensions().size() > 0) {
                 for (DapNode subnode : group.getDimensions()) {
                     if (!ce.references(subnode)) continue;
-                    print(subnode, ce);
+                    printNode(subnode, ce);
                     printer.eol();
                 }
             }
             if (group.getEnums().size() > 0) {
                 for (DapNode subnode : group.getEnums()) {
                     if (!ce.references(subnode)) continue;
-                    print(subnode, ce);
+                    printNode(subnode, ce);
                     printer.eol();
                 }
             }
             if (group.getVariables().size() > 0)
                 for (DapNode subnode : group.getVariables()) {
                     if (!ce.references(subnode)) continue;
-                    print(subnode, ce);
+                    printNode(subnode, ce);
                     printer.eol();
                 }
             printMetadata(node, ce);
             if (group.getGroups().size() > 0)
                 for (DapNode subnode : group.getGroups()) {
                     if (!ce.references(subnode)) continue;
-                    print(subnode, ce);
+                    printNode(subnode, ce);
                     printer.eol();
                 }
             printer.outdent();
@@ -220,7 +220,7 @@ public class DMRPrint
             printer.indent();
             for (DapVariable field : struct.getFields()) {
                 if (!ce.references(field)) continue;
-                print(field, ce);
+                printNode(field, ce);
                 printer.eol();
             }
             printDimrefs(struct, ce);

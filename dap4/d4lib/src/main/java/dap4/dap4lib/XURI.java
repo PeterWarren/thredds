@@ -124,8 +124,8 @@ public class XURI
             this.host = canonical(this.url.getHost());
             if(this.url.getPort() > 0)
                 this.host += (":" + this.url.getPort());
-            this.path = canonical(this.isfile?this.url.getSchemeSpecificPart()
-                                             :this.url.getPath());
+            this.path = canonical(this.isfile ? this.url.getSchemeSpecificPart()
+                    : this.url.getPath());
         }
 
         // Parse the raw query (before decoding)
@@ -257,18 +257,25 @@ public class XURI
     {
         StringBuilder uri = new StringBuilder();
         // Note that format and base may be same, so case it out
-        boolean neither = (!parts.contains(Parts.FORMAT) && !parts.contains(Parts.BASE));
-        if(neither) {
-            boolean both = (parts.contains(Parts.FORMAT) && parts.contains(Parts.BASE));
-            if(both || parts.contains(Parts.FORMAT))
+        int useformat = (parts.contains(Parts.FORMAT) ? 1 : 0);
+        int usebase = (parts.contains(Parts.BASE) ? 2 : 0);
+        switch (useformat + usebase) {
+        case 0 + 0: // neither
+            break;
+        case 1 + 0: // FORMAT only
+            uri.append(this.formatprotocol + ":");
+            break;
+        case 2 + 0: // BASE only
+            uri.append(this.baseprotocol + ":");
+            break;
+        case 2 + 1: // both
+            uri.append(this.formatprotocol + ":");
+            if(!this.baseprotocol.equals(this.formatprotocol))
                 uri.append(this.formatprotocol + ":");
-            if(both || parts.contains(Parts.BASE)) {
-                if(!this.baseprotocol.equals(this.formatprotocol))
-                    uri.append(this.formatprotocol + ":");
-            }
-            if(this.baseprotocol.equals("file")) uri.append("/"); // use only single /
-            else uri.append("//");
+            break;
         }
+        uri.append(this.baseprotocol.equals("file")?"/":"//");
+
         if(userinfo != null && parts.contains(Parts.PWD))
             uri.append(this.userinfo + ":");
         if(this.host != null && parts.contains(Parts.HOST))
