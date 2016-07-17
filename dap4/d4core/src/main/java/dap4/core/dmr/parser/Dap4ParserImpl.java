@@ -389,19 +389,21 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
             throw new ParseException("Empty dataset name attribute");
         // convert and test version numbers
         float ndapversion = DAPVERSION;
-        try {
-            ndapversion = Float.parseFloat(dapversion.value);
-        } catch (NumberFormatException nfe) {
-            ndapversion = DAPVERSION;
-        }
+        if(dapversion != null)
+            try {
+                ndapversion = Float.parseFloat(dapversion.value);
+            } catch (NumberFormatException nfe) {
+                ndapversion = DAPVERSION;
+            }
         if(ndapversion != DAPVERSION)
             throw new ParseException("Dataset dapVersion mismatch: " + dapversion.value);
-        float ndmrversion = DAPVERSION;
-        try {
-            ndmrversion = Float.parseFloat(dmrversion.value);
-        } catch (NumberFormatException nfe) {
-            ndmrversion = DMRVERSION;
-        }
+        float ndmrversion = DMRVERSION;
+        if(dmrversion != null)
+            try {
+                ndmrversion = Float.parseFloat(dmrversion.value);
+            } catch (NumberFormatException nfe) {
+                ndmrversion = DMRVERSION;
+            }
         if(ndmrversion != DMRVERSION)
             throw new ParseException("Dataset dmrVersion mismatch: " + dmrversion.value);
         this.root = factory.newDataset(name.value, null);

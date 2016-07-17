@@ -630,6 +630,8 @@ abstract public class DapUtil // Should only contain static methods
         StringBuilder result = new StringBuilder();
         if(prefix == null) prefix = "";
         if(suffix == null) suffix = "";
+        prefix = DapUtil.canonicalpath(prefix);
+        suffix = DapUtil.canonicalpath(suffix);
         result.append(prefix);
         if(!prefix.endsWith("/"))
             result.append("/");

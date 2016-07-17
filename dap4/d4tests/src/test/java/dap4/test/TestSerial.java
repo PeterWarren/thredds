@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import ucar.nc2.dataset.NetcdfDataset;
+import ucar.unidata.util.test.TestDir;
 import ucar.unidata.util.test.category.NeedsExternalResource;
 
 import java.io.IOException;
@@ -111,8 +112,9 @@ public class TestSerial extends DapTestCommon
         if(!DapUtil.hasDriveLetter(this.resourceroot))
             this.resourceroot = DapUtil.absolutize(this.resourceroot);
         this.datasetpath = this.resourceroot + "/" + BASELINEDIR;
-        findServer(this.datasetpath);
-        this.sourceurl = this.d4tsserver;
+        //findServer(this.datasetpath);
+        //this.sourceurl = this.d4tsserver;
+        this.sourceurl = TestDir.dap4TestServer;
         System.out.println("Using source url " + this.sourceurl);
         defineAllTestcases(this.resourceroot, this.sourceurl);
         chooseTestcases();

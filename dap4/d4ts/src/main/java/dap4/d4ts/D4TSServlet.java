@@ -8,11 +8,11 @@ import dap4.core.data.DSPRegistry;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
+import dap4.dap4lib.DapCodes;
 import dap4.dap4lib.DapLog;
 import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.netcdf.NetcdfDSP;
 import dap4.servlet.*;
-import ucar.httpservices.HTTPUtil;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -32,6 +32,8 @@ public class D4TSServlet extends DapController
     static final boolean DEBUG = false;
 
     static final boolean PARSEDEBUG = false;
+
+    static protected final String RESOURCEPATH = "WEB-INF/testfiles";
 
     //////////////////////////////////////////////////
     // Type Decls
@@ -61,8 +63,6 @@ public class D4TSServlet extends DapController
     //////////////////////////////////////////////////
     // Instance variables
 
-    ServletContext cxt = null;
-
     //////////////////////////////////////////////////
     // Constructor(s)
 
@@ -75,7 +75,11 @@ public class D4TSServlet extends DapController
     public void initialize()
     {
         DapLog.info("Initializing d4ts servlet");
-        cxt = getServletContext();
+        ServletContext svccxt = getServletContext();
+        // Construct the resource dir path
+        String svcroot = svccxt.getRealPath("");
+        String resourcedir = DapUtil.canonjoin(svcroot, RESOURCEPATH);
+        this.dapcxt.put("RESOURCEDIR",resourcedir);
     }
 
     //////////////////////////////////////////////////
@@ -141,16 +145,12 @@ public class D4TSServlet extends DapController
     getResourcePath(DapRequest drq, String location)
             throws IOException
     {
-        String prefix = (String) this.context.get("RESOURCEDIR");
-        String datasetfilepath;
+        String prefix = (String) this.dapcxt.get("RESOURCEDIR");
+        if(prefix == null)
+            throw new DapException("Cannot location resource: " + location)
+                    .setCode(DapCodes.SC_NOT_FOUND);
         location = DapUtil.canonicalpath(location);
-        if(prefix != null) {
-            datasetfilepath = DapUtil.canonjoin(prefix, location);
-        } else {
-            // Using context information, we need to
-            // construct a file path to the specified dataset
-            datasetfilepath = cxt.getRealPath(location);
-        }
+        String datasetfilepath = DapUtil.canonjoin(prefix, location);
         // See if it really exists and is readable and of proper type
         File dataset = new File(datasetfilepath);
         if(!dataset.exists())
@@ -174,5 +174,15 @@ public class D4TSServlet extends DapController
     getServletID()
     {
         return "d4ts";
+    }
+
+    @Override
+    public ServletContext
+    getServletContext()
+    {
+        if(this.servletcontext == null)
+            this.servletcontext = super.getServletContext();
+        assert (this.servletcontext != null);
+        return this.servletcontext;
     }
 }

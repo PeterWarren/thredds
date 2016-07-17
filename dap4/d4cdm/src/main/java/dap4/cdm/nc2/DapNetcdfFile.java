@@ -73,7 +73,6 @@ public class DapNetcdfFile extends NetcdfFile
     static protected DSPRegistry dspregistry = new DSPRegistry();
 
     static {
-        dspregistry.register(FileDSP.class, DSPRegistry.FIRST);
         dspregistry.register(HttpDSP.class, DSPRegistry.FIRST);
     }
 
@@ -124,17 +123,16 @@ public class DapNetcdfFile extends NetcdfFile
         } catch (URISyntaxException use) {
             throw new IOException(use);
         }
-        boolean isfile = false;
-        if(xuri.isFile()) {
+        boolean isfile = xuri.isFile();
+        if(isfile) {
             this.dsplocation = DapUtil.absolutize(xuri.getPath());
-            isfile = true;
         } else { // Not a file url
             this.dsplocation = xuri.assemble(XURI.URLBASE);
         }
         DapContext cxt = new DapContext();
         cancel = (cancelTask == null ? nullcancel : cancelTask);
         // 1. Get and parse the constrained DMR and Data v-a-v URL
-        this.dsp = dspregistry.findMatchingDSP(this.dsplocation,cxt); // will set dsp context
+        this.dsp = dspregistry.findMatchingDSP(location,cxt); // will set dsp context
         if(this.dsp == null)
             throw new IOException("No matching DSP: "+this.location);
         this.dsp.setContext(cxt);

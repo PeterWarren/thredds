@@ -8,6 +8,7 @@ import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.core.util.*;
 import dap4.dap4lib.AbstractData;
+import dap4.dap4lib.AbstractDataDataset;
 import dap4.dap4lib.AbstractDataVariable;
 import dap4.dap4lib.LibTypeFcns;
 
@@ -50,8 +51,11 @@ public class D4Data
         //Coverity[FB.URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD]
         protected long totalbytestringsize = 0;  // total space used by the bytestrings
         protected int[] bytestrings = null; // List of the absolute start offsets of
-        // an array of e.g. opaque,  or string atomictypes.
-        // The value is the offset of object's count.
+			        // an array of e.g. opaque,  or string atomictypes.
+			        // The value is the offset of object's count.
+
+	// Actual sizes as taken from the constraint
+	protected long[] actualsizes = null;
 
         //////////////////////////////////////////////////
         // Constructors
@@ -63,7 +67,11 @@ public class D4Data
             this.varoffset = (Integer) src;
             this.basetype = dap.getBaseType();
             this.atomictype = this.basetype.getTypeSort();
-            this.product = DapUtil.dimProduct(dap.getDimensions());
+	    List<DapDimension> dimset = dap.getDimensions();
+            this.product = DapUtil.dimProduct(dimset);
+	    actualsizes = new long[dimset.size()];
+	    for(int i=0;i<actualsizes.length;i++)
+		actualsizes[i] = dimset.get(i).getSize();
             this.varelementsize = LibTypeFcns.size(this.basetype);
             this.isbytestring = (this.atomictype.isStringType() || this.atomictype.isOpaqueType());
         }
@@ -441,11 +449,10 @@ public class D4Data
     }
 
 
-    static public class D4DataDataset extends AbstractData
-            implements DataDataset
+    static public class D4DataDataset extends AbstractDataDataset
     {
 
-        //////////////////////////////////////////////////
+        //////////// //////////////////////////////////////
         // Constants
 
         static final public long serialVersionUID = 1L;

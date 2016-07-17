@@ -10,6 +10,7 @@ import dap4.core.dmr.*;
 import dap4.core.util.*;
 import dap4.core.util.Index;
 import dap4.dap4lib.AbstractData;
+import dap4.dap4lib.AbstractDataDataset;
 import dap4.dap4lib.AbstractDataVariable;
 import dap4.dap4lib.LibTypeFcns;
 import ucar.ma2.*;
@@ -384,8 +385,7 @@ public class CDMData
     */
     }
 
-
-    static public class CDMDataDataset extends AbstractData implements DataDataset
+    static public class CDMDataDataset extends AbstractDataDataset
     {
 
         //////////////////////////////////////////////////

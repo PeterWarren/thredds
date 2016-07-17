@@ -188,7 +188,7 @@ public class TestParserCE extends DapTestCommon
                 ceparser.setDebugLevel(1);
             parseok = ceparser.parse(testset.constraint);
             CECompiler compiler = new CECompiler();
-            ceroot = compiler.compile(dmr, ceparser.getConstraint());
+            ceroot = compiler.compile(dmr, ceparser.getCEAST());
         } catch (Exception e) {
             e.printStackTrace();
             parseok = false;

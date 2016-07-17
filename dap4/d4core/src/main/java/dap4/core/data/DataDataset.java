@@ -4,6 +4,7 @@
 
 package dap4.core.data;
 
+import dap4.core.ce.CEConstraint;
 import dap4.core.dmr.DapVariable;
 
 import java.util.Iterator;
@@ -22,4 +23,8 @@ public interface DataDataset extends Data
     public void addVariable(DataVariable dv);
 
     public List<DataVariable>  getTopVariables();
+
+    public CEConstraint getConstraint();
+
+    public void setConstraint(CEConstraint ce);
 }

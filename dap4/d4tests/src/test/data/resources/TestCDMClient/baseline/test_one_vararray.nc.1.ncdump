@@ -1,17 +1,12 @@
-<Dataset
-         name="test_one_vararray.nc?dap4.ce=t"
-         dapVersion="4.0"
-         dmrVersion="1.0"
-         xmlns="http://xml.opendap.org/ns/DAP/4.0#"
-         xmlns:dap="http://xml.opendap.org/ns/DAP/4.0#">
-    <Dimension name="d2" size="2"/>
-    <Int32 name="t">
-        <Dim name="/d2"/>
-        <Attribute name="_DAP4_Checksum_CRC32" type="String">
-            <Value value="0xd0b1d243"/>
-        </Attribute>
-    </Int32>
-</Dataset>
-/t[0] = 17
-/t[1] = 37
-
+netcdf test_one_vararray\.1 {
+  dimensions:
+    d2 = 2;
+  variables:
+    int t(d2);
+      t:_DAP4_Checksum_CRC32 = "0xd0b1d243";
+  // global attributes:
+  :_CoordSysBuilder = "ucar.nc2.dataset.conv.DefaultConvention";
+ data:
+t =
+  {17, 37}
+}

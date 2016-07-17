@@ -85,7 +85,7 @@ abstract public class DapController extends HttpServlet
     //////////////////////////////////////////////////
     // Instance variables
 
-    transient protected DapContext context = new DapContext();
+    transient protected DapContext dapcxt = new DapContext();
 
     protected boolean compress = true;
 
@@ -103,7 +103,6 @@ abstract public class DapController extends HttpServlet
     {
         this.servletcontext = servletcontext;
     }
-
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -186,25 +185,26 @@ abstract public class DapController extends HttpServlet
 
     public DapController setControllerPath(String controllerpath)
     {
-        this.context.put("controllerpath", DapUtil.canonjoin("", controllerpath));
+        this.dapcxt.put("controllerpath", DapUtil.canonjoin("", controllerpath));
         return this;
     }
 
     public DapContext getContext()
     {
-        return this.context;
+        return this.dapcxt;
     }
 
     //////////////////////////////////////////////////////////
     // Primary Controller Entry Point
 
-    public void handleRequest(HttpServletRequest req, HttpServletResponse res)
+    public void
+    handleRequest(HttpServletRequest req, HttpServletResponse res)
             throws IOException
     {
         DapLog.debug("doGet(): User-Agent = " + req.getHeader("User-Agent"));
         if(TESTING) {
             String resourcedir = (String)req.getAttribute("RESOURCEDIR");
-            this.context.put("RESOURCEDIR",resourcedir);
+            this.dapcxt.put("RESOURCEDIR",resourcedir);
         }
         DapRequest drq = getRequestState(req, res);
         String url = drq.getOriginalURL();
@@ -215,12 +215,11 @@ abstract public class DapController extends HttpServlet
         if(DEBUG) {
             System.err.println("DAP4 Servlet: processing url: " + drq.getOriginalURL());
         }
-
-        DapContext cxt = new DapContext();
-        cxt.put(HttpServletRequest.class, req);
-        cxt.put(HttpServletResponse.class, res);
+        assert(this.dapcxt != null);
+        this.dapcxt.put(HttpServletRequest.class, req);
+        this.dapcxt.put(HttpServletResponse.class, res);
         if(url.endsWith(FAVICON)) {
-            doFavicon(drq, FAVICON, cxt);
+            doFavicon(drq, FAVICON, this.dapcxt);
             return;
         }
 
@@ -230,7 +229,7 @@ abstract public class DapController extends HttpServlet
                 // This is the case where a request was made without a dataset;
                 // According to the spec, I think we should return the
                 // services/capabilities document
-                doCapabilities(drq, cxt);
+                doCapabilities(drq, this.dapcxt);
             } else {
                 RequestMode mode = drq.getMode();
                 if(mode == null)
@@ -238,13 +237,13 @@ abstract public class DapController extends HttpServlet
                             .setCode(HttpServletResponse.SC_BAD_REQUEST);
                 switch (mode) {
                 case DMR:
-                    doDMR(drq, cxt);
+                    doDMR(drq, this.dapcxt);
                     break;
                 case DAP:
-                    doData(drq, cxt);
+                    doData(drq, this.dapcxt);
                     break;
                 case DSR:
-                    doDSR(drq, cxt);
+                    doDSR(drq, this.dapcxt);
                     break;
                 default:
                     throw new DapException("Unrecognized request extension")
@@ -394,14 +393,16 @@ abstract public class DapController extends HttpServlet
 
         // Dump the databuffer part
         switch (drq.getFormat()) {
+        case TEXT:
         case XML:
         case HTML:
             throw new IOException("Unsupported return format: " + drq.getFormat());
-        case TEXT:
+            /*
             sw = new StringWriter();
             DAPPrint dp = new DAPPrint(sw);
             dp.print(dsp.getDataset(), ce);
             break;
+                */
         case NONE:
         default:
             DapSerializer writer = new DapSerializer(dsp, ce, cw, byteorder);
@@ -522,7 +523,7 @@ abstract public class DapController extends HttpServlet
         boolean parseok = ceparser.parse(sce);
         if(!parseok)
             throw new IOException("Constraint Parse failed: " + sce);
-        CEAST root = ceparser.getConstraint();
+        CEAST root = ceparser.getCEAST();
         CECompiler compiler = new CECompiler();
         CEConstraint ce = compiler.compile(dmr, root);
         ce.expand();

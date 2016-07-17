@@ -44,13 +44,12 @@ public class XURI
     static public final EnumSet<Parts> URLONLY = EnumSet.of(Parts.BASE, Parts.PWD, Parts.HOST, Parts.PATH);
     static public final EnumSet<Parts> URLALL = EnumSet.of(Parts.FORMAT, Parts.BASE, Parts.PWD, Parts.HOST, Parts.PATH, Parts.QUERY, Parts.FRAG);
     static public final EnumSet<Parts> URLBASE = EnumSet.of(Parts.BASE, Parts.PWD, Parts.HOST, Parts.PATH, Parts.QUERY, Parts.FRAG);
+    static public final EnumSet<Parts> URLPATH = EnumSet.of(Parts.PATH, Parts.QUERY, Parts.FRAG);
 
     //////////////////////////////////////////////////
     // Instance variables
 
     protected String originaluri = null;
-    //protected String trueurl = null;  // without the query or frag and with proper single protocol
-    protected URI url = null; //applied to trueurl
     protected boolean isfile = false;
 
     protected String baseprotocol = null; // rightmost protocol
@@ -92,7 +91,10 @@ public class XURI
             break;
         case 1:
             this.formatprotocol = protocols.get(0);
-            this.baseprotocol = "http";   // default conversion
+            if("file".equalsIgnoreCase(this.formatprotocol))
+                this.baseprotocol = "file";   // default conversion
+            else
+                this.baseprotocol = "http";   // default conversion
             break;
         case 2:
             this.baseprotocol = protocols.get(0);
@@ -101,42 +103,76 @@ public class XURI
         default:
             throw new URISyntaxException(xurl, "Too many protocols: at most 2 allowed");
         }
-        // Construct a usable url and parse it
-        this.url = new URI(baseprotocol + ":" + remainder);
+        this.isfile = "file".equals(this.baseprotocol);
+        // The standard URI parser does not handle 'file:' very well,
+        // so handle specially
+        URI uri;
+        if(this.isfile)
+            parsefile(remainder);
+        else
+            parsenonfile(remainder); // not a file: url
+        if(this.query != null)
+            parseQuery(this.query);
+        if(this.frag != null)
+            parseFragment(this.frag);
+    }
 
+    protected void
+    parsenonfile(String remainder)
+            throws URISyntaxException
+    {
+        // Construct a usable url and parse it
+        URI uri = new URI(baseprotocol + ":" + remainder);
         // Extract the parts of the uri so they can
         // be modified and later reassembled
+        this.userinfo = canonical(uri.getUserInfo());
+        this.host = canonical(uri.getHost());
+        if(uri.getPort() > 0)
+            this.host += (":" + uri.getPort());
+        this.path = canonical(uri.getPath());
+        // Parse the raw query (before decoding)
+        this.query = uri.getRawQuery();
+        // Parse the raw fragment (before decoding)
+        this.frag = canonical(uri.getFragment());
+    }
 
-        if(!this.baseprotocol.equals(canonical(this.url.getScheme())))
-            throw new URISyntaxException(this.url.toString(),
-                    String.format("malformed url: %s :: %s",
-                            this.baseprotocol, this.url.getScheme()));
-        this.isfile = "file".equals(this.url.getScheme());
-        this.userinfo = canonical(this.url.getUserInfo());
-        /*
-        if(this.isfile && DapUtil.hasDriveLetter(this.url.getHost() + ":")) {
-            this.host = null;
-            this.path = this.url.getHost() + ":";
-            this.path = canonical(this.path + this.url.getPath());
-        } else
-         */
-        {
-            this.host = canonical(this.url.getHost());
-            if(this.url.getPort() > 0)
-                this.host += (":" + this.url.getPort());
-            this.path = canonical(this.isfile ? this.url.getSchemeSpecificPart()
-                    : this.url.getPath());
+    protected void
+    parsefile(String remainder)
+    {
+        // Pull off the query and fragment parts, if any.
+        String query = null;
+        String fragment = null;
+        int qindex = remainder.indexOf("?");
+        int findex = remainder.lastIndexOf("#");
+        if(qindex >= 0) { // query and maybe fragment
+            if(findex >= 0 && findex > qindex) {// both
+                fragment = remainder.substring(findex + 1, remainder.length());
+                remainder = remainder.substring(0, findex);
+            }
+            query = remainder.substring(qindex + 1, remainder.length());
+            remainder = remainder.substring(0, qindex);
+        } else if(findex >= 0) { // fragment, no query
+            fragment = remainder.substring(findex + 1, remainder.length());
+            remainder = remainder.substring(0, findex);
         }
 
-        // Parse the raw query (before decoding)
-        this.query = this.url.getRawQuery();
-        if(this.query != null)
-            setQuery(this.query);
+        // Standardize path part to be absolute
+        // => single leading '/' or windows drive letter
+        StringBuilder buf = new StringBuilder(remainder);
+        for(int i = 0; i < remainder.length(); i++) { // remove all leading '/'
+            if(buf.charAt(i) != '/') break;
+            buf.deleteCharAt(i);
+        }
+        // check for drive letter
+        if(DapUtil.DRIVELETTERS.indexOf(buf.charAt(0)) < 0
+                || buf.charAt(1) != ':') { // no drive letter, prepend '/'
+            buf.insert(0, '/');
+        }
 
-        // Parse the raw fragment (before decoding)
-        this.frag = canonical(this.url.getFragment());
-        if(this.frag != null)
-            setFragment(this.frag);
+        remainder = buf.toString();
+        this.path = remainder;
+        this.frag = fragment;
+        this.query = query;
     }
 
     //////////////////////////////////////////////////
@@ -203,7 +239,7 @@ public class XURI
     }
 
     public XURI
-    setQuery(String q)
+    parseQuery(String q)
     {
         if(q == null || q.length() == 0) return this;
         String[] params = q.split(QUERYSEP);
@@ -224,7 +260,7 @@ public class XURI
     }
 
     public XURI
-    setFragment(String f)
+    parseFragment(String f)
     {
         if(f == null || f.length() == 0) return this;
         String[] params = f.split(FRAGMENTSEP);
@@ -274,7 +310,7 @@ public class XURI
                 uri.append(this.formatprotocol + ":");
             break;
         }
-        uri.append(this.baseprotocol.equals("file")?"/":"//");
+        uri.append(this.baseprotocol.equals("file") ? "/" : "//");
 
         if(userinfo != null && parts.contains(Parts.PWD))
             uri.append(this.userinfo + ":");

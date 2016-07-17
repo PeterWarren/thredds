@@ -4,8 +4,10 @@
 
 package dap4.core.ce;
 
+import dap4.core.ce.parser.CEParserImpl;
 import dap4.core.data.*;
 import dap4.core.dmr.*;
+import dap4.core.dmr.parser.ParseException;
 import dap4.core.util.*;
 
 import java.util.*;
@@ -68,12 +70,10 @@ import java.util.*;
  * btree is usable.
  * <p/>
  * Ideally, we would allow all three modes, but for now, only
- * generate-and-test and iteration are implemented, and only a subset
- * of those. Specifically, iteration is provided for referencing,
- * projection, and selection (filters). Generate-and-test is provided for
- * referencing and selection. It is not provided for projection
- * (for now) because it essentially requires the inverse of iteration
- * and that is fairly tricky.
+ * generate-and-test is implemented, and only a subset of that.
+ * Generate-and-test is provided for referencing and selection. It is not
+ * provided for projection (for now) because it essentially requires the
+ * inverse of iteration and that is fairly tricky.
  */
 
 public class CEConstraint implements Constraint
@@ -145,6 +145,7 @@ public class CEConstraint implements Constraint
         }
     }
 
+    /*
     static protected class ReferenceIterator implements Iterator<DapNode>
     {
 
@@ -154,10 +155,10 @@ public class CEConstraint implements Constraint
         List<DapNode> list = new ArrayList<>();
         Iterator<DapNode> listiter = null;
 
-        /**
+        **
          * @param ce the constraint over which to iterate
          * @throws DapException
-         */
+         *
         public ReferenceIterator(CEConstraint ce)
             throws DapException
         {
@@ -186,7 +187,6 @@ public class CEConstraint implements Constraint
         }
 
     }
-
 
     static protected class FilterIterator implements Iterator<DataRecord>
     {
@@ -245,6 +245,7 @@ public class CEConstraint implements Constraint
             throw new UnsupportedOperationException();
         }
     }
+    */
 
     //////////////////////////////////////////////////
     // class variables and methods
@@ -655,13 +656,14 @@ public class CEConstraint implements Constraint
      * @return ReferenceIterator
      * @throws DapException if could not create.
      */
-
+    /*
     public ReferenceIterator
     referenceIterator()
         throws DapException
     {
         return new ReferenceIterator(this);
     }
+    */
 
     //////////////////////////////////////////////////
     // Projection processing
@@ -681,7 +683,7 @@ public class CEConstraint implements Constraint
      * @param var over whose dimensions to iterate
      * @throws DapException
      */
-
+    /*
     public Odometer
     projectionIterator(DapVariable var)
         throws DapException
@@ -691,6 +693,7 @@ public class CEConstraint implements Constraint
             return null;
         return Odometer.factory(seg.slices, seg.dimset, false);
     }
+    */
 
     //////////////////////////////////////////////////
     // Selection (Filter) processing
@@ -749,7 +752,7 @@ public class CEConstraint implements Constraint
      * @param dapseq
      * @param dataseq
      */
-
+    /*
     public FilterIterator
     filterIterator(DapSequence dapseq, DataSequence dataseq)
         throws DapException
@@ -760,7 +763,7 @@ public class CEConstraint implements Constraint
             return null;
         return new FilterIterator(this, dapseq, dataseq, seg.filter);
     }
-
+    */
 
     //////////////////////////////////////////////////
     // Utilities
@@ -1083,6 +1086,28 @@ public class CEConstraint implements Constraint
                     this.groups.add(group);
             }
         }
+    }
+
+    //////////////////////////////////////////////////
+    // Static Utility for compiling a constraint string
+
+    static CEConstraint
+    compile(String sce, DapDataset dmr)
+            throws DapException
+    {
+        if(sce == null || dmr == null)  return null;
+        CEParserImpl parser = new CEParserImpl(dmr);
+        boolean ok;
+        try {
+	    ok = parser.parse(sce);
+        } catch (ParseException pe) {
+            ok = false;
+        }
+        if(!ok)
+            throw new DapException("Constraint parse failed: " + sce);
+        CECompiler compiler = new CECompiler();
+	CEConstraint ce = compiler.compile(dmr, parser.getCEAST());
+	return ce;
     }
 
 }

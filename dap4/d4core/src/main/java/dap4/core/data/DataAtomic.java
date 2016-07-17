@@ -123,7 +123,8 @@ public interface DataAtomic extends DataVariable
     readHelper(List<Slice> slices)
             throws DataException
     {
-        if(slices == null || slices.size() == 0) { //scalar
+        assert(slices != null);
+        if(slices.size() == 0) { //scalar
             slices = new ArrayList<Slice>();
             Slice slice = new Slice(0, 1, 1);
             slices.add(slice);

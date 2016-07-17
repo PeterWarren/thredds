@@ -195,6 +195,10 @@ public class DapType extends DapNode implements DapDecl
             return typesort.isUnsigned();
     }
 
+    public boolean isAtomicType()
+    {
+        return getTypeSort().isAtomic();
+    }
 
     // Pass thru to atomictype
     public boolean isIntegerType()

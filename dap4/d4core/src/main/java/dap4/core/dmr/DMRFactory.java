@@ -2,6 +2,7 @@
    See the LICENSE file for more information. */
 
 package dap4.core.dmr;
+import dap4.core.ce.CEConstraint;
 import dap4.core.util.DapSort;
 
 public interface DMRFactory

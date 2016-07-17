@@ -54,7 +54,7 @@ public class CEParserImpl extends CEBisonParser
     //////////////////////////////////////////////////
     // Get/Set
 
-    public CEAST getConstraint()
+    public CEAST getCEAST()
     {
         return constraint;
     }

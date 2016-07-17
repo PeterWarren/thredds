@@ -126,7 +126,7 @@ public class DapRequest
         }
         XURI xuri;
         try {
-            xuri = new XURI(this.url).setQuery(this.querystring);
+            xuri = new XURI(this.url).parseQuery(this.querystring);
         } catch (URISyntaxException e) {
             throw new IOException(e);
         }

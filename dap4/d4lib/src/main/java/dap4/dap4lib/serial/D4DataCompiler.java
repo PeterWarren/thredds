@@ -12,9 +12,8 @@ import dap4.core.util.DapException;
 import dap4.core.util.DapSort;
 import dap4.core.util.DapUtil;
 import dap4.dap4lib.ChecksumMode;
-import dap4.dap4lib.Dap4Util;
-import dap4.dap4lib.RequestMode;
 import dap4.dap4lib.LibTypeFcns;
+import dap4.dap4lib.RequestMode;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -90,6 +89,7 @@ public class D4DataCompiler implements DataCompiler
             DapDump.dumpbytes(this.databuffer, false);
         }
         this.datadataset = factory.newDataset(this.dsp, this.dataset, this.databuffer);
+        this.datadataset.setConstraint(this.dsp.getConstraint());
         this.dsp.setDataset(this.datadataset);
 
         // iterate over the variables represented in the databuffer

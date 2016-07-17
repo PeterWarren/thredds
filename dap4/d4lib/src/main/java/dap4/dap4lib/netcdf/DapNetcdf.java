@@ -258,7 +258,7 @@ public interface DapNetcdf extends Library
     int nc_inq_vlen(int ncid, int xtype, byte[] name, SizeTByReference datum_sizep, IntByReference base_nc_typep);
 
     // read entire array
-    int nc_get_var(int ncid, int varid, byte[] bbuff);
+    int nc_get_var(int ncid, int varid, Pointer p);
 
     int nc_get_var(int ncid, int varid, Vlen_t[] vlen);      // vlen
 

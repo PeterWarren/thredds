@@ -4,6 +4,8 @@
 
 package dap4.core.dmr;
 
+import dap4.core.ce.CEConstraint;
+import dap4.core.data.DSP;
 import dap4.core.util.*;
 
 import java.util.*;
@@ -19,9 +21,13 @@ public class DapDataset extends DapGroup
     //////////////////////////////////////////////////
     // Instance variables
 
+    protected CEConstraint ce = null;
+
     protected List<DapNode> nodelist = new ArrayList<DapNode>(); // ordered by prefix order
     protected Map<String, DapNode> fqnmap = new HashMap<String, DapNode>();
     protected List<DapDimension> anonymousdims = new ArrayList<DapDimension>(); // Track separately
+
+    protected List<DapNode> visiblenodes = null; // nodelist filtered by constraint
 
     // Dataset xml attribute values
     protected String dapversion = null;
@@ -29,7 +35,7 @@ public class DapDataset extends DapGroup
     protected String base = null;
     protected String ns = null;
 
-    // Collect some subsets of the nodeset
+    // Collect some (optionally constrained) subsets of the nodeset
     protected List<DapVariable> topvariables = null;
     protected List<DapVariable> allvariables = null;
     protected List<DapGroup> allgroups = null;
@@ -60,6 +66,16 @@ public class DapDataset extends DapGroup
     {
         if(this.finished)
             return;
+        if(this.ce == null)
+            this.visiblenodes = nodelist;
+        else {
+            this.visiblenodes = new ArrayList<DapNode>(nodelist.size());
+            for(int i = 0; i < nodelist.size(); i++) {
+                DapNode node = nodelist.get(i);
+                if(ce.references(node))
+                    visiblenodes.add(node);
+            }
+        }
         this.topvariables = new ArrayList<DapVariable>();
         this.allvariables = new ArrayList<DapVariable>();
         this.allgroups = new ArrayList<DapGroup>();
@@ -76,6 +92,7 @@ public class DapDataset extends DapGroup
     protected void
     finishR(DapNode node)
     {
+        if(ce != null && !ce.references(node)) return;
         switch (node.getSort()) {
         case DIMENSION:
             this.alldimensions.add((DapDimension) node);
@@ -94,17 +111,26 @@ public class DapDataset extends DapGroup
         case DATASET:
             DapGroup g = (DapGroup) node;
             this.allgroups.add(g);
-            for(DapNode subnode : g.getDecls())
+            for(DapNode subnode : g.getDecls()) {
                 finishR(subnode);
+            }
             break;
         default: /*ignore*/
             break;
         }
     }
 
-
     //////////////////////////////////////////////////
     // Accessors
+
+    public CEConstraint getConstraint() {return this.ce;}
+
+    public DapDataset
+    setConstraint(CEConstraint ce)
+    {
+        this.ce = ce;
+        return this;
+    }
 
     public String getDapVersion()
     {
@@ -158,7 +184,7 @@ public class DapDataset extends DapGroup
 
     public List<DapNode> getNodeList()
     {
-        return nodelist;
+        return this.visiblenodes;
     }
 
     public void addNode(DapNode newnode)
@@ -170,7 +196,7 @@ public class DapDataset extends DapGroup
     }
 
     public DapDimension createAnonymous(long size)
-        throws DapException
+            throws DapException
     {
         for(DapDimension dim : anonymousdims) {
             if(dim.getSize() == size) return dim;
@@ -184,7 +210,7 @@ public class DapDataset extends DapGroup
 
     public DapIterator getIterator(EnumSet<DapSort> sortset)
     {
-        return new DapIterator(nodelist, sortset);
+        return new DapIterator(visiblenodes, sortset);
     }
 
 
@@ -242,7 +268,7 @@ public class DapDataset extends DapGroup
      */
     public DapNode
     lookup(String fqn, DapSort... sortset)
-        throws DapException
+            throws DapException
     {
         fqn = fqn.trim();
         if(fqn == null)
@@ -258,7 +284,7 @@ public class DapDataset extends DapGroup
         List<String> path = DapUtil.backslashSplit(fqn, '/');
         DapGroup current = dataset;
         // Walk all but the last element to walk group path
-        for(int i = 0;i < path.size() - 1;i++) {
+        for(int i = 0; i < path.size() - 1; i++) {
             String groupname = Escape.backslashUnescape(path.get(i));
             DapNode g = current.findInGroup(groupname, DapSort.GROUP);
             if(g == null)
@@ -281,7 +307,7 @@ public class DapDataset extends DapGroup
                 return null; // does not exist
             // search for the innermost structure
             String fieldname;
-            for(int i = 1;i < structpath.size() - 1;i++) {
+            for(int i = 1; i < structpath.size() - 1; i++) {
                 fieldname = Escape.backslashUnescape(structpath.get(i));
                 DapNode field = currentstruct.findByName(fieldname);
                 if(field == null)
@@ -312,8 +338,9 @@ public class DapDataset extends DapGroup
         List<DapNode> sorted = new ArrayList<DapNode>();
         sortR(this, sorted);
         // Assign indices
-        for(int i = 0;i < sorted.size();i++)
+        for(int i = 0; i < sorted.size(); i++) {
             sorted.get(i).setIndex(i);
+        }
         this.nodelist = sorted;
     }
 
@@ -335,27 +362,27 @@ public class DapDataset extends DapGroup
             // attributes, dimensions, enums, variables, groups
             DapGroup group = (DapGroup) node;
             attrs = group.getAttributes();
-            for(Map.Entry<String,DapAttribute> entry : attrs.entrySet()) {
+            for(Map.Entry<String, DapAttribute> entry : attrs.entrySet()) {
                 sortR(entry.getValue(), sortlist);
             }
             List<DapDimension> dims = group.getDimensions();
             if(dims != null)
-                for(int i = 0;i < dims.size();i++) {
+                for(int i = 0; i < dims.size(); i++) {
                     sortR(dims.get(i), sortlist);
                 }
             List<DapEnumeration> enums = group.getEnums();
             if(enums != null)
-                for(int i = 0;i < enums.size();i++) {
+                for(int i = 0; i < enums.size(); i++) {
                     sortR(enums.get(i), sortlist);
                 }
             List<DapVariable> vars = group.getVariables();
             if(vars != null)
-                for(int i = 0;i < vars.size();i++) {
+                for(int i = 0; i < vars.size(); i++) {
                     sortR(vars.get(i), sortlist);
                 }
             List<DapGroup> groups = group.getGroups();
             if(groups != null)
-                for(int i = 0;i < groups.size();i++) {
+                for(int i = 0; i < groups.size(); i++) {
                     sortR(groups.get(i), sortlist);
                 }
             break;
@@ -364,7 +391,7 @@ public class DapDataset extends DapGroup
             DapStructure struct = (DapStructure) node;
             List<DapVariable> fields = struct.getFields();
             if(fields != null)
-                for(int i = 0;i < fields.size();i++) {
+                for(int i = 0; i < fields.size(); i++) {
                     sortR(fields.get(i), sortlist);
                 }
             // fall thru
@@ -372,17 +399,17 @@ public class DapDataset extends DapGroup
             var = (DapVariable) node;
             attrs = var.getAttributes();
             if(attrs != null)
-                for(Map.Entry<String,DapAttribute> entry : attrs.entrySet()) {
+                for(Map.Entry<String, DapAttribute> entry : attrs.entrySet()) {
                     sortR(entry.getValue(), sortlist);
                 }
             List<DapMap> maps = var.getMaps();
             if(maps != null)
-                for(int i = 0;i < maps.size();i++) {
+                for(int i = 0; i < maps.size(); i++) {
                     sortR(maps.get(i), sortlist);
                 }
             dims = var.getDimensions();
             if(dims != null)
-                for(int i = 0;i < dims.size();i++) {
+                for(int i = 0; i < dims.size(); i++) {
                     sortR(dims.get(i), sortlist);
                 }
             break;

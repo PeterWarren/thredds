@@ -132,7 +132,8 @@ public class CDMDSP extends AbstractDSP
     // DSP Interface
 
     // This is intended to be the last DSP checked
-    static public boolean dspMatch(String path, DapContext context)
+    @Override
+    public boolean dspMatch(String path, DapContext context)
     {
         return true;
     }
@@ -965,6 +966,7 @@ public class CDMDSP extends AbstractDSP
     {
         List<Variable> cdmvars = this.ncdfile.getVariables();
         DataDataset dds = datafactory.newDataset(this, dmr, this.ncdfile);
+        dds.setConstraint(getConstraint());
         for(Variable v : cdmvars) {
             DapVariable dv = (DapVariable) nodemap.get(v);
             if(dv == null)

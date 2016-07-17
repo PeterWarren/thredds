@@ -4,6 +4,7 @@
 
 package dap4.dap4lib;
 
+import dap4.core.ce.CEConstraint;
 import dap4.core.data.DSP;
 import dap4.core.data.DataDataset;
 import dap4.core.dmr.DMRFactory;
@@ -16,7 +17,6 @@ import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import org.xml.sax.SAXException;
 
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +48,7 @@ abstract public class AbstractDSP implements DSP
     protected ByteOrder order = null;
     protected ChecksumMode checksummode = ChecksumMode.DAP;
     protected DataDataset dataset = null;
+    protected CEConstraint ce = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -68,8 +69,9 @@ abstract public class AbstractDSP implements DSP
 
     /**
      * "open" a reference to a data source and return the DSP wrapper.
-     * @param location  - path to the data source; must be abolute file path or url.
-     * @return  = wrapping dsp
+     *
+     * @param location - path to the data source; must be abolute file path or url.
+     * @return = wrapping dsp
      * @throws DapException
      */
     abstract public DSP open(String location) throws DapException;
@@ -92,10 +94,18 @@ abstract public class AbstractDSP implements DSP
         return this.context;
     }
 
+    @Override
     public String
     getLocation()
     {
         return this.location;
+    }
+
+    @Override
+    public void
+    setLocation(String loc)
+    {
+        this.location = loc;
     }
 
     @Override
@@ -104,12 +114,17 @@ abstract public class AbstractDSP implements DSP
         return this.dmr;
     }
 
-    public void
-    setDMR(DapDataset dmr)
-    {
-        this.dmr = dmr;
-    }
 
+    @Override
+    public void
+    setConstraint(CEConstraint ce)
+    {
+        this.ce = ce;
+        if(this.dmr != null)
+            this.dmr.setConstraint(ce);
+        if(this.dataset != null)
+            this.dataset.setConstraint(ce);
+    }
 
     // DSP Extensions
 
@@ -124,18 +139,23 @@ abstract public class AbstractDSP implements DSP
     {
     }
 
+    public void
+    setDMR(DapDataset dmr)
+    {
+        this.dmr = dmr;
+    }
+
+    @Override
+    public CEConstraint getConstraint()
+    {
+        return this.ce;
+    }
+
     protected void
     setDataset(DapDataset dataset)
             throws DapException
     {
         this.dmr = dataset;
-    }
-
-    public void
-    setLocation(String loc)
-            throws DapException
-    {
-        this.location = loc;
     }
 
     @Override

@@ -10,6 +10,7 @@ import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.core.util.*;
 import dap4.dap4lib.AbstractData;
+import dap4.dap4lib.AbstractDataDataset;
 import dap4.dap4lib.AbstractDataVariable;
 
 import java.nio.ByteBuffer;
@@ -17,8 +18,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static dap4.dap4lib.netcdf.Nc4DMR.TypeNotes;
-import static dap4.dap4lib.netcdf.Nc4DMR.VarNotes;
+import static dap4.dap4lib.netcdf.Nc4Notes.TypeNotes;
+import static dap4.dap4lib.netcdf.Nc4Notes.VarNotes;
 import static dap4.dap4lib.netcdf.NetcdfDSP.DEBUG;
 
 public class Nc4Data
@@ -124,10 +125,10 @@ public class Nc4Data
         @Override
         public long getElementSize()
         {
-            return getElementSize((Nc4DMR.TypeNotes) this.basetype.annotation());
+            return getElementSize((TypeNotes) this.basetype.annotation());
         }
 
-        protected long getElementSize(Nc4DMR.TypeNotes ti)
+        protected long getElementSize(TypeNotes ti)
         {
             DapType type = TypeNotes.find(ti.id).get();
             switch (type.getTypeSort()) {
@@ -138,7 +139,7 @@ public class Nc4Data
             case URL:
                 return Pointer.SIZE;
             case Enum:
-                return getElementSize(ti);
+                return getElementSize(TypeNotes.find(ti.enumbase));
             case Opaque:
                 return ti.opaquelen;
             default:
@@ -174,26 +175,30 @@ public class Nc4Data
                 throws DataException
         {
             int ret = DapNetcdf.NC_NOERR;
-            if(slices == null) slices = new ArrayList<Slice>(0);
-            int rank = slices.size();
-            // Convert slices to (start,count,stride);
-            SizeT[] startp = new SizeT[rank];
-            SizeT[] countp = new SizeT[rank];
-            SizeT[] stridep = new SizeT[rank];
-            slicesToVars(slices, startp, countp, stridep);
+            assert (slices != null);
             // Get VarNotes and TypeNotes
-            Nc4DMR.VarNotes vi = (VarNotes) this.annotation();
-            Nc4DMR.TypeNotes ti = vi.basetype;
+            VarNotes vi = (VarNotes) this.annotation();
+            TypeNotes ti = vi.basetype;
             long elemsize = getElementSize();
             long memsize = elemsize * getCount();
             Memory mem = Mem.allocate(memsize);
-            readcheck(nc4, ret = nc4.nc_get_vars(vi.gid, vi.id, startp, countp, stridep, mem));
             long count = this.getCount();
+            int rank = slices.size();
+            if(rank == 0) { //scalar
+                readcheck(nc4, ret = nc4.nc_get_var(vi.gid, vi.id, mem));
+            } else {
+                // Convert slices to (start,count,stride);
+                SizeT[] startp = new SizeT[rank];
+                SizeT[] countp = new SizeT[rank];
+                SizeT[] stridep = new SizeT[rank];
+                slicesToVars(slices, startp, countp, stridep);
+                readcheck(nc4, ret = nc4.nc_get_vars(vi.gid, vi.id, startp, countp, stridep, mem));
+            }
             return getdata(ti, count, elemsize, mem);
         }
 
         protected Object
-        getdata(Nc4DMR.TypeNotes ti, long lcount, long elemsize, Memory mem)
+        getdata(TypeNotes ti, long lcount, long elemsize, Memory mem)
         {
             Object result = null;
             TypeSort sort = ti.get().getTypeSort();
@@ -246,7 +251,7 @@ public class Nc4Data
                 break;
             case Enum:
                 DapEnumeration de = (DapEnumeration) basetype;
-                result = getdata(ti, lcount, elemsize, mem);
+                result = getdata(TypeNotes.find(ti.enumbase), lcount, elemsize, mem);
                 break;
             }
             return result;
@@ -318,8 +323,7 @@ public class Nc4Data
         }
     }
 
-    static public class Nc4DataDataset extends AbstractData
-            implements DataDataset
+    static public class Nc4DataDataset extends AbstractDataDataset
     {
 
         //////////////////////////////////////////////////

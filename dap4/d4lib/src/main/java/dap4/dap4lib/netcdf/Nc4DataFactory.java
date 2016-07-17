@@ -8,7 +8,7 @@ import dap4.core.data.*;
 import dap4.core.dmr.*;
 import dap4.dap4lib.AbstractData;
 
-import static dap4.dap4lib.netcdf.Nc4DMR.*;
+import static dap4.dap4lib.netcdf.Nc4Notes.*;
 import static dap4.dap4lib.netcdf.Nc4Data.*;
 
 

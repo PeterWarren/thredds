@@ -196,7 +196,7 @@ public class TestHyrax extends DapTestCommon
         }
         if(false) {
             alltestcases.add(new ClientTest("test_simple_1.dmr"));
-            //deleted: alltestcases.add(new ClientTest("dmr-testsuite/testall.xml"));
+            //deleted: alltestcases.add(new TestCase("dmr-testsuite/testall.xml"));
         }
         if(false) {
             alltestcases.add(new ClientTest("dmr-testsuite/test_array_1.xml"));
@@ -219,14 +219,14 @@ public class TestHyrax extends DapTestCommon
             alltestcases.add(new ClientTest("dmr-testsuite/test_simple_4.xml"));
             alltestcases.add(new ClientTest("dmr-testsuite/test_simple_5.xml"));
             alltestcases.add(new ClientTest("dmr-testsuite/test_simple_6.xml"));
-            //sequence: alltestcases.add(new ClientTest("dmr-testsuite/test_simple_7.xml"));
-            //sequence: alltestcases.add(new ClientTest("dmr-testsuite/test_simple_8.xml"));
+            //sequence: alltestcases.add(new TestCase("dmr-testsuite/test_simple_7.xml"));
+            //sequence: alltestcases.add(new TestCase("dmr-testsuite/test_simple_8.xml"));
             alltestcases.add(new ClientTest("dmr-testsuite/test_simple_9.xml"));
             alltestcases.add(new ClientTest("dmr-testsuite/test_simple_9.1.xml"));
             alltestcases.add(new ClientTest("dmr-testsuite/test_simple_10.xml"));
         }
         if(false) {
-            // alltestcases.add(new ClientTest("D4-xml/DMR_0.1.xml"));  needs fixing
+            // alltestcases.add(new TestCase("D4-xml/DMR_0.1.xml"));  needs fixing
             alltestcases.add(new ClientTest("D4-xml/DMR_0.xml"));
             alltestcases.add(new ClientTest("D4-xml/DMR_1.xml"));
             alltestcases.add(new ClientTest("D4-xml/DMR_2.xml"));
@@ -241,9 +241,9 @@ public class TestHyrax extends DapTestCommon
             alltestcases.add(new ClientTest("D4-xml/DMR_4.1.xml"));
             alltestcases.add(new ClientTest("D4-xml/DMR_5.xml"));
             alltestcases.add(new ClientTest("D4-xml/DMR_5.1.xml"));
-            //serial:  alltestcases.add(new ClientTest("D4-xml/DMR_6.xml"));
-            //serial: alltestcases.add(new ClientTest("D4-xml/DMR_6.1.xml"));
-            //serial: alltestcases.add(new ClientTest("D4-xml/DMR_6.2.xml"));
+            //serial:  alltestcases.add(new TestCase("D4-xml/DMR_6.xml"));
+            //serial: alltestcases.add(new TestCase("D4-xml/DMR_6.1.xml"));
+            //serial: alltestcases.add(new TestCase("D4-xml/DMR_6.2.xml"));
             alltestcases.add(new ClientTest("D4-xml/DMR_7.xml"));
             alltestcases.add(new ClientTest("D4-xml/DMR_7.1.xml"));
             alltestcases.add(new ClientTest("D4-xml/DMR_7.2.xml"));

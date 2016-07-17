@@ -1,13 +1,13 @@
-netcdf test_struct_array.nc {
+netcdf test_struct_array\.8 {
   variables:
 
     Structure {
       int x;
-        :_CoordinateAxisType = "GeoX";
+        x:_CoordinateAxisType = "GeoX";
       int y;
-        :_CoordinateAxisType = "GeoY";
+        y:_CoordinateAxisType = "GeoY";
     } s(2, 2);
-      :_DAP4_Checksum_CRC32 = "0xa0014233";
+      s:_DAP4_Checksum_CRC32 = "0xa0014233";
 
 
   // global attributes:

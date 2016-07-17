@@ -12,10 +12,8 @@ import dap4.dap4lib.serial.D4DSP;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteOrder;
-import java.util.List;
 
 /**
  * Provide a DSP interface to synthetic data (see Generator.java).
@@ -27,7 +25,7 @@ public class FileDSP extends D4DSP
     // Constants
 
     static protected final String[] EXTENSIONS = new String[]{
-            ".dap"
+            ".dap", ".raw"
     };
 
     //////////////////////////////////////////////////
@@ -51,16 +49,15 @@ public class FileDSP extends D4DSP
     /**
      * A path is file if it has no base protocol or is file:
      *
-     * @param location  file:/ or possibly an absolute path
-     * @param context Any parameters that may help to decide.
+     * @param location file:/ or possibly an absolute path
+     * @param context  Any parameters that may help to decide.
      * @return true if this path appears to be processible by this DSP
      */
-    static public boolean dspMatch(String location, DapContext context)
+    public boolean dspMatch(String location, DapContext context)
     {
         try {
             XURI xuri = new XURI(location);
-            String baseproto = xuri.getBaseProtocol();
-            if("file".equalsIgnoreCase(baseproto)) {
+            if(xuri.isFile()) {
                 String path = xuri.getPath();
                 for(String ext : EXTENSIONS) {
                     if(path.endsWith(ext))
@@ -87,8 +84,8 @@ public class FileDSP extends D4DSP
             if(filepath.startsWith("file:")) try {
                 XURI xuri = new XURI(filepath);
                 filepath = xuri.getPath();
-            }  catch (URISyntaxException use) {
-                throw new DapException("Malformed filepath: "+filepath)
+            } catch (URISyntaxException use) {
+                throw new DapException("Malformed filepath: " + filepath)
                         .setCode(DapCodes.SC_NOT_FOUND);
             }
             try (FileInputStream stream = new FileInputStream(filepath)) {

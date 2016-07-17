@@ -90,7 +90,7 @@ public class NetcdfDSP extends AbstractDSP
      * @param context Any parameters that may help to decide.
      * @return true if this path appears to be processible by this DSP
      */
-    static public boolean dspMatch(String path, DapContext context)
+    public boolean dspMatch(String path, DapContext context)
     {
         for(String s : EXTENSIONS) {
             if(path.endsWith(s)) return true;
@@ -143,6 +143,7 @@ public class NetcdfDSP extends AbstractDSP
     {
         int ret, mode;
         IntByReference ncidp = new IntByReference();
+        this.filepath = filepath;
         try {
             mode = NC_NOWRITE;
             Nc4Data.errcheck(nc4, ret = nc4.nc_open(this.filepath, mode, ncidp));

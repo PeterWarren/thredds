@@ -6,7 +6,6 @@ package dap4.core.data;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,8 +17,6 @@ public class DSPRegistry
     //////////////////////////////////////////////////
     // Constants
 
-    static public final String MATCHMETHOD = "dspMatch";
-
     // MNemonics
     static public final boolean LAST = true;
     static public final boolean FIRST = false;
@@ -30,15 +27,15 @@ public class DSPRegistry
     static protected class Registration
     {
         Class<? extends DSP> dspclass;
-        Method matcher;
+        DSP matcher;
 
         public Registration(Class<? extends DSP> cl)
         {
             this.dspclass = cl;
             try {
-                this.matcher = dspclass.getMethod(MATCHMETHOD, String.class, DapContext.class);
-            } catch (NoSuchMethodException e) {
-                throw new IllegalArgumentException("DSPFactory: no " + MATCHMETHOD + " method for DSP: " + dspclass.getName());
+                this.matcher = dspclass.newInstance();
+            } catch (IllegalAccessException | InstantiationException e) {
+                throw new IllegalArgumentException("DSPFactory: cannot create matching instance for Class: " + dspclass.getName());
             }
         }
 
@@ -51,7 +48,6 @@ public class DSPRegistry
     //////////////////////////////////////////////////
 
     static protected ClassLoader loader = DSPRegistry.class.getClassLoader();
-
 
     //////////////////////////////////////////////////
     // Instance Variables
@@ -85,7 +81,7 @@ public class DSPRegistry
     /**
      * Register a DSP, using its class string name.
      *
-     * @param className Class that implements DSP.
+     * @param className Name of class that implements DSP.
      * @throws IllegalAccessException if class is not accessible.
      * @throws InstantiationException if class doesnt have a no-arg constructor.
      * @throws ClassNotFoundException if class not found.
@@ -154,7 +150,7 @@ public class DSPRegistry
 
     /**
      * @param path
-     * @return DSP object that can process this path
+     * @return new DSP object that can process this path
      * @throws DapException
      */
 
@@ -165,7 +161,7 @@ public class DSPRegistry
         for(int i = 0; i < registry.size(); i++) {
             try {
                 Registration tester = registry.get(i);
-                boolean ismatch = (Boolean) tester.matcher.invoke(null, path, cxt);
+                boolean ismatch = (Boolean) tester.matcher.dspMatch(path, cxt);
                 if(ismatch) {
                     DSP dsp = (DSP) tester.dspclass.newInstance();
                     return dsp;

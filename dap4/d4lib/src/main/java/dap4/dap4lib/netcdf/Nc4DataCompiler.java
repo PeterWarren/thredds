@@ -74,6 +74,7 @@ public class Nc4DataCompiler implements DataCompiler
     {
         assert (this.dmr != null && this.nc4 != null);
         this.dataset = factory.newDataset(this.dsp, this.dmr, nc4);
+        this.dataset.setConstraint(this.dsp.getConstraint());
         this.dsp.setDataset(this.dataset);
 
         // iterate over the top-level variables

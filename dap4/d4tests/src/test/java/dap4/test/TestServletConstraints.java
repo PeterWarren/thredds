@@ -75,11 +75,6 @@ public class TestServletConstraints extends DapTestCommon
 
         static {
             alltests = new TestCase[2048];
-            reset();
-        }
-
-        static public void reset()
-        {
             Arrays.fill(alltests, null);
         }
 
@@ -203,7 +198,6 @@ public class TestServletConstraints extends DapTestCommon
 
     void defineAllTestcases()
     {
-        TestCase.reset();
         this.alltestcases.add(
                 new TestCase(1, "test_one_vararray.nc", "dmr,dap", "/t[1]",
                         // S4

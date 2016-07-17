@@ -38,7 +38,6 @@ import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import dap4.dap4lib.DapCodes;
-import dap4.dap4lib.XURI;
 import dap4.servlet.DSPFactory;
 import dap4.servlet.DapCache;
 import dap4.servlet.DapController;
@@ -50,7 +49,6 @@ import thredds.core.TdsRequestedDataset;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.net.URISyntaxException;
 
 @Controller
 @RequestMapping("/dap4")
@@ -153,7 +151,7 @@ public class Dap4Controller extends DapController
     getResourcePath(DapRequest drq, String location)
             throws IOException
     {
-        String prefix = (String) this.context.get("RESOURCEDIR");
+        String prefix = (String) this.dapcxt.get("RESOURCEDIR");
         String realpath;
         if(prefix != null) {
             realpath = DapUtil.canonjoin(prefix, location);

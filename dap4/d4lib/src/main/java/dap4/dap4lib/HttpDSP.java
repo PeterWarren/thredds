@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 
 /**
  * Make a request to a server and convert the reply
@@ -66,9 +65,11 @@ public class HttpDSP extends D4DSP
             {"dap4.ce", null},
     };
     static protected final String[][] DAP4FRAGMARKERS = new String[][]{
-            {"proto", "dap4"},
+            {"protocol", "dap4"},
             {"dap4", null},
     };
+
+    static protected final String[] DAP4SCHEMES = {"dap4", "http", "https"};
 
     //////////////////////////////////////////////////
     // Instance variables
@@ -101,12 +102,22 @@ public class HttpDSP extends D4DSP
      * @param context Any parameters that may help to decide.
      * @return true if this url appears to be processible by this DSP
      */
-    static public boolean dspMatch(String url, DapContext context)
+    public boolean dspMatch(String url, DapContext context)
     {
         try {
             XURI xuri = new XURI(url);
-            String formatproto = xuri.getFormatProtocol();
-            if(false) {
+            if(true) {
+                boolean found = false;
+                for(String scheme : DAP4SCHEMES) {
+                    if(scheme.equalsIgnoreCase(xuri.getBaseProtocol())
+                            || scheme.equalsIgnoreCase(xuri.getFormatProtocol())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) return false;
+                // Might still be a non-dap4 url
+                String formatproto = xuri.getFormatProtocol();
                 if(DAP4PROTO.equalsIgnoreCase(formatproto))
                     return true;
                 for(String[] pair : DAP4QUERYMARKERS) {
@@ -132,7 +143,8 @@ public class HttpDSP extends D4DSP
     }
 
     @Override
-    public DSP open(String url) throws DapException
+    public DSP open(String url)
+            throws DapException
     {
         setLocation(url);
         // See if this is a local vs remote request
@@ -140,7 +152,6 @@ public class HttpDSP extends D4DSP
         this.basece = this.xuri.getQueryFields().get(CONSTRAINTTAG);
         build();
         return this;
-
     }
 
     @Override
