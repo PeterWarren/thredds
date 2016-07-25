@@ -15,7 +15,6 @@ import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 import dap4.core.data.DSP;
-import dap4.core.data.DataDataset;
 import dap4.core.dmr.DMRFactory;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
@@ -44,9 +43,10 @@ public class NetcdfDSP extends AbstractDSP
     static public String[] EXTENSIONS = new String[]{".nc", ".hdf5"};
 
     // Define reserved attributes
-    static public final String UCARTAGVLEN = "^edu.ucar.isvlen";
-    static public final String UCARTAGOPAQUE = "^edu.ucar.opaque.size";
-    static public final String UCARTAGUNLIM = "^edu.ucar.isunlim";
+    static public final String UCARTAGVLEN = "_edu.ucar.isvlen";
+    static public final String UCARTAGOPAQUE = "_edu.ucar.opaque.size";
+    static public final String UCARTAGUNLIM = "_edu.ucar.isunlim";
+    static public final String UCARTAGORIGTYPE = "_edu.ucar.orig.type";
 
     static final Pointer NC_NULL = Pointer.NULL;
     static final int NC_FALSE = 0;
@@ -80,8 +80,9 @@ public class NetcdfDSP extends AbstractDSP
     //////////////////////////////////////////////////
     // Static variables
 
+
     //////////////////////////////////////////////////
-    // Static methods
+    // DSP Match API
 
     /**
      * A path is file if it has no base protocol or is file:
@@ -111,10 +112,7 @@ public class NetcdfDSP extends AbstractDSP
     protected int mode = 0;
     protected String filepath = null; // real path to the dataset
 
-    protected Nc4DMRFactory dmrfactory = null;
-    protected Nc4DataFactory datafactory = null;
-
-    protected DataDataset dataset = null;
+    protected DMRFactory dmrfactory = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -132,8 +130,7 @@ public class NetcdfDSP extends AbstractDSP
             if(this.nc4 == null)
                 throw new DapException("Could not load libnetcdf");
         }
-        dmrfactory = new Nc4DMRFactory();
-        datafactory = new Nc4DataFactory();
+        dmrfactory = new DMRFactory();
     }
 
     @Override
@@ -146,12 +143,12 @@ public class NetcdfDSP extends AbstractDSP
         this.filepath = filepath;
         try {
             mode = NC_NOWRITE;
-            Nc4Data.errcheck(nc4, ret = nc4.nc_open(this.filepath, mode, ncidp));
+            Nc4Cursor.errcheck(nc4, ret = nc4.nc_open(this.filepath, mode, ncidp));
             this.ncid = ncidp.getValue();
             setSource(this.ncid);
             // Figure out what kind of file
             IntByReference formatp = new IntByReference();
-            Nc4Data.errcheck(nc4, ret = nc4.nc_inq_format(ncid, formatp));
+            Nc4Cursor.errcheck(nc4, ret = nc4.nc_inq_format(ncid, formatp));
             this.format = formatp.getValue();
             if(DEBUG)
                 System.out.printf("TestNetcdf: open: %s; ncid=%d; format=%d%n",
@@ -159,8 +156,6 @@ public class NetcdfDSP extends AbstractDSP
             // Compile the DMR 
             Nc4DMRCompiler dmrcompiler = new Nc4DMRCompiler(this, ncid, dmrfactory);
             this.dmr = dmrcompiler.compile();
-            Nc4DataCompiler datacompiler = new Nc4DataCompiler(this, nc4, datafactory);
-            datacompiler.compile(); // returns result via setDataset
             return this;
         } catch (Exception t) {
             t.printStackTrace();
@@ -175,15 +170,10 @@ public class NetcdfDSP extends AbstractDSP
         if(this.closed) return;
         if(this.ncid < 0) return;
         int ret = nc4.nc_close(ncid);
-        Nc4Data.errcheck(nc4, ret);
+        Nc4Cursor.errcheck(nc4, ret);
         closed = true;
         if(trace)
             System.out.printf("NetcdfDSP: closed: %s%n", this.filepath);
-    }
-
-    protected DMRFactory getFactory()
-    {
-        return new Nc4DMRFactory();
     }
 
     //////////////////////////////////////////////////

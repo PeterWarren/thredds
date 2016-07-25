@@ -55,7 +55,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
     public Dap4ParserImpl(DMRFactory factory)
     {
         super();
-        this.factory = factory; // see Dap4Actions
+        this.factory = (factory == null ? new DMRFactory() : factory); // see Dap4Actions
         if(globaldebuglevel > 0) setDebugLevel(globaldebuglevel);
     }
 
@@ -193,7 +193,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
                   List<String> nslist, DapNode parent)
             throws DapException
     {
-        DapAttribute attr = factory.newAttribute(name, basetype, null);
+        DapAttribute attr = new DapAttribute(name, basetype);
         if(sort == DapSort.ATTRIBUTE) {
             attr.setBaseType(basetype);
         }
@@ -279,12 +279,18 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
     {
         SaxEvent name = pull(attrs, "name");
         SaxEvent atype = pull(attrs, "type");
+        SaxEvent isenum = pull(attrs, "enum");
         if(false) { // if enable, then allow <Attribute type="..." value="..."/>
             SaxEvent value = pull(attrs, "value");
         }
         if(isempty(name))
             throw new ParseException("Attribute: Empty attribute name");
-        String typename = (atype == null ? "Int32" : atype.value);
+        String typename;
+        if(isenum != null) {
+            typename = isenum.value;
+        } else {
+            typename = (atype == null ? "Int32" : atype.value);
+        }
         if("Byte".equalsIgnoreCase(typename)) typename = "UInt8";
         DapType basetype = DapType.reify(typename);
         if(basetype == null || !islegalattributetype(basetype))
@@ -406,7 +412,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
             }
         if(ndmrversion != DMRVERSION)
             throw new ParseException("Dataset dmrVersion mismatch: " + dmrversion.value);
-        this.root = factory.newDataset(name.value, null);
+        this.root = new DapDataset(name.value);
         this.root.setDapVersion(Float.toString(ndapversion));
         this.root.setDMRVersion(Float.toString(ndmrversion));
         this.root.setDataset(this.root);
@@ -438,7 +444,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
                 throw new ParseException("Empty group name");
             DapGroup parent = getGroupScope();
             DapGroup group;
-            group = factory.newGroup(name.value, null);
+            group = new DapGroup(name.value);
             parent.addDecl(group);
             scopestack.push(group);
         } catch (DapException de) {
@@ -479,7 +485,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
                     throw new ParseException("Enumdef: Invalid Enum Declaration Type name: " + basetype.value);
             }
             DapEnumeration dapenum = null;
-            dapenum = factory.newEnumeration(name.value, basedaptype, null);
+            dapenum = new DapEnumeration(name.value, basedaptype);
             DapGroup parent = getGroupScope();
             parent.addDecl(dapenum);
             scopestack.push(dapenum);
@@ -525,7 +531,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
             // vis-a-vis other names
             if(!ParseUtil.isLegalEnumConstName(name.value))
                 throw new ParseException("Enumconst: illegal enumeration constant name: " + name.value);
-            parent.addEnumConst(factory.newEnumConst(name.value, lvalue, null));
+            parent.addEnumConst(new DapEnumConst(name.value, lvalue));
         } catch (DapException de) {
             throw new ParseException(de);
         }
@@ -554,7 +560,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
         DapDimension dim = null;
         try {
 
-            dim = factory.newDimension(name.value, lvalue, null);
+            dim = new DapDimension(name.value, lvalue);
             dim.setShared(true);
             DapGroup parent = getGroupScope();
             parent.addDecl(dim);
@@ -641,7 +647,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
                 throw new ParseException("AtomicVariable: Illegal type: " + open.name);
             DapVariable var = null;
             // Do type substitutions
-            var = factory.newAtomicVariable(name.value, basetype, null);
+            var = new DapAtomicVariable(name.value, basetype);
             // Look at the parent scope
             DapNode parent = scopestack.peek();
             if(parent == null)
@@ -725,7 +731,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
             if(target == null)
                 throw new ParseException("EnumVariable: no such enum: " + name.value);
             DapVariable var = null;
-            var = factory.newAtomicVariable(name.value, target, null);
+            var = new DapAtomicVariable(name.value, target);
             // Look at the parent scope
             DapNode parent = scopestack.peek();
             if(parent == null)
@@ -789,7 +795,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
         if((container.getSort() == DapSort.STRUCTURE || container.getSort() == DapSort.SEQUENCE)
                 && container == scope)
             throw new ParseException("Mapref: map variable not in outer scope: " + name.name);
-        DapMap map = factory.newMap(var, null);
+        DapMap map = new DapMap(var);
         try {
             // Pull the top variable scope
             DapVariable parent = (DapVariable) searchScope(DapSort.ATOMICVARIABLE, DapSort.STRUCTURE, DapSort.SEQUENCE);
@@ -821,7 +827,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
             throw new ParseException("Structure: Empty structure name");
         try {
             DapStructure var = null;
-            var = factory.newStructure(name.value, null);
+            var = new DapStructure(name.value);
             // Look at the parent scope
             DapNode parent = scopestack.peek();
             if(parent == null)
@@ -864,7 +870,7 @@ public class Dap4ParserImpl extends Dap4BisonParser implements Dap4Parser
             throw new ParseException("Sequence: Empty sequence name");
         try {
             DapVariable var = null;
-            var = factory.newSequence(name.value, null);
+            var = new DapSequence(name.value);
             // Look at the parent scope
             DapNode parent = scopestack.peek();
             if(parent == null)

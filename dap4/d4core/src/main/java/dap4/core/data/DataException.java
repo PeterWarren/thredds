@@ -31,4 +31,10 @@ public class DataException extends DapException
     {
         super(msg, e);
     }
+
+    public DataException setCode(int code)
+    {
+        super.setCode(code);
+        return this;
+    }
 }

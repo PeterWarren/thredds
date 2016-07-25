@@ -6,7 +6,7 @@ package dap4.dap4lib;
 
 import dap4.core.ce.CEConstraint;
 import dap4.core.data.DSP;
-import dap4.core.data.DataDataset;
+import dap4.core.data.DataCursor;
 import dap4.core.dmr.DMRFactory;
 import dap4.core.dmr.DapAttribute;
 import dap4.core.dmr.DapDataset;
@@ -47,8 +47,7 @@ abstract public class AbstractDSP implements DSP
     protected Object source = null;
     protected ByteOrder order = null;
     protected ChecksumMode checksummode = ChecksumMode.DAP;
-    protected DataDataset dataset = null;
-    protected CEConstraint ce = null;
+    protected DataCursor dataset = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -56,11 +55,6 @@ abstract public class AbstractDSP implements DSP
     public AbstractDSP()  /* must have a parameterless constructor */
     {
     }
-
-    //////////////////////////////////////////////////
-    // Sub class defined
-
-    abstract protected DMRFactory getFactory();
 
     //////////////////////////////////////////////////
     // DSP Interface
@@ -78,12 +72,12 @@ abstract public class AbstractDSP implements DSP
 
     //////////////////////////////////////////////////
 
-    public DataDataset getDataset()
+    public DataCursor getDataset()
     {
         return this.dataset;
     }
 
-    public void setDataset(DataDataset dds)
+    public void setDataset(DataCursor dds)
     {
         this.dataset = dds;
     }
@@ -114,18 +108,6 @@ abstract public class AbstractDSP implements DSP
         return this.dmr;
     }
 
-
-    @Override
-    public void
-    setConstraint(CEConstraint ce)
-    {
-        this.ce = ce;
-        if(this.dmr != null)
-            this.dmr.setConstraint(ce);
-        if(this.dataset != null)
-            this.dataset.setConstraint(ce);
-    }
-
     // DSP Extensions
 
     @Override
@@ -143,12 +125,6 @@ abstract public class AbstractDSP implements DSP
     setDMR(DapDataset dmr)
     {
         this.dmr = dmr;
-    }
-
-    @Override
-    public CEConstraint getConstraint()
-    {
-        return this.ce;
     }
 
     protected void
@@ -210,7 +186,7 @@ abstract public class AbstractDSP implements DSP
         // Parse the dmr
         Dap4Parser parser;
         //if(USEDOM)
-        parser = new Dap4ParserImpl(getFactory());
+        parser = new Dap4ParserImpl(null);
         //else
         //    parser = new DOM4Parser(new DefaultDMRFactory());
         if(PARSEDEBUG)

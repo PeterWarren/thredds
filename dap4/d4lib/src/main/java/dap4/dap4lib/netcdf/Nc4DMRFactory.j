@@ -4,7 +4,6 @@
 package dap4.dap4lib.netcdf;
 
 import dap4.core.dmr.*;
-import dap4.core.util.DapException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -133,6 +132,16 @@ public class Nc4DMRFactory implements DMRFactory
         return (DapAtomicVariable) tag(new Nc4AtomicVariable(name, t), notes);
     }
 
+    public DapStructure newStructure(String name, Object notes)
+    {
+        return (DapStructure) tag(new Nc4Structure(name), notes);
+    }
+
+    public DapSequence newSequence(String name, Object notes)
+    {
+        return (DapSequence) tag(new Nc4Sequence(name), notes);
+    }
+
     public DapGroup newGroup(String name, Object notes)
     {
         return (DapGroup) tag(new Nc4Group(name), notes);
@@ -151,16 +160,6 @@ public class Nc4DMRFactory implements DMRFactory
     public DapEnumConst newEnumConst(String name, long value, Object notes)
     {
         return (DapEnumConst) tag(new Nc4EnumConst(name, value), notes);
-    }
-
-    public DapStructure newStructure(String name, Object notes)
-    {
-        return (DapStructure) tag(new Nc4Structure(name), notes);
-    }
-
-    public DapSequence newSequence(String name, Object notes)
-    {
-        return (DapSequence) tag(new Nc4Sequence(name), notes);
     }
 
 }

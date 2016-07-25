@@ -12,7 +12,7 @@ import java.util.Map;
 import static dap4.dap4lib.netcdf.DapNetcdf.*;
 import static dap4.dap4lib.netcdf.Nc4Notes.*;
 
-public class Nc4DMR
+abstract public class Nc4DMR
 {
     //////////////////////////////////////////////////
 

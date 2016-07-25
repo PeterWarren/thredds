@@ -277,10 +277,10 @@ abstract public class DapTestCommon extends UnitTestCommon
         if(!captured.endsWith("\n"))
             captured = captured + "\n";
         // Dump the output for visual comparison
-        System.out.println("Testing " + title + ": " + header + ":");
-        System.out.println("---------------");
-        System.out.print(captured);
-        System.out.println("---------------");
+        System.err.println("Testing " + title + ": " + header + ":");
+        System.err.println("---------------");
+        System.err.print(captured);
+        System.err.println("---------------");
     }
 
     protected void

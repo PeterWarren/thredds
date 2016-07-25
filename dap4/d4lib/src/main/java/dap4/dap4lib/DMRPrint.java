@@ -214,6 +214,7 @@ public class DMRPrint
         case SEQUENCE:
             if (!ce.references(node)) break;
             DapStructure struct = (DapStructure) node;
+            if(struct.isTemplate()) break; // ignore
             printer.marginPrint("<" + dmrname);
             printXMLAttributes(node, ce, NILFLAGS);
             printer.println(">");

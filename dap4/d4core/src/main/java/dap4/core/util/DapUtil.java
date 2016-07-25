@@ -3,6 +3,7 @@
 
 package dap4.core.util;
 
+import dap4.core.data.DataException;
 import dap4.core.dmr.*;
 
 import java.io.*;
@@ -663,6 +664,51 @@ abstract public class DapUtil // Should only contain static methods
             return url;
         return "file:" + absolutize(url);
     }
+
+    //////////////////////////////////////////////////
+
+    /**
+     * Helper functions for reading
+     */
+
+    /**
+     * Provide a helper function to convert an Index object to
+     * a slice list.
+     *
+     * @param indices  indicate value to read
+     * @param template variable template
+     * @return corresponding List<Slice>
+     * @throws DataException
+     */
+
+    static public List<Slice>
+    indexToSlices(Index indices, DapVariable template)
+            throws DataException
+    {
+        List<DapDimension> dims = template.getDimensions();
+        List<Slice> slices = Slice.indexToSlices(indices);
+        return slices;
+    }
+
+    /**
+     * Provide a helper function to convert an offset  to
+     * a slice list.
+     *
+     * @param offset
+     * @param template variable template
+     * @return
+     * @throws DataException
+     */
+    static public List<Slice>
+    offsetToSlices(long offset, DapVariable template)
+            throws DataException
+    {
+        List<DapDimension> dims = template.getDimensions();
+        long[] dimsizes = DapUtil.getDimSizes(dims);
+        return indexToSlices(Index.offsetToIndex(offset, dimsizes), template);
+    }
+
+
 
 }
 

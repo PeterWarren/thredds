@@ -18,7 +18,7 @@ import java.util.Map;
  * This reifies all of the atomic types
  * and specifically all enumeration declarations
  * as specific objects denoting a type.
- * Structure are specifically excluded
+ * Structures and Sequence are specifically excluded
  */
 
 public class DapType extends DapNode implements DapDecl

@@ -37,7 +37,7 @@ abstract public class DapController extends HttpServlet
     //////////////////////////////////////////////////
     // Constants
 
-    static public final boolean DEBUG = false;
+    static public final boolean DEBUG = true;
 
     static public final boolean PARSEDEBUG = false;
 
@@ -135,7 +135,7 @@ abstract public class DapController extends HttpServlet
      * Convert a URL path into an absolute file path
      * Note that it is assumed than any leading servlet prefix has been removed.
      *
-     * @param drq  for context
+     * @param drq      for context
      * @param location suffix of url path
      * @return
      * @throws IOException
@@ -203,8 +203,8 @@ abstract public class DapController extends HttpServlet
     {
         DapLog.debug("doGet(): User-Agent = " + req.getHeader("User-Agent"));
         if(TESTING) {
-            String resourcedir = (String)req.getAttribute("RESOURCEDIR");
-            this.dapcxt.put("RESOURCEDIR",resourcedir);
+            String resourcedir = (String) req.getAttribute("RESOURCEDIR");
+            this.dapcxt.put("RESOURCEDIR", resourcedir);
         }
         DapRequest drq = getRequestState(req, res);
         String url = drq.getOriginalURL();
@@ -215,7 +215,7 @@ abstract public class DapController extends HttpServlet
         if(DEBUG) {
             System.err.println("DAP4 Servlet: processing url: " + drq.getOriginalURL());
         }
-        assert(this.dapcxt != null);
+        assert (this.dapcxt != null);
         this.dapcxt.put(HttpServletRequest.class, req);
         this.dapcxt.put(HttpServletResponse.class, res);
         if(url.endsWith(FAVICON)) {
@@ -317,7 +317,7 @@ abstract public class DapController extends HttpServlet
         // Process any constraint view
         CEConstraint ce = null;
         String sce = drq.queryLookup(DapProtocol.CONSTRAINTTAG);
-        ce = buildconstraint(drq, sce, dmr);
+        ce = CEConstraint.compile(sce, dmr);
 
         // Provide a PrintWriter for capturing the DMR.
         StringWriter sw = new StringWriter();
@@ -367,7 +367,7 @@ abstract public class DapController extends HttpServlet
         // Process any constraint
         CEConstraint ce = null;
         String sce = drq.queryLookup(DapProtocol.CONSTRAINTTAG);
-        ce = buildconstraint(drq, sce, dmr);
+        ce = CEConstraint.compile(sce, dmr);
 
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
@@ -496,39 +496,6 @@ abstract public class DapController extends HttpServlet
         err.setContext(drq.getURL());
         String errormsg = err.buildXML();
         drq.getResponse().sendError(httpcode, errormsg);
-    }
-
-
-    /**
-     * If the request has a constraint, then parse it
-     * else use the universal constraint
-     *
-     * @param drq
-     * @param sce string of the constraint
-     * @return parsed constraint
-     */
-    protected CEConstraint
-    buildconstraint(DapRequest drq, String sce, DapDataset dmr)
-            throws IOException
-    {
-        // Process any constraint
-        if(sce == null || sce.length() == 0)
-            return CEConstraint.getUniversal(dmr);
-        CEParserImpl ceparser = new CEParserImpl(dmr);
-        if(PARSEDEBUG)
-            ceparser.setDebugLevel(1);
-        if(DEBUG) {
-            System.err.println("Dap4Servlet: parsing constraint: |" + sce + "|");
-        }
-        boolean parseok = ceparser.parse(sce);
-        if(!parseok)
-            throw new IOException("Constraint Parse failed: " + sce);
-        CEAST root = ceparser.getCEAST();
-        CECompiler compiler = new CECompiler();
-        CEConstraint ce = compiler.compile(dmr, root);
-        ce.expand();
-        ce.finish();
-        return ce;
     }
 
 }

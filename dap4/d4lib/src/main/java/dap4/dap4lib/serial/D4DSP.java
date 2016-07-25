@@ -4,14 +4,19 @@
 
 package dap4.dap4lib.serial;
 
-import dap4.core.data.DataCompiler;
-import dap4.core.dmr.DMRFactory;
 import dap4.core.dmr.DapDataset;
+import dap4.core.dmr.DapVariable;
 import dap4.core.util.DapException;
 import dap4.dap4lib.AbstractDSP;
+import dap4.dap4lib.DMRPrint;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * DAP4 Serial to DSP interface
@@ -26,7 +31,7 @@ abstract public class D4DSP extends AbstractDSP
     //////////////////////////////////////////////////
     // Constants
 
-    static public boolean DEBUG = false;
+    static public boolean DEBUG = true;
 
     static protected final String DAPVERSION = "4.0";
     static protected final String DMRVERSION = "1.0";
@@ -35,6 +40,8 @@ abstract public class D4DSP extends AbstractDSP
     // Instance variables
 
     protected ByteBuffer databuffer = null; // local copy of AbstractDSP.getSource
+
+    protected Map<DapVariable, D4Cursor> toplevel = new HashMap<>();
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -45,21 +52,45 @@ abstract public class D4DSP extends AbstractDSP
     }
 
     //////////////////////////////////////////////////
-
-    protected DMRFactory getFactory() {return new D4DMRFactory();}
-
-    //////////////////////////////////////////////////
     // DSP API
     // Most is left to be subclass defined; 
 
     //////////////////////////////////////////////////
     // (Other) Accessors
 
+    public D4Cursor
+    getVariable(DapVariable var)
+    {
+          return toplevel.get(var);
+    }
+
+    public D4DSP
+    addVariable(DapVariable var, D4Cursor data)
+    {
+        if(!var.isTopLevel())
+            throw new IllegalArgumentException("not a toplevel var:"+var);
+        toplevel.put(var,data);
+        return this;
+    }
+
+    //////////////////////////////////////////////////
+    // Compilation
+
     protected void
     build(String document, byte[] serialdata, ByteOrder order)
             throws DapException
     {
-        build(parseDMR(document), serialdata, order);
+        DapDataset dmr = parseDMR(document);
+        if(DEBUG)  {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            DMRPrint printer = new DMRPrint(pw);
+            try {printer.print(dmr); pw.close(); sw.close();} catch (IOException e) {};
+            System.err.println("+++++++++++++++++++++");
+            System.err.println(sw.toString());
+            System.err.println("+++++++++++++++++++++");
+        }
+        build(dmr, serialdata, order);
     }
 
     /**
@@ -79,7 +110,7 @@ abstract public class D4DSP extends AbstractDSP
         // "Compile" the databuffer section of the server response
         setSource(ByteBuffer.wrap(serialdata).order(order));
         this.databuffer = (ByteBuffer) getAnnotation();
-        DataCompiler compiler = new D4DataCompiler(this, checksummode, this.databuffer, new D4DataFactory());
+        D4DataCompiler compiler = new D4DataCompiler(this, checksummode, this.databuffer);
         compiler.compile();
     }
 

@@ -3,12 +3,13 @@
 
 package dap4.core.ce;
 
-import dap4.core.ce.CEConstraint;
 import dap4.core.dmr.*;
-import dap4.core.dmr.parser.ParseException;
-import dap4.core.util.*;
+import dap4.core.util.DapException;
+import dap4.core.util.DapSort;
+import dap4.core.util.Slice;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 /**
  * Given an AST, compile it into a CEConstraint instance
@@ -97,23 +98,39 @@ public class CECompiler
     compilesegment(CEAST ast)
             throws DapException
     {
-        DapNode parent = getParent();
         DapNode node = null;
-        if(parent == null) {
-            // name must be fqn
-            DapNode match = this.dataset.findByFQN(ast.name,
+        // Does this look like an fqn?
+        if(isFQN(ast.name)) {
+            DapDataset root = this.dataset;
+            DapNode match = root.findByFQN(ast.name,
                     DapSort.ATOMICVARIABLE, DapSort.SEQUENCE, DapSort.STRUCTURE);
             if(match == null)
                 throw new DapException("Multiply defined variable name: " + ast.name);
             node = match;
-        } else if(parent.getSort() == DapSort.STRUCTURE) {
-            DapStructure struct = (DapStructure) parent;
-            node = struct.findByName(ast.name);
-        } else if(parent.getSort() == DapSort.SEQUENCE) {
-            DapSequence seq = (DapSequence) parent;
-            node = seq.findByName(ast.name);
-        } else {
-            throw new DapException("Attempt to treat non-structure object as structure: " + parent.getFQN());
+        } else { // interpret relative to parent or root
+            DapNode parent = getParent();
+            if(parent == null)
+                parent = this.dataset;
+            if(parent == null) {
+                assert parent != null;
+            }
+            switch (parent.getSort()) {
+            case DATASET:
+                DapDataset dataset = (DapDataset) parent;
+                node = dataset.findByName(ast.name,
+                            DapSort.ATOMICVARIABLE, DapSort.STRUCTURE, DapSort.SEQUENCE);
+                break;
+            case STRUCTURE:
+                DapStructure struct = (DapStructure) parent;
+                node = struct.findByName(ast.name);
+                break;
+            case SEQUENCE:
+                DapSequence seq = (DapSequence) parent;
+                node = seq.findByName(ast.name);
+                break;
+            default:
+                throw new DapException("relative names must be WRT to structure|dataset object: " + parent.getFQN());
+            }
         }
         if(node == null) {
             throw new DapException("Constraint expression does not reference a known field: " + ast.name);
@@ -232,12 +249,20 @@ public class CECompiler
     //////////////////////////////////////////////////
     // Utilities
 
-    DapVariable
+    protected DapVariable
     getParent()
     {
         if(scopestack.size() > 0)
             return scopestack.peek();
         return null;
+    }
+
+    static protected boolean
+    isFQN(String s)
+    {
+        if(s == null || s.length() == 0)
+            return false;
+        return (s.charAt(0) == '/');
     }
 
 }

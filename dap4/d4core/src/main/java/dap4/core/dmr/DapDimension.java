@@ -21,9 +21,9 @@ public class DapDimension extends DapNode implements DapDecl, Cloneable
     //////////////////////////////////////////////////
     // Instance variables
 
-    long size = 0;
+    protected long size = 0;
 
-    boolean isshared = false;
+    protected boolean isshared = false;
 
 
     //////////////////////////////////////////////////
@@ -38,6 +38,7 @@ public class DapDimension extends DapNode implements DapDecl, Cloneable
     {
         this();
         setShortName(name);
+        this.isshared  = true;
     }
 
     public DapDimension(String name, long size)
@@ -49,7 +50,7 @@ public class DapDimension extends DapNode implements DapDecl, Cloneable
     public DapDimension(long size)
     {
         setSize(size);
-	this.isshared = false;
+        this.isshared = false;
     }
 
     //////////////////////////////////////////////////
@@ -85,7 +86,11 @@ public class DapDimension extends DapNode implements DapDecl, Cloneable
 
     public Object clone()
     {
-	    try {return super.clone(); } catch (CloneNotSupportedException e) {return null;}
+        try {
+            return super.clone();
+        } catch (CloneNotSupportedException e) {
+            return null;
+        }
     }
 
 
@@ -98,7 +103,7 @@ public class DapDimension extends DapNode implements DapDecl, Cloneable
         String name = null;
         if(name == null) name = getShortName();
         if(name == null) name = "";
-        return sortname + "::" + name + "[" +getSize()+ "]";
+        return sortname + "::" + name + "[" + getSize() + "]";
     }
 
 

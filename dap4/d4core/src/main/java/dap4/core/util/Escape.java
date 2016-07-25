@@ -35,7 +35,7 @@ public class Escape
     static private final String nonAlphaNumeric = " !\"#$%&'()*+,-./:;<=>?@[]\\^_`|{}~";
 
     // define the printable backslash characters to escape (control chars not included)
-    static public final String BACKSLASHESCAPE = "./\\\"'";
+    static public final String BACKSLASHESCAPE = "/\\\"'";
 
     // Define the alphan characters
 
@@ -153,6 +153,7 @@ public class Escape
     /**
      * Escape control chars plus
      * selected other characters in a string using backslash
+     * The definitive list is in netcdf-c/ncgen/ncgen.l.
      */
     static public String
     backslashEscape(String s, String wrt)

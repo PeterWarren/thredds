@@ -221,12 +221,15 @@ abstract public class DapNode
     {
         if(this.dataset == null) {
             // walk up to find
-            DapGroup g = this.getGroup();
-            while(g.getSort() != DapSort.DATASET)
-                g = g.getGroup();
-            setDataset((DapDataset)g);
+            DapNode curr, next = this;
+            do {
+                curr = next;
+                assert curr != null;
+                next = curr.getGroup();
+            } while(curr.getSort() != DapSort.DATASET);
+            setDataset((DapDataset) curr);
         }
-            return dataset;
+        return this.dataset;
     }
 
     public void setDataset(DapDataset dataset)

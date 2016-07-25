@@ -142,8 +142,8 @@ public class TestConstraints extends DapTestCommon
     void
     chooseTestcases()
     {
-        if(false) {
-            chosentests.add(locate1(2));
+        if(true) {
+            chosentests.add(locate1(8));
             prop_visual = true;
         } else {
             for(TestCase tc : alltestcases) {
@@ -184,8 +184,8 @@ public class TestConstraints extends DapTestCommon
     doOneTest(TestCase testcase)
             throws Exception
     {
-        System.out.println("Testcase: " + testcase.makeurl());
-        System.out.println("Baseline: " + testcase.getbaseline());
+        System.err.println("Testcase: " + testcase.makeurl());
+        System.err.println("Baseline: " + testcase.getbaseline());
 
         String url = testcase.makeurl();
         NetcdfDataset ncfile = null;
@@ -230,7 +230,7 @@ public class TestConstraints extends DapTestCommon
         if(prop_diff) { //compare with baseline
             // Read the baseline file(s)
             String baselinecontent = readfile(testcase.getbaseline());
-            System.out.println("Comparison:");
+            System.err.println("Comparison:");
             Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, testoutput));
         }
     }

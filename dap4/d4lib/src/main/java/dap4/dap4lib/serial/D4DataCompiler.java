@@ -5,7 +5,7 @@
 
 package dap4.dap4lib.serial;
 
-import dap4.core.data.*;
+import dap4.core.data.DSP;
 import dap4.core.dmr.*;
 import dap4.core.util.DapDump;
 import dap4.core.util.DapException;
@@ -18,7 +18,7 @@ import dap4.dap4lib.RequestMode;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class D4DataCompiler implements DataCompiler
+public class D4DataCompiler
 {
     static public boolean DEBUG = false;
 
@@ -34,8 +34,6 @@ public class D4DataCompiler implements DataCompiler
     //////////////////////////////////////////////////
     // Instance variables
 
-    protected DataDataset datadataset = null;
-
     protected DapDataset dataset = null;
 
     // Make compile arguments global
@@ -43,9 +41,7 @@ public class D4DataCompiler implements DataCompiler
 
     protected ChecksumMode checksummode = null;
 
-    protected DSP dsp;
-
-    protected DAPDataFactory factory = null;
+    protected D4DSP dsp;
 
     //////////////////////////////////////////////////
     //Constructor(s)
@@ -56,18 +52,16 @@ public class D4DataCompiler implements DataCompiler
      * @param dsp          the D4DSP
      * @param checksummode
      * @param databuffer   the source of serialized databuffer
-     * @param factory      for producing data nodes
      */
 
-    public D4DataCompiler(DSP dsp, ChecksumMode checksummode,
-                          ByteBuffer databuffer, DAPDataFactory factory)
+    public D4DataCompiler(D4DSP dsp, ChecksumMode checksummode,
+                          ByteBuffer databuffer)
             throws DapException
     {
         this.dsp = dsp;
         this.dataset = this.dsp.getDMR();
         this.databuffer = databuffer;
         this.checksummode = checksummode;
-        this.factory = factory;
     }
 
     //////////////////////////////////////////////////
@@ -75,12 +69,14 @@ public class D4DataCompiler implements DataCompiler
 
     /**
      * The goal here is to process the serialized
-     * databuffer and locate variable-specific positions
-     * in the serialized databuffer. For each DAP4 variable,
-     * D4 objects are created and linked together.
+     * databuffer and locate top-level variable positions
+     * in the serialized databuffer. Access to non-top-level
+     * variables is accomplished on the fly.
+     *
+     * @return
+     * @throws DapException
      */
-    @Override
-    public void
+    public D4Cursor
     compile()
             throws DapException
     {
@@ -88,36 +84,35 @@ public class D4DataCompiler implements DataCompiler
         if(DEBUG) {
             DapDump.dumpbytes(this.databuffer, false);
         }
-        this.datadataset = factory.newDataset(this.dsp, this.dataset, this.databuffer);
-        this.datadataset.setConstraint(this.dsp.getConstraint());
-        this.dsp.setDataset(this.datadataset);
-
+        D4Cursor root = new D4Cursor(this.dsp, this.dsp.getDMR());
         // iterate over the variables represented in the databuffer
         for(DapVariable vv : this.dataset.getTopVariables()) {
-            DataVariable array = compileVar(vv);
-            this.datadataset.addVariable(array);
+            D4Cursor data = compileVar(vv, null);
+            root.addVariable(data);
         }
+        return root;
     }
 
-    protected DataVariable
-    compileVar(DapVariable dapvar)
+    protected D4Cursor
+    compileVar(DapVariable dapvar, D4Cursor container)
             throws DapException
     {
-        DataVariable array = null;
         boolean isscalar = dapvar.getRank() == 0;
+        D4Cursor array = null;
         if(dapvar.getSort() == DapSort.ATOMICVARIABLE) {
-            array = compileAtomicVar((DapAtomicVariable) dapvar);
+            array = compileAtomicVar((DapAtomicVariable) dapvar, container);
         } else if(dapvar.getSort() == DapSort.STRUCTURE) {
             if(isscalar)
-                array = compileStructure((DapStructure) dapvar, null, 0);
+                array = compileStructure((DapStructure) dapvar, container);
             else
-                array = compileStructureArray(dapvar);
+                array = compileStructureArray(dapvar, container);
         } else if(dapvar.getSort() == DapSort.SEQUENCE) {
             if(isscalar)
-                array = compileSequence((DapSequence) dapvar, null, 0);
+                array = compileSequence((DapSequence) dapvar, container);
             else
-                array = compileSequenceArray(dapvar);
+                array = compileSequenceArray(dapvar, container);
         }
+        if(array != null) array.setPos(0);
         if(dapvar.isTopLevel()) {
             // extract the checksum from databuffer src,
             // attach to the array, and make into an attribute
@@ -127,15 +122,22 @@ public class D4DataCompiler implements DataCompiler
         return array;
     }
 
-    protected DataAtomic
-    compileAtomicVar(DapAtomicVariable atomvar)
+    /**
+     *
+     * @param atomvar
+     * @param container
+     * @return
+     * @throws DapException
+     */
+    protected D4Cursor
+    compileAtomicVar(DapAtomicVariable atomvar, D4Cursor container)
             throws DapException
     {
         DapType daptype = atomvar.getBaseType();
-        D4Data.D4DataAtomic data =
-                (D4Data.D4DataAtomic) factory.newAtomicVariable(this.dsp, atomvar, getPos(this.databuffer));
+        D4Cursor data = new D4Cursor(this.dsp, atomvar)
+                .setContainer(container).setPos(getPos(this.databuffer));
         long total = 0;
-        long dimproduct = data.getCount();
+        long dimproduct = atomvar.getCount();
         if(!daptype.isEnumType() && !daptype.isFixedSize()) {
             // this is a string, url, or opaque
             int[] positions = new int[(int) dimproduct];
@@ -155,42 +157,44 @@ public class D4DataCompiler implements DataCompiler
      * Compile a structure array.
      *
      * @param dapvar the template
+     * @param container if inside a compound object
      * @return A DataCompoundArray for the databuffer for this struct.
      * @throws DapException
      */
-    DataCompoundArray
-    compileStructureArray(DapVariable dapvar)
+    protected D4Cursor
+    compileStructureArray(DapVariable dapvar, D4Cursor container)
             throws DapException
     {
-        DataCompoundArray structarray
-                = factory.newCompoundArray(this.dsp, dapvar, getPos(this.databuffer));
         DapStructure struct = (DapStructure) dapvar;
-        long dimproduct = structarray.getCount();
+        D4Cursor structarray = new D4Cursor(this.dsp, struct)
+                .setContainer(container).setPos(getPos(this.databuffer));
+        long dimproduct = struct.getCount();
         for(int i = 0; i < dimproduct; i++) {
-            DataStructure instance = compileStructure(struct, structarray, i);
+            D4Cursor instance = compileStructure(struct, structarray);
             structarray.addElement(instance);
         }
         return structarray;
     }
 
-
     /**
      * Compile a structure instance.
      *
      * @param dapstruct The template
+     * @param container
      * @return A DataStructure for the databuffer for this struct.
      * @throws DapException
      */
-    DataStructure
-    compileStructure(DapStructure dapstruct, DataCompoundArray array, int index)
+    protected D4Cursor
+    compileStructure(DapStructure dapstruct, D4Cursor container)
             throws DapException
     {
         int pos = getPos(this.databuffer);
-        DataStructure d4ds = factory.newStructure(dsp, dapstruct, array, pos);
+        D4Cursor d4ds = new D4Cursor(dsp, dapstruct)
+        .setContainer(container).setPos(pos);
         List<DapVariable> dfields = dapstruct.getFields();
         for(int m = 0; m < dfields.size(); m++) {
             DapVariable dfield = dfields.get(m);
-            DataVariable dvfield = compileVar(dfield);
+            D4Cursor dvfield = compileVar(dfield, d4ds);
             d4ds.addField(m, dvfield);
         }
         return d4ds;
@@ -203,45 +207,47 @@ public class D4DataCompiler implements DataCompiler
      * @return A DataCompoundArray for the databuffer for this sequence.
      * @throws DapException
      */
-    DataCompoundArray
-    compileSequenceArray(DapVariable dapvar)
+    protected D4Cursor
+    compileSequenceArray(DapVariable dapvar, D4Cursor container)
             throws DapException
     {
         DapSequence dapseq = (DapSequence) dapvar;
-        DataCompoundArray seqarray
-                = factory.newCompoundArray(this.dsp, dapseq, getPos(this.databuffer));
-        long dimproduct = seqarray.getCount();
+        D4Cursor seqarray = new D4Cursor(this.dsp, dapseq)
+                .setContainer(container).setPos(getPos(this.databuffer));
+        long dimproduct = dapseq.getCount();
         for(int i = 0; i < dimproduct; i++) {
-            DataSequence dseq = compileSequence(dapseq, seqarray, i);
-            seqarray.addElement(dseq);
+            D4Cursor instance = compileSequence(dapseq, seqarray)
+                    .setContainer(container);
+            seqarray.addElement(instance);
         }
         return seqarray;
     }
 
     /**
-     * Compile a sequence from a set of records.
+     * Compile a sequence as a set of records.
      *
-     * @param dapseq The template for this sequence
-     * @param array  the parent compound array
-     * @param index  within the parent compound array
-     * @return A DataSequence for the records for this sequence.
+     * @param dapseq
+     * @param container
+     * @return
      * @throws DapException
      */
-    DataSequence
-    compileSequence(DapSequence dapseq, DataCompoundArray array, int index)
+    public D4Cursor
+    compileSequence(DapSequence dapseq, D4Cursor container)
             throws DapException
     {
+        int pos = getPos(this.databuffer);
+        D4Cursor seq = new D4Cursor(dsp, dapseq)
+                .setContainer(container).setPos(pos);
         List<DapVariable> dfields = dapseq.getFields();
         // Get the count of the number of records
         long nrecs = getCount(this.databuffer);
-        int pos = getPos(this.databuffer);
-        DataSequence seq = factory.newSequence(this.dsp, dapseq, array, pos);
         for(int r = 0; r < nrecs; r++) {
             pos = getPos(this.databuffer);
-            DataRecord rec = factory.newRecord(this.dsp, dapseq, seq, pos);
+            D4Cursor rec = new D4Cursor(this.dsp, dapseq)
+            .setContainer(seq).setPos(pos);
             for(int m = 0; m < dfields.size(); m++) {
                 DapVariable dfield = dfields.get(m);
-                DataVariable dvfield = compileVar(dfield);
+                D4Cursor dvfield = compileVar(dfield, rec);
                 rec.addField(m, dvfield);
             }
             seq.addRecord(rec);

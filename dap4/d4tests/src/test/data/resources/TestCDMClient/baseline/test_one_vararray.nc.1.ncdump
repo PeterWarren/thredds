@@ -1,4 +1,4 @@
-netcdf test_one_vararray\.1 {
+netcdf test_one_vararray.1 {
   dimensions:
     d2 = 2;
   variables:

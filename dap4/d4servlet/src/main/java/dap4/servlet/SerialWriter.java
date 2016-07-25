@@ -352,14 +352,14 @@ public class SerialWriter
     // Write API
 
     /**
-     * Write out a single object
+     * Write out a single atomic object
      *
      * @param daptype the type of the object
      * @param value   the object to write out
      * @throws IOException
      */
     public void
-    writeObject(DapType daptype, Object value)
+    writeAtomicObject(DapType daptype, Object value)
             throws IOException
     {
         ByteBuffer buf = encodeObject(daptype, value);
@@ -401,9 +401,10 @@ public class SerialWriter
     }
 
     /**
-     * Write out an array of values
+     * Write out an array of atomic values
      *
      * @param daptype the type of the object
+     * @param value the array of values
      * @throws IOException
      */
     public void

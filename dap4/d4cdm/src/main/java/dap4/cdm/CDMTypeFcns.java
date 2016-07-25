@@ -8,11 +8,11 @@ import dap4.core.data.DataException;
 import dap4.core.dmr.DapEnumeration;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.TypeSort;
-import dap4.core.util.CoreTypeFcns;
+import dap4.core.util.ConversionException;
 import dap4.core.util.DapUtil;
-import dap4.dap4lib.LibTypeFcns;
 import ucar.ma2.DataType;
 import ucar.ma2.ForbiddenConversionException;
+import ucar.nc2.EnumTypedef;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -27,6 +27,11 @@ import java.nio.ByteBuffer;
 
 abstract public class CDMTypeFcns
 {
+    //////////////////////////////////////////////////
+    // Constants
+
+    static final BigInteger LONGMASK = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
+
     //////////////////////////////////////////////////
     // Static Methods
 
@@ -110,8 +115,8 @@ abstract public class CDMTypeFcns
         case Opaque:
             vector = new ByteBuffer[icount];
             break;
-	case Enum:
-	    return createVector(((DapEnumeration)type).getBaseType(),count);
+        case Enum:
+            return createVector(((DapEnumeration) type).getBaseType(), count);
         default:
             throw new ForbiddenConversionException();
         }
@@ -979,54 +984,109 @@ abstract public class CDMTypeFcns
     }
 
 
-        static public void
-        vectorcopy(DapType datatype, Object src, Object dst, long srcoffset, long dstoffset)
-                throws DataException
-        {
-            switch (datatype.getTypeSort()) {
-            case UInt8:
-            case Int8:
-                ((byte[])dst)[(int)dstoffset] = ((byte[])src)[(int)srcoffset];
-                break;
-            case Char:
-                ((char[])dst)[(int)dstoffset] = ((char[])src)[(int)srcoffset];
-                break;
-            case UInt16:
-            case Int16:
-                ((short[])dst)[(int)dstoffset] = ((short[])src)[(int)srcoffset];
-                break;
-            case UInt32:
-            case Int32:
-                ((int[])dst)[(int)dstoffset] = ((int[])src)[(int)srcoffset];
-                break;
-            case UInt64:
-            case Int64:
-                ((long[])dst)[(int)dstoffset] = ((long[])src)[(int)srcoffset];
-                break;
-            case Float32:
-                ((float[])dst)[(int)dstoffset] = ((float[])src)[(int)srcoffset];
-                break;
-            case Float64:
-                ((double[])dst)[(int)dstoffset] = ((double[])src)[(int)srcoffset];
-                break;
-            case Opaque:
-                // Sigh, bytebuffer hidden by CDM
-                Object o = ((Object[])src)[(int)srcoffset];
-                ((ByteBuffer[])dst)[(int)dstoffset] = (ByteBuffer)o;
-                break;
-            case String:
-                // Sigh, String hidden by CDM
-                o = ((Object[])src)[(int)srcoffset];
-                ((String[])dst)[(int)dstoffset] = (String)o;
-                break;
-	    case Enum:
-	        vectorcopy(((DapEnumeration)datatype).getBaseType(), src, dst,  srcoffset, dstoffset);
-		break;
-            case Struct:
-            case Seq:
-            default:
-                throw new DataException("Attempt to read non-atomic value of type: " + datatype);
-            }
+    static public void
+    vectorcopy(DapType datatype, Object src, Object dst, long srcoffset, long dstoffset)
+            throws DataException
+    {
+        switch (datatype.getTypeSort()) {
+        case UInt8:
+        case Int8:
+            ((byte[]) dst)[(int) dstoffset] = ((byte[]) src)[(int) srcoffset];
+            break;
+        case Char:
+            ((char[]) dst)[(int) dstoffset] = ((char[]) src)[(int) srcoffset];
+            break;
+        case UInt16:
+        case Int16:
+            ((short[]) dst)[(int) dstoffset] = ((short[]) src)[(int) srcoffset];
+            break;
+        case UInt32:
+        case Int32:
+            ((int[]) dst)[(int) dstoffset] = ((int[]) src)[(int) srcoffset];
+            break;
+        case UInt64:
+        case Int64:
+            ((long[]) dst)[(int) dstoffset] = ((long[]) src)[(int) srcoffset];
+            break;
+        case Float32:
+            ((float[]) dst)[(int) dstoffset] = ((float[]) src)[(int) srcoffset];
+            break;
+        case Float64:
+            ((double[]) dst)[(int) dstoffset] = ((double[]) src)[(int) srcoffset];
+            break;
+        case Opaque:
+            // Sigh, bytebuffer hidden by CDM
+            Object o = ((Object[]) src)[(int) srcoffset];
+            ((ByteBuffer[]) dst)[(int) dstoffset] = (ByteBuffer) o;
+            break;
+        case String:
+            // Sigh, String hidden by CDM
+            o = ((Object[]) src)[(int) srcoffset];
+            ((String[]) dst)[(int) dstoffset] = (String) o;
+            break;
+        case Enum:
+            vectorcopy(((DapEnumeration) datatype).getBaseType(), src, dst, srcoffset, dstoffset);
+            break;
+        case Struct:
+        case Seq:
+        default:
+            throw new DataException("Attempt to read non-atomic value of type: " + datatype);
         }
+    }
+
+    static public Object
+    attributeConvert(DataType cdmtype, EnumTypedef en, Object o)
+    {
+        if(en != null) {
+            switch (cdmtype) {
+            case ENUM1:
+            case ENUM2:
+            case ENUM4:
+                if(!(o instanceof Long))
+                    throw new ConversionException(o.toString());
+                long eval = (Long) o;
+                String econst = en.lookupEnumString((int) eval);
+                if(econst == null)
+                    throw new ConversionException(o.toString());
+                return econst;
+            default:
+                throw new ConversionException(o.toString());
+            }
+        } else if(cdmtype == DataType.STRING) {
+            return o.toString();
+        } else if(o instanceof Long) {
+            long lval = (Long) o;
+            switch (cdmtype) {
+            case BOOLEAN:
+                return (lval == 0 ? Boolean.TRUE : Boolean.FALSE);
+            case BYTE:
+                return (byte) (lval);
+            case SHORT:
+                return (short) (lval);
+            case INT:
+                return (int) (lval);
+            case LONG:
+                return lval;
+            case UBYTE:
+                return (byte) (lval & 0xFF);
+            case USHORT:
+                return (short) (lval & 0xFFFF);
+            case UINT:
+                return (short) (lval & 0xFFFFFFFF);
+            case ULONG:
+                return lval;
+            case STRING:
+                return ((Long) o).toString();
+            default:
+                throw new ConversionException(o.toString());
+            }
+        } else if(o instanceof Float || o instanceof Double || o instanceof Character)
+            return o;
+        else if(cdmtype == DataType.OPAQUE) {
+            assert o instanceof ByteBuffer;
+            return o;
+        }
+        return o;
+    }
 
 }

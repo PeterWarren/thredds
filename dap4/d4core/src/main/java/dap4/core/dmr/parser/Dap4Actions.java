@@ -3,7 +3,6 @@
 
 package dap4.core.dmr.parser;
 
-import dap4.core.dmr.DMRFactory;
 import dap4.core.dmr.DapXML;
 import dap4.core.util.DapException;
 import dap4.core.util.DapSort;
@@ -63,8 +62,6 @@ abstract public class Dap4Actions extends Dap4EventHandler
 
     //////////////////////////////////////////////////
     // Instance variables
-
-    protected DMRFactory factory = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)

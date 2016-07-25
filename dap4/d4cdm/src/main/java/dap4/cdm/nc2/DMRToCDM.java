@@ -17,6 +17,7 @@ import dap4.dap4lib.LibTypeFcns;
 import ucar.ma2.DataType;
 import ucar.ma2.ForbiddenConversionException;
 import ucar.nc2.*;
+import ucar.nc2.stream.NcStreamProto;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -307,18 +308,19 @@ public class DMRToCDM
         switch (dapattr.getSort()) {
         case ATTRIBUTE:
             DapType basetype = dapattr.getBaseType();
-            if(!(basetype.isNumericType() || basetype.isStringType() || basetype.isCharType()))
+            if(!(basetype.isLegalAttrType()))
                 throw new ForbiddenConversionException("Illegal attribute type:" + basetype.toString());
-            DapType uptype = CoreTypeFcns.upcastType(basetype);
-            DataType cdmtype = CDMTypeFcns.daptype2cdmtype(uptype);
+            DataType cdmtype = CDMTypeFcns.daptype2cdmtype(basetype);
+            EnumTypedef en = (EnumTypedef)(basetype.isEnumType() ? nodemap.get(basetype) : null);
             Object[] dapvalues = dapattr.getValues();
             List cdmvalues = new ArrayList();
             for(int i = 0; i < dapvalues.length; i++) {
                 Object o = dapvalues[i];
-                o = CoreTypeFcns.upcast(uptype,o);
-                if(cdmtype == DataType.CHAR)
-                    o = ((Character) o).toString();
-                cdmvalues.add(o);
+                o = CoreTypeFcns.attributeConvert(basetype,o);
+                if(o == null)
+                    throw new ForbiddenConversionException("Illegal attribute type:" + basetype.toString());
+                Object ocdm = CDMTypeFcns.attributeConvert(cdmtype,en,o);
+                cdmvalues.add(ocdm);
             }
             cdmattr = new Attribute(dapattr.getShortName(), cdmvalues);
             break;

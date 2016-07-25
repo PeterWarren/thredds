@@ -2,21 +2,101 @@
    See the LICENSE file for more information. */
 
 package dap4.core.dmr;
-import dap4.core.ce.CEConstraint;
-import dap4.core.util.DapSort;
 
-public interface DMRFactory
+public class DMRFactory
 {
-    DapAttribute newAttribute(String name, DapType basetype, Object notes);
-    DapAttributeSet newAttributeSet(String name, Object notes);
-    DapOtherXML newOtherXML(String name, Object notes);
-    DapDimension newDimension(String name, long size, Object notes);
-    DapMap newMap(DapVariable target, Object notes);
-    DapAtomicVariable newAtomicVariable(String name, DapType t, Object notes);
-    DapGroup newGroup(String name, Object notes);
-    DapDataset newDataset(String name, Object notes);
-    DapEnumeration newEnumeration(String name, DapType basetype, Object notes);
-    DapEnumConst newEnumConst(String name, long value, Object notes);
-    DapStructure newStructure(String name, Object notes);
-    DapSequence newSequence(String name, Object notes);
+    //////////////////////////////////////////////////
+    // Constructor
+    public DMRFactory()
+    {
+    }
+
+    //////////////////////////////////////////////////
+    // DMRFactory API
+
+    public DapAttribute
+    newAttribute(String name, DapType basetype)
+    {
+        return new DapAttribute(name, basetype);
+    }
+
+    public DapAttributeSet
+    newAttributeSet(String name)
+    {
+        return new DapAttributeSet(name);
+    }
+
+    public DapOtherXML
+    newOtherXML(String name)
+    {
+        return new DapOtherXML(name);
+    }
+
+    public DapDimension
+    newDimension(String name, long size)
+    {
+        return new DapDimension(name, size);
+    }
+
+    public DapMap
+    newMap(DapVariable target)
+    {
+        return new DapMap(target);
+    }
+
+    public DapAtomicVariable
+    newAtomicVariable(String name, DapType t)
+    {
+        return new DapAtomicVariable(name, t);
+    }
+
+    public DapVariable
+    newStructureVariable(String name, DapType t)
+    {
+        return new DapStructure(name);
+    }
+
+    public DapVariable
+    newSequenceVariable(String name, DapType t)
+        {
+            return new DapSequence(name);
+        }
+
+    public DapGroup
+    newGroup(String name)
+    {
+        return new DapGroup(name);
+    }
+
+    public DapDataset
+    newDataset(String name)
+    {
+        return new DapDataset(name);
+    }
+
+    public DapEnumeration
+    newEnumeration(String name, DapType basetype)
+    {
+        return new DapEnumeration(name, basetype);
+    }
+
+    public DapEnumConst
+    newEnumConst(String name, long value)
+    {
+        return new DapEnumConst(name, value);
+    }
+
+    public DapStructure
+    newStructure(String name)
+    {
+        return new DapStructure(name);
+    }
+
+    public DapSequence
+    newSequence(String name)
+    {
+        return new DapSequence(name);
+    }
+
 }
+

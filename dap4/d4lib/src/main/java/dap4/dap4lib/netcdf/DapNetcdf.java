@@ -176,6 +176,13 @@ public interface DapNetcdf extends Library
 
     int nc_inq_grpname(int ncid, byte[] name);
 
+    /* Given ncid, find full name and len of full name. (Root group is
+             * named "/", with length 1.) */
+    int nc_inq_grpname_full(int ncid, SizeTByReference lenp, byte[] full_name);
+
+    /* Given ncid, find len of full name. */
+    int nc_inq_grpname_len(int ncid, SizeTByReference lenp);
+
     // dimension info
     int nc_inq_ndims(int ncid, IntByReference ndimsp);
 
@@ -260,8 +267,6 @@ public interface DapNetcdf extends Library
     // read entire array
     int nc_get_var(int ncid, int varid, Pointer p);
 
-    int nc_get_var(int ncid, int varid, Vlen_t[] vlen);      // vlen
-
     int nc_get_var_text(int ncid, int varid, byte[] op);
 
     int nc_get_var_schar(int ncid, int varid, byte[] ip);
@@ -288,8 +293,6 @@ public interface DapNetcdf extends Library
 
     // read single element
     int nc_get_var1(int ncid, int varid, SizeTByReference indexp, Pointer p);
-
-    int nc_get_var1(int ncid, int varid, SizeTByReference indexp, Vlen_t[] vlen);      // vlen
 
     int nc_get_var1_text(int ncid, int varid, SizeTByReference indexp, byte[] op);
 
@@ -530,6 +533,11 @@ public interface DapNetcdf extends Library
 
     int nc_put_att_double(int ncid, int varid, String attName, int xtype, SizeT len, double[] value);
   
+    /* Vlen-specialized Read/write */
+    int nc_get_var(int ncid, int varid, Vlen_t[] vlen);
+
+    int nc_get_var1(int ncid, int varid, SizeTByReference indexp, Vlen_t[] vlen);
+
   /* Extra netcdf-4 stuff. */
 
     /* Set compression settings for a variable. Lower is faster, higher is better.

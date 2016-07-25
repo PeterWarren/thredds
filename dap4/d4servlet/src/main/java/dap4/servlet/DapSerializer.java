@@ -30,7 +30,6 @@ public class DapSerializer
     protected OutputStream stream = null;
     protected SerialWriter writer = null;
     protected DSP dsp = null;
-    protected DataDataset data = null;
     protected CEConstraint ce = null;
     protected ByteOrder order = null;
 
@@ -56,7 +55,6 @@ public class DapSerializer
         this.dsp = dsp;
         this.order = order;
         this.stream = stream;
-        this.data = dsp.getDataset();
         this.ce = constraint;
     }
 
@@ -67,13 +65,14 @@ public class DapSerializer
         writer = new SerialWriter(this.stream, this.order);
 	    writer.flush(); // If stream is ChunkWriter, then dump DMR
         // Iterate over the top-level variables in the constraint
+        DataCursor dataset = dsp.getRootCursor();
         for(DapVariable var : dmr.getTopVariables()) {
-            DataVariable dv = data.getVariableData(var);
-            if(!ce.references(var))
+            if(!this.ce.references(var))
                 continue;
-            if(dv == null)
+	    DataCursor varcursor = dataset.get(var);
+            if(varcursor == null)
                 throw new DapException("DapSerializer: cannot find  Variable data " + var.getFQN());
-            writeVariable(var, dv, writer);
+            writeVariable(cursor, writer);
         }
     }
 
@@ -81,28 +80,25 @@ public class DapSerializer
     // Recursive variable writer
 
     /**
-     * @param dapvar
-     * @param dv
+     * @param data - cursor referencing what to write
+     * @param dst - where to write
      * @throws IOException
      */
     protected void
-    writeVariable(DapVariable dapvar, DataVariable dv, SerialWriter dst)
+    writeVariable(DataCursor data,SerialWriter dst)
             throws IOException
     {
-        assert (dapvar == dv.getTemplate());
+        DapVariable template = (DapVariable)data.getTemplate());
         dst.startVariable();
-        switch (dv.getSort()) {
+        switch (template.getSort()) {
         case ATOMIC:
-            writeAtomicVariable(dapvar, dv, dst);
+            writeAtomicVariable(data,dst);
             break;
         case STRUCTURE:
-            writeStructure(dapvar, (DataStructure) dv, dst);
+            writeStructure(data,dst);
             break;
         case SEQUENCE:
-            writeSequence(dapvar, (DataSequence) dv, dst);
-            break;
-        case COMPOUNDARRAY:
-            writeCompoundArray(dapvar, (DataCompoundArray) dv, dst);
+            writeSequence(data,dst);
             break;
         default:
             assert false : "Unexpected variable type";
@@ -118,249 +114,145 @@ public class DapSerializer
      * @throws IOException
      */
     protected void
-    writeAtomicVariable(DapVariable vv, DataVariable dv, SerialWriter dst)
+    writeAtomicVariable(DataCursor data, SerialWriter dst)
             throws DataException
     {
-        try {
-            DapAtomicVariable dapvar = (DapAtomicVariable) vv;
-            DataAtomic dav = (DataAtomic) dv;
-            DapType basetype = dapvar.getBaseType();
-            List<Slice> slices;
-            ByteBuffer buf;
-            if(dapvar.getRank() == 0) { // scalar
-                dst.writeObject(basetype, dav.read(Index.SCALAR));
-            } else {// dimensioned
-                // get the slices from constraint
-                slices = ce.getConstrainedSlices(dapvar);
-                if(slices == null)
-                    throw new DataException("Unknown variable: " + dapvar.getFQN());
-                long count = DapUtil.sliceProduct(slices);
-                Object vector = dav.read(slices);
-                dst.writeArray(basetype, vector);
-            }
-        } catch (IOException ioe) {
-            throw new DataException(ioe);
-        }
-    }
-
-    /* unneeded?
-    static public Object
-    buildAtomicArray(int product, DapType typ)
-    {
-        Object array = null;
-        TypeSort atype = typ.getTypeSort();
-        switch (atype) {
-        case Char:
-        case Int8:
-        case UInt8:
-            array = new byte[product];
-            break;
-        case Int16:
-        case UInt16:
-            array = new short[product];
-            break;
-        case Int32:
-        case UInt32:
-            array = new int[product];
-            break;
-        case Int64:
-        case UInt64:
-            array = new long[product];
-            break;
-        case Float32:
-            array = new float[product];
-            break;
-        case Float64:
-            array = new double[product];
-            break;
-        default:
-            assert false;
-        }
-        return array;
-    }
-    */
-
-    /**
-     * Write out a single structure instance.
-     *
-     * @param vv the structure view
-     * @param ds the structure data
-     * @throws DataException
-     */
-
-    protected void
-    writeStructure(DapVariable vv, DataStructure ds, SerialWriter dst)
-            throws DataException
-    {
-        try {
-            DapStructure dapvar = (DapStructure) vv;
-            for(DapVariable field : dapvar.getFields()) {
-                if(!ce.references(field)) continue; // not in the view
-                DataVariable dv = ds.getfield(field.getShortName());
-                writeVariable(field, dv, dst);
-            }
-        } catch (IOException ioe) {
-            throw new DataException(ioe);
-        }
-    }
-
-    /**
-     * Write out a singleton compound variable.
-     *
-     * @param vv the structure variable
-     * @param dc the data
-     * @throws DataException
-     */
-
-    protected void
-    writeCompound(DapVariable vv, DataCompound dc, SerialWriter dst)
-            throws DataException
-    {
-        if(dc.getSort() == DataSort.STRUCTURE)
-            writeStructure(vv, (DataStructure) dc, dst);
-        else
-            writeSequence(vv, (DataSequence) dc, dst);
-        return;
-    }
-
-    /**
-     * Write out a dimensioned ompound variable.
-     *
-     * @param dapvar the structure variable
-     * @param dca    the array's data
-     * @throws DataException
-     */
-
-    protected void
-    writeCompoundArray(DapVariable dapvar, DataCompoundArray dca, SerialWriter dst)
-            throws DataException
-    {
-        try {
-            if(dapvar.getRank() == 0) {
-                writeCompound(dapvar, (DataCompound)dca.getElement(Index.SCALAR), dst);
-                return;
-            }
-            // Get the active set of slices for this variable
+        DapAtomicVariable template = (DapAtomicVariable)data.getTemplate());
+	assert (this.ce.references(template));
+        DapType basetype = template.getBaseType();
+        if(dapvar.getRank() == 0) { // scalar
+            dst.writeObject(basetype, data.read(Index.SCALAR);
+        } else {// dimensioned
+	    // get the slices from constraint
             List<Slice> slices = ce.getConstrainedSlices(dapvar);
             if(slices == null)
-                throw new DataException("Undefined variable: " + dapvar);
+	        throw new DataException("Unknown variable: " + template.getFQN());
             long count = DapUtil.sliceProduct(slices);
-            List<DataCompound> dc = dca.getElements(slices);
-            for(int i = 0; i < count; i++) {
-                writeCompound(dapvar, dc.get(i), dst);
-            }
-        } catch (IOException ioe) {
-            throw new DataException(ioe);
-        }
+            Object vector = data.read(slices);
+            dst.writeArray(basetype, vector);
+ 	}
     }
 
     /**
-     * Write out a single Record instance.
+     * Write out a single or array structure instance
      *
-     * @param vv the record view
-     * @param dr the record data
+     * @param data
+     * @param dst - where to write
      * @throws DataException
      */
 
     protected void
-    writeRecord(DapVariable vv, DataRecord dr, SerialWriter dst)
+    writeStructure(DataCursor data, SerialWriter dst)
             throws DataException
     {
-        try {
-            DapSequence dapvar = (DapSequence) vv;
-            for(DapVariable field : dapvar.getFields()) {
-                if(!ce.references(field)) continue; // not in the view
-                DataVariable dv = dr.getfield(field.getShortName());
-                writeVariable(field, dv, dst);
+        DapStructure template = (DapStructure)data.getTemplate());
+	assert (this.ce.references(template));
+	if(template.getRank() == 0) { // scalar
+	    writeStructure1(data,dst);
+	} else {
+	    List<Slices> slices = ce.getConstrainedSlices(template);
+            long count = DapUtil.sliceProduct(slices);
+	    dst.writeCount(count);
+	    Odometer odom = Odometer.factory(slices);
+	    while(odom.hasNext()) {
+		Index index = odom.next();
+	        DataCursor instance = (DataCursor)data.read(index);
+		writeStructure1(instance,dst);
             }
-        } catch (IOException ioe) {
-            throw new DataException(ioe);
-        }
     }
+
+    /**
+     * Write out a single structure instance
+     *
+     * @param data
+     * @param dst - where to write
+     * @throws DataException
+     */
+
+    protected void
+    writeStructure1(DataCursor instance, SerialWriter dst)
+            throws DataException
+    {
+        DapStructure template = (DapStructure)instance.getTemplate());
+	assert (this.ce.references(template));
+        for(DapVariable field : template.getFields()) {
+	    if(!this.ce.references(field)) continue; // not in the view
+            DataCursor df = instance.read(field);
+	    writeVariable(df,dst);
+	}
+    }
+
+    /**
+     * Write out a single or array sequence instance
+     *
+     * @param data
+     * @param dst - where to write
+     * @throws DataException
+     */
+
+    protected void
+    writeSequence(DataCursor data, SerialWriter dst)
+            throws DataException
+    {
+        DapSequence template = (DapSequence)data.getTemplate());
+	assert (this.ce.references(template));
+	if(template.getRank() == 0) { // scalar
+	    writeSequence1(data,dst);
+	} else {
+	    List<Slices> slices = ce.getConstrainedSlices(template);
+            long count = DapUtil.sliceProduct(slices);
+	    dst.writeCount(count);
+	    Odometer odom = Odometer.factory(slices);
+	    while(odom.hasNext()) {
+		Index index = odom.next();
+	        DataCursor instance = (DataCursor)data.read(index);
+		writeSequence1(instance,dst);
+            }
+    }
+
 
     /**
      * Write out a single Sequence of records
      * (Eventually use any filter in the DapVariable)
      *
-     * @param dapvar the constraint view
-     * @param ds     the structure data
+     * @param instance the sequence instance
+     * @param dst write target
      * @throws DataException
      */
 
     protected void
-    writeSequence(DapVariable dapvar, DataSequence ds, SerialWriter dst)
+    writeSequence1(DataCursor instance, SerialWriter dst)
             throws DataException
     {
-        DapSequence seq = (DapSequence) dapvar;
-        long nrecs = ds.getRecordCount();
-        // We need to create a temporary serializing buffer
-        // so we can properly precede the records with the correct count.
-        long actual = 0;
-        ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
-        SerialWriter tmp = new SerialWriter(bytestream, this.order);
-        tmp.computeChecksums(false);
-        try {
-            for(int i = 0; i < nrecs; i++) {
-                DataRecord rec = ds.getRecord(i);
-                if(ce.match(seq, rec)) {
-                    writeRecord(dapvar, ds.getRecord(i), tmp);
-                    actual++;
-                }
-            }
-            bytestream.flush();
-            dst.writeCount(actual);
-            dst.writeBytes(bytestream.toByteArray());
-        } catch (IOException ioe) {
-            throw new DataException(ioe);
-        }
+        DapSequence template = (DapSequenceucture)instance.getTemplate());
+	assert (this.ce.references(template));
+        long nrecs = instance.getRecordCount();
+	for(long i=0;i<nrecs;i++) {
+	    DataCursor record = instance.getRecord(i);
+	    writeRecord(record,dst);
+	}
     }
 
-/**
- * Write out a possibly dimensioned sequence variable.
- *
- * @param vv   the sequence variable
- * @param data the variable's data
- * @throws DataException
- */
+    /**
+     * Write out a single Record instance.
+     *
+     * @param record the record data cursor
+     * @param dst to which to write
+     * @throws DataException
+     */
 
-/*
-    void
-    writeSequenceVariable(View view, DapVariable vv, DataSequence data)
-        throws DataException
+    protected void
+    writeRecord(DataCursor record, SerialWriter dst)
+            throws DataException
     {
-        Dapequence dapvar = (DapSequence) vv.getVariable();
-        if(dapvar.getRank() == 0) {
-            writeSequence(view, vv, dav.read(0));
-            return;
-        }
-        List<Slice> slices = vv.getSlices();
-        long count = DapUtil.sliceProduct(slices);
-        DataSequence[] dvs = dav.read(slices);
-        assert dvs.length == count;
-        for(int i = 0;i < count;i++) {
-            writeSequence(view, vv, dvs[i]);
-        }
-
-
-        // The sequence will never be a leaf because of the call
-        // to CESemantics.expandStruct().
-        DapVariable dapvar = vv.getVariable();
-        assert (dapvar.getSort() == DapSort.SEQUENCE);
-        DapSequence dapseq = (DapSequence) dapvar;
-        List<DapVariable> fields = dapseq.getFields();
-
-        long nrecords = data.getRecordCount();
-        for(int recno = 0;recno < nrecords;recno++) {
-            DataRecord instance = data.readRecord(recno);
-            // Walk and dump the fields of the instance
-            for(DapVariable field : fields) {
-                DapVariable fieldproj = view.get(field);
-                if(fieldproj == null) continue; // do not output
-                DataVariable fielddata = instance.readfield(field.getShortName());
-                writeVariable(fieldproj, fielddata);
-            }
-        }
+        DapSequence template = (DapSequence)record.getTemplate());
+        for(DapVariable field : template.getFields()) {
+	    if(!this.ce.references(field)) continue; // not in the view
+            DataCursor df = record.read(field);
+	    writeVariable(df,dst);
+	}
     }
-    */
+
 }
+
 

@@ -45,15 +45,12 @@ public interface DSP
 
     public DapDataset getDMR() throws DapException;
 
-    public DataDataset getDataset() throws DataException;
+    public DataCursor getDataset() throws DataException;
 
-    public void setDataset(DataDataset ds);
+    public void setDataset(DataCursor ds);
 
     public void close() throws IOException;
 
     public Object getAnnotation();
 
-    public CEConstraint getConstraint();
-
-    public void setConstraint(CEConstraint ce);
 }

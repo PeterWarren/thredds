@@ -5,10 +5,14 @@
 package dap4.core.ce;
 
 import dap4.core.ce.parser.CEParserImpl;
-import dap4.core.data.*;
+import dap4.core.data.Constraint;
+import dap4.core.data.DataCursor;
 import dap4.core.dmr.*;
 import dap4.core.dmr.parser.ParseException;
-import dap4.core.util.*;
+import dap4.core.util.DapException;
+import dap4.core.util.DapSort;
+import dap4.core.util.Index;
+import dap4.core.util.Slice;
 
 import java.util.*;
 
@@ -17,7 +21,7 @@ import java.util.*;
  * containing a parsed representation
  * of a constraint expression.
  * Its purpose is define a subset of interest of a dataset.
- * <p/>
+ * <p>
  * The constraint object is defined with respect to some underlying DMR.
  * It defines a subset view over that DMR in that it specifies
  * a set of declarations (variables, enums, dimensions, groups)
@@ -25,7 +29,7 @@ import java.util.*;
  * For each such variable, the constraint specifies
  * any overriding of the dimensions of the variables.
  * Additionally, each variable (if appropriate) may have a filter expr.
- * <p/>
+ * <p>
  * Thus, there are three 'sub' constraints within a full constraint.
  * 1. Referencing - is a variable from the underlying dataset
  * included in the constraint, directly (by
@@ -37,7 +41,7 @@ import java.util.*;
  * 3. Selection (aka filters) - A predicate over the scalar fields
  * of a row of a Sequence; if it evaluates to true, then that
  * row matches the constraint.
- * <p/>
+ * <p>
  * There are multiple ways to effect a constraint.
  * 1. Generate and test mode: the constraint is asked if a given
  * element matches the constraint. E.g.
@@ -57,7 +61,7 @@ import java.util.*;
  * c. For a selection filter, the iterator would return
  * either the row indices or the actual rows of a sequence
  * that matched the filter predicate
- * <p/>
+ * <p>
  * 3. Read mode: Sometimes, it may be more efficient to let the
  * DataVariable object handle the constraint more directly. E.g.
  * a. For example, if the data variable was backed by a netcdf
@@ -68,7 +72,7 @@ import java.util.*;
  * to evaluate the filter using the btree. Note that this
  * requires analysis of the filter expression to see if the
  * btree is usable.
- * <p/>
+ * <p>
  * Ideally, we would allow all three modes, but for now, only
  * generate-and-test is implemented, and only a subset of that.
  * Generate-and-test is provided for referencing and selection. It is not
@@ -80,6 +84,9 @@ public class CEConstraint implements Constraint
 {
     //////////////////////////////////////////////////
     // Constants
+
+    static protected final boolean PARSEDEBUG = false;
+    static protected final boolean DEBUG = false;
 
     // Mnemonics
 
@@ -119,12 +126,13 @@ public class CEConstraint implements Constraint
         }
 
         void setSlices(List<Slice> slices)
-            throws DapException
+                throws DapException
         {
             this.slices = slices;
             // Make sure they are finished
-            for(Slice sl : slices)
+            for(Slice sl : slices) {
                 sl.finish();
+            }
         }
 
         void setFilter(CEAST filter)
@@ -188,18 +196,18 @@ public class CEConstraint implements Constraint
 
     }
 
-    static protected class FilterIterator implements Iterator<DataRecord>
+    static protected class FilterIterator implements Iterator<DataCursor>
     {
         protected DapSequence seq;
-        protected DataSequence data;
+        protected DataCursor data;
         protected long nrecords;
         protected CEAST filter;
 
         protected int recno;
-        protected DataRecord current;
+        protected DataCursor current;
         CEConstraint ce;
 
-        public FilterIterator(CEConstraint ce, DapSequence seq, DataSequence data, CEAST filter)
+        public FilterIterator(CEConstraint ce, DapSequence seq, DataCursor data, CEAST filter)
         {
             this.ce = ce;
             this.filter = filter;
@@ -233,7 +241,7 @@ public class CEConstraint implements Constraint
             return false;
         }
 
-        public DataRecord next()
+        public DataCursor next()
         {
             if(this.recno >= nrecords || this.current == null)
                 throw new NoSuchElementException();
@@ -274,8 +282,8 @@ public class CEConstraint implements Constraint
     }
 
     static protected Object
-    fieldValue(DapSequence seq, DataRecord record, String field)
-        throws DapException
+    fieldValue(DapSequence seq, DataCursor record, String field)
+            throws DapException
     {
         DapVariable dapv = seq.findByName(field);
         if(dapv == null)
@@ -284,22 +292,23 @@ public class CEConstraint implements Constraint
             throw new DapException("Non-atomic variable in filter: " + field);
         if(dapv.getRank() > 0)
             throw new DapException("Non-scalar variable in filter: " + field);
-        DataAtomic da = (DataAtomic) (record.getfield(field));
+        int fieldindex = seq.indexByName(field);
+        DataCursor da = (DataCursor) (record.getField(fieldindex));
         if(da == null)
-            throw new DapException("No such field: "+field);
-        return da.read(Index.SCALAR);
+            throw new DapException("No such field: " + field);
+        return da.readAtomic(Index.SCALAR);
     }
 
     static protected int
     compare(Object lvalue, Object rvalue)
-        throws DapException
+            throws DapException
     {
         if(lvalue instanceof String && rvalue instanceof String)
             return ((String) lvalue).compareTo((String) rvalue);
         if(lvalue instanceof Boolean && rvalue instanceof Boolean)
             return compare((Boolean) lvalue ? 1 : 0, (Boolean) rvalue ? 1 : 0);
         if(lvalue instanceof Double || lvalue instanceof Float
-            || rvalue instanceof Double || rvalue instanceof Float) {
+                || rvalue instanceof Double || rvalue instanceof Float) {
             double d1 = ((Number) lvalue).doubleValue();
             double d2 = ((Number) lvalue).doubleValue();
             return Double.compare(d1, d2);
@@ -323,8 +332,8 @@ public class CEConstraint implements Constraint
      * @returns the value of the expression (usually a Boolean)
      */
     protected Object
-    eval(DapSequence seq, DataRecord record, CEAST expr)
-        throws DapException
+    eval(DapSequence seq, DataCursor record, CEAST expr)
+            throws DapException
     {
         switch (expr.sort) {
 
@@ -442,7 +451,7 @@ public class CEConstraint implements Constraint
     }
 
     public void addVariable(DapVariable var, List<Slice> slices)
-        throws DapException
+            throws DapException
     {
         if(findVariableIndex(var) < 0) {
             Segment segment = new Segment(var);
@@ -495,7 +504,7 @@ public class CEConstraint implements Constraint
     {
         StringBuilder buf = new StringBuilder();
         boolean first = true;
-        for(int i = 0;i < segments.size();i++) {
+        for(int i = 0; i < segments.size(); i++) {
             Segment seg = segments.get(i);
             if(!seg.var.isTopLevel())
                 continue;
@@ -517,7 +526,7 @@ public class CEConstraint implements Constraint
      */
     public CEConstraint
     finish()
-        throws DapException
+            throws DapException
     {
         if(!finished) {
             finished = true;
@@ -539,7 +548,7 @@ public class CEConstraint implements Constraint
     {
         StringBuilder buf = new StringBuilder();
         boolean first = true;
-        for(int i = 0;i < segments.size();i++) {
+        for(int i = 0; i < segments.size(); i++) {
             Segment seg = segments.get(i);
             if(!seg.var.isTopLevel())
                 continue;
@@ -571,7 +580,7 @@ public class CEConstraint implements Constraint
             dimset = new ArrayList<DapDimension>();
         else
             assert dimset.size() == slices.size();
-        for(int i = 0;i < dimset.size();i++) {
+        for(int i = 0; i < dimset.size(); i++) {
             Slice slice = slices.get(i);
             DapDimension dim = dimset.get(i);
             try {
@@ -584,7 +593,7 @@ public class CEConstraint implements Constraint
             return;
         // If structure and all fields are in the view, then done
         if(seg.var.getSort() == DapSort.STRUCTURE
-            || seg.var.getSort() == DapSort.SEQUENCE) {
+                || seg.var.getSort() == DapSort.SEQUENCE) {
             if(!isWholeCompound((DapStructure) seg.var)) {
                 // Need to insert {...} and recurse
                 buf.append(LBRACE);
@@ -599,7 +608,7 @@ public class CEConstraint implements Constraint
                 buf.append(RBRACE);
             }
             if(seg.var.getSort() == DapSort.SEQUENCE
-                && seg.filter != null) {
+                    && seg.filter != null) {
                 buf.append("|");
                 buf.append(seg.filter.toString());
             }
@@ -700,7 +709,7 @@ public class CEConstraint implements Constraint
 
     /**
      * Selection X match
-     * <p/>
+     * <p>
      * Evaluate a filter with respect to a Sequence record.
      * Assumes the filter has been canonicalized.
      *
@@ -709,8 +718,8 @@ public class CEConstraint implements Constraint
      * @throws DapException
      * @returns true if the filter matches the record
      */
-    public boolean match(DapSequence seq, DataRecord rec)
-        throws DapException
+    public boolean match(DapSequence seq, DataCursor rec)
+            throws DapException
     {
         Segment sseq = findSegment(seq);
         if(sseq == null)
@@ -732,38 +741,12 @@ public class CEConstraint implements Constraint
      * @returns true if a match
      */
     protected boolean
-    matches(DapSequence seq, DataRecord rec, CEAST filter)
-        throws DapException
+    matches(DapSequence seq, DataCursor rec, CEAST filter)
+            throws DapException
     {
         Object value = eval(seq, rec, filter);
         return ((Boolean) value);
     }
-
-    /**
-     * Selection X Iterator
-     * Filter evaluation using an iterator.
-     * The iterator evaluates records from a sequence one-by-one
-     * and returns the next one that matches the filter.
-     * In order to evaluate a record, we need as input:
-     * 1.  the DapSequence from which the free
-     * variables in the filter are taken.
-     * 2.  the DataRecord to evaluate
-     *
-     * @param dapseq
-     * @param dataseq
-     */
-    /*
-    public FilterIterator
-    filterIterator(DapSequence dapseq, DataSequence dataseq)
-        throws DapException
-    {
-        // Locate the filter for this sequence
-        Segment seg = findSegment(dapseq);
-        if(seg == null)
-            return null;
-        return new FilterIterator(this, dapseq, dataseq, seg.filter);
-    }
-    */
 
     //////////////////////////////////////////////////
     // Utilities
@@ -771,7 +754,7 @@ public class CEConstraint implements Constraint
     /* Search the set of variables */
     protected int findVariableIndex(DapVariable var)
     {
-        for(int i = 0;i < variables.size();i++) {
+        for(int i = 0; i < variables.size(); i++) {
             if(variables.get(i) == var)
                 return i;
         }
@@ -780,7 +763,7 @@ public class CEConstraint implements Constraint
 
     protected Segment findSegment(DapVariable var)
     {
-        for(int i = 0;i < segments.size();i++) {
+        for(int i = 0; i < segments.size(); i++) {
             if(segments.get(i).var == var)
                 return segments.get(i);
         }
@@ -799,7 +782,7 @@ public class CEConstraint implements Constraint
         // Create a queue of unprocessed leaf compounds
         Queue<DapVariable> queue = new ArrayDeque<DapVariable>();
 
-        for(int i = 0;i < variables.size();i++) {
+        for(int i = 0; i < variables.size(); i++) {
             DapVariable var = variables.get(i);
             if(!var.isTopLevel())
                 continue;
@@ -841,7 +824,7 @@ public class CEConstraint implements Constraint
     {
         // Create a set of contracted compounds
         Set<DapStructure> contracted = new HashSet<>();
-        for(int i = 0;i < variables.size();i++) {
+        for(int i = 0; i < variables.size(); i++) {
             DapVariable var = variables.get(i);
             if(var.isTopLevel()) {
                 if(var.getSort() == DapSort.STRUCTURE || var.getSort() == DapSort.SEQUENCE) {
@@ -871,7 +854,7 @@ public class CEConstraint implements Constraint
             if(findVariableIndex(field) < 0)
                 break; // this compound cannot be contracted
             if((field.getSort() == DapSort.STRUCTURE || field.getSort() == DapSort.SEQUENCE)
-                && !contracted.contains((DapStructure) field)) {
+                    && !contracted.contains((DapStructure) field)) {
                 if(!contractR((DapStructure) field, contracted))
                     break; // this compound cannot be contracted
             }
@@ -948,7 +931,7 @@ public class CEConstraint implements Constraint
      * using slicing and redef info.
      * In effect, this is where projection constraints
      * are applied
-     * <p/>
+     * <p>
      * Assume that the constraint compiler has given us the following info:
      * <ol>
      * <li> A list of the variables to include.
@@ -956,14 +939,14 @@ public class CEConstraint implements Constraint
      * <li> For each variable in #1, a list of slices
      * taken from the constraint expression
      * </ol>
-     * <p/>
+     * <p>
      * Two products will be produced.
      * <ol>
      * <li> The variables map will be modified so that the
      * slices properly reflect any original or redef dimensions.
      * <li> A set, dimrefs, of all referenced original dimensions.
      * </ol>
-     * <p/>
+     * <p>
      * The processing is as follows
      * <ol>
      * <li> For each redef create a new redef dimension
@@ -980,7 +963,7 @@ public class CEConstraint implements Constraint
      */
     protected void
     computedimensions()
-        throws DapException
+            throws DapException
     {
         // Build the redefmap
         for(DapDimension key : redefslice.keySet()) {
@@ -991,7 +974,7 @@ public class CEConstraint implements Constraint
         }
 
         // Process each variable
-        for(int i = 0;i < segments.size();i++) {
+        for(int i = 0; i < segments.size(); i++) {
             Segment seg = segments.get(i);
             if(seg.var.getRank() == 0)
                 continue;
@@ -1007,7 +990,7 @@ public class CEConstraint implements Constraint
                 slices.add(new Slice().setConstrained(false));
             }
             assert (slices != null && slices.size() == orig.size());
-            for(int j = 0;j < slices.size();j++) {
+            for(int j = 0; j < slices.size(); j++) {
                 Slice slice = slices.get(j);
                 DapDimension dim0 = orig.get(j);
                 DapDimension newdim = redef.get(dim0);
@@ -1041,7 +1024,7 @@ public class CEConstraint implements Constraint
      */
     protected void computeenums()
     {
-        for(int i = 0;i < variables.size();i++) {
+        for(int i = 0; i < variables.size(); i++) {
             DapVariable var = variables.get(i);
             if(var.getSort() != DapSort.ATOMICVARIABLE)
                 continue;
@@ -1060,7 +1043,7 @@ public class CEConstraint implements Constraint
     protected void computegroups()
     {
         // 1. variables
-        for(int i = 0;i < variables.size();i++) {
+        for(int i = 0; i < variables.size(); i++) {
             DapVariable var = variables.get(i);
             List<DapGroup> path = var.getGroupPath();
             for(DapGroup group : path) {
@@ -1091,23 +1074,33 @@ public class CEConstraint implements Constraint
     //////////////////////////////////////////////////
     // Static Utility for compiling a constraint string
 
-    static CEConstraint
+    static public CEConstraint
     compile(String sce, DapDataset dmr)
             throws DapException
     {
-        if(sce == null || dmr == null)  return null;
-        CEParserImpl parser = new CEParserImpl(dmr);
+        // Process any constraint
+        if(sce == null || sce.length() == 0)
+            return CEConstraint.getUniversal(dmr);
+        CEParserImpl ceparser = new CEParserImpl(dmr);
+        if(PARSEDEBUG)
+            ceparser.setDebugLevel(1);
+        if(DEBUG) {
+            System.err.println("Dap4Servlet: parsing constraint: |" + sce + "|");
+        }
         boolean ok;
         try {
-	    ok = parser.parse(sce);
+            ok = ceparser.parse(sce);
         } catch (ParseException pe) {
             ok = false;
         }
         if(!ok)
             throw new DapException("Constraint parse failed: " + sce);
+        CEAST root = ceparser.getCEAST();
         CECompiler compiler = new CECompiler();
-	CEConstraint ce = compiler.compile(dmr, parser.getCEAST());
-	return ce;
+        CEConstraint ce = compiler.compile(dmr, root);
+        ce.expand();
+        ce.finish();
+        return ce;
     }
 
 }

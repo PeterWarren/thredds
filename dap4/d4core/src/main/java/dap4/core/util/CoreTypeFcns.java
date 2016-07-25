@@ -3,77 +3,58 @@
 
 package dap4.core.util;
 
+import dap4.core.dmr.DapEnumConst;
 import dap4.core.dmr.DapEnumeration;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.TypeSort;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 abstract public class CoreTypeFcns
 {
 
     /**
-     * Given a DapAttribute basetype
-     * convert it to avoid losing information.
-     * This primarily alters unsigned types
+     * Force an attribute value (typically string)
+     * to match a given basetype
      *
-     * @param basetype the basetype of the DapAttribute
-     * @return the upcast DapType
-     */
-    static public DapType
-    upcastType(DapType basetype)
-    {
-        switch (basetype.getTypeSort()) {
-        case UInt8:
-            return DapType.INT16;
-        case UInt16:
-            return DapType.INT32;
-        case UInt32:
-            return DapType.INT64;
-        default:
-            break;
-        }
-        return basetype;
-    }
-
-    /**
-     * Given an value from a DapAttribute,
-     * convert it to avoid losing information.
-     * This primarily alters unsigned types
-     *
-     * @param o       the object to upcast
-     * @param srctype the basetype of the DapAttribute
-     * @return the upcast value
+     * @param type  expected type
+     * @param value actual value
+     * @return the value as made to conform to the expected type
      */
     static public Object
-    upcast(DapType srctype, Object o)
+    attributeConvert(DapType type, Object value)
     {
-        Object result = null;
-        TypeSort otype = TypeSort.classToType(o);
-        TypeSort srcatomtype = srctype.getTypeSort();
-        if(otype == null)
-            throw new ConversionException("Unexpected value type: " + o.getClass());
-        switch (srcatomtype) {
-        case UInt8:
-            long lvalue = ((Byte) o).longValue();
-            lvalue &= 0xFFL;
-            result = new Short((short) lvalue);
-            break;
-        case UInt16:
-            lvalue = ((Short) o).longValue();
-            lvalue &= 0xFFFFL;
-            result = new Integer((int) lvalue);
-            break;
-        case UInt32:
-            lvalue = ((Integer) o).longValue();
-            lvalue &= 0xFFFFFFFFL;
-            result = new Long(lvalue);
-            break;
-        default:
-            result = o;
-            break;
+        if(value == null) return value;
+        if(type.getTypeSort() == TypeSort.Enum && (value instanceof String)) {
+            // See if the constant is an int vs enum const name
+            try {
+                long lval = Long.parseLong(value.toString());
+                return lval;
+            } catch (NumberFormatException nfe) {
+                // Assume it is an econst name; try to locate it
+                DapEnumConst dec = ((DapEnumeration)type).lookup(value.toString());
+                if(dec == null)
+                    return value;
+                return dec.getValue();
+            }
+        } else if(value instanceof String) {
+            try {
+                BigInteger bi = new BigInteger((String) value);
+                return bi.longValue();
+            } catch (NumberFormatException nfe) {
+                return value;
+            }
+        } else if(value instanceof Long) {
+                    return (Long) value;
+        } else if(value instanceof Float) {
+            return (Float) value;
+        } else if(value instanceof Double) {
+            return (Double) value;
+        } else if(value instanceof Character) {
+            return ((Character) value);
         }
-        return result;
+        return value;
     }
 
     /* Get the size of an equivalent java object; zero if not defined */
@@ -322,7 +303,7 @@ abstract public class CoreTypeFcns
         case Opaque:
             return ((ByteBuffer[]) v)[n];
         case Enum:
-            return get(((DapEnumeration)type).getBaseType(), v, n);
+            return get(((DapEnumeration) type).getBaseType(), v, n);
         case Struct:
         case Seq:
         default:
@@ -336,36 +317,36 @@ abstract public class CoreTypeFcns
     {
         switch (sort) {
         case Char:
-            ((char[]) v)[n] = ((char[])value)[0];
+            ((char[]) v)[n] = ((char[]) value)[0];
             break;
         case Int8:
         case UInt8:
-            ((byte[]) v)[n] = ((byte[])value)[0];
+            ((byte[]) v)[n] = ((byte[]) value)[0];
             break;
         case Int16:
         case UInt16:
-            ((short[]) v)[n] = ((short[])value)[0];
+            ((short[]) v)[n] = ((short[]) value)[0];
             break;
         case Int32:
         case UInt32:
-            ((int[]) v)[n] = ((int[])value)[0];
+            ((int[]) v)[n] = ((int[]) value)[0];
             break;
         case Int64:
         case UInt64:
-            ((long[]) v)[n] = ((long[])value)[0];
+            ((long[]) v)[n] = ((long[]) value)[0];
             break;
         case Float32:
-            ((float[]) v)[n] = ((float[])value)[0];
+            ((float[]) v)[n] = ((float[]) value)[0];
             break;
         case Float64:
-            ((double[]) v)[n] = ((double[])value)[0];
+            ((double[]) v)[n] = ((double[]) value)[0];
             break;
         case String:
         case URL:
-            ((String[]) v)[n] = ((String[])value)[0];
+            ((String[]) v)[n] = ((String[]) value)[0];
             break;
         case Opaque:
-            ((ByteBuffer[]) v)[n] = ((ByteBuffer[])value)[0];
+            ((ByteBuffer[]) v)[n] = ((ByteBuffer[]) value)[0];
             break;
         case Enum:
         case Struct:
