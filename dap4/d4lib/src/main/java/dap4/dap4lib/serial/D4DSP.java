@@ -58,6 +58,12 @@ abstract public class D4DSP extends AbstractDSP
     //////////////////////////////////////////////////
     // (Other) Accessors
 
+    /*packge*/ ByteBuffer
+    getBuffer()
+    {
+          return databuffer;
+    }
+
     public D4Cursor
     getVariable(DapVariable var)
     {

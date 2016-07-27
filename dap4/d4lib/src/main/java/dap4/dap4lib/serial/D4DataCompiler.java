@@ -15,8 +15,11 @@ import dap4.dap4lib.ChecksumMode;
 import dap4.dap4lib.LibTypeFcns;
 import dap4.dap4lib.RequestMode;
 
+import java.io.SequenceInputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
+
+import static dap4.core.data.DataCursor.Format;
 
 public class D4DataCompiler
 {
@@ -84,7 +87,7 @@ public class D4DataCompiler
         if(DEBUG) {
             DapDump.dumpbytes(this.databuffer, false);
         }
-        D4Cursor root = new D4Cursor(this.dsp, this.dsp.getDMR());
+        D4Cursor root = new D4Cursor(Format.DATASET,this.dsp, this.dsp.getDMR());
         // iterate over the variables represented in the databuffer
         for(DapVariable vv : this.dataset.getTopVariables()) {
             D4Cursor data = compileVar(vv, null);
@@ -134,7 +137,7 @@ public class D4DataCompiler
             throws DapException
     {
         DapType daptype = atomvar.getBaseType();
-        D4Cursor data = new D4Cursor(this.dsp, atomvar)
+        D4Cursor data = new D4Cursor(Format.ATOMIC,this.dsp, atomvar)
                 .setContainer(container).setPos(getPos(this.databuffer));
         long total = 0;
         long dimproduct = atomvar.getCount();
@@ -166,7 +169,7 @@ public class D4DataCompiler
             throws DapException
     {
         DapStructure struct = (DapStructure) dapvar;
-        D4Cursor structarray = new D4Cursor(this.dsp, struct)
+        D4Cursor structarray = new D4Cursor(Format.STRUCTURE, this.dsp, struct)
                 .setContainer(container).setPos(getPos(this.databuffer));
         long dimproduct = struct.getCount();
         for(int i = 0; i < dimproduct; i++) {
@@ -189,7 +192,7 @@ public class D4DataCompiler
             throws DapException
     {
         int pos = getPos(this.databuffer);
-        D4Cursor d4ds = new D4Cursor(dsp, dapstruct)
+        D4Cursor d4ds = new D4Cursor(Format.STRUCTURE, this.dsp, dapstruct)
         .setContainer(container).setPos(pos);
         List<DapVariable> dfields = dapstruct.getFields();
         for(int m = 0; m < dfields.size(); m++) {
@@ -212,7 +215,7 @@ public class D4DataCompiler
             throws DapException
     {
         DapSequence dapseq = (DapSequence) dapvar;
-        D4Cursor seqarray = new D4Cursor(this.dsp, dapseq)
+        D4Cursor seqarray = new D4Cursor(Format.SEQUENCE,this.dsp, dapseq)
                 .setContainer(container).setPos(getPos(this.databuffer));
         long dimproduct = dapseq.getCount();
         for(int i = 0; i < dimproduct; i++) {
@@ -236,7 +239,7 @@ public class D4DataCompiler
             throws DapException
     {
         int pos = getPos(this.databuffer);
-        D4Cursor seq = new D4Cursor(dsp, dapseq)
+        D4Cursor seq = new D4Cursor(Format.SEQUENCE,this.dsp, dapseq)
                 .setContainer(container).setPos(pos);
         List<DapVariable> dfields = dapseq.getFields();
         // Get the count of the number of records

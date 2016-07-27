@@ -126,7 +126,8 @@ public class Nc4DMRCompiler
         errcheck(ret = nc4.nc_inq_grpname(ncid, namep));
         GroupNotes gi = new GroupNotes(ncid, ncid);
         String[] pieces = DapUtil.canonicalpath(this.path).split("[/]");
-        DapDataset g = factory.newDataset(pieces[pieces.length - 1], gi);
+        DapDataset g = factory.newDataset(pieces[pieces.length - 1]);
+        g.annotate(gi);
         gi.set(g);
         this.dmr = g;
         fillgroup(ncid);
@@ -169,7 +170,8 @@ public class Nc4DMRCompiler
         byte[] namep = new byte[NC_MAX_NAME + 1];
         errcheck(ret = nc4.nc_inq_grpname(gid, namep));
         GroupNotes gi = new GroupNotes(parent, gid);
-        DapGroup g = factory.newGroup(makeString(namep), gi);
+        DapGroup g = factory.newGroup(makeString(namep));
+        g.annotate(gi);
         gi.set(g);
         GroupNotes gp = GroupNotes.find(parent);
         gp.getGroup().addDecl(g);
@@ -188,12 +190,13 @@ public class Nc4DMRCompiler
         int len = lenp.intValue();
         boolean isunlimited = contains(udims, did);
         DimNotes di = new DimNotes(gid, did);
-        DapDimension dim = factory.newDimension(name, lenp.longValue(), di);
+        DapDimension dim = factory.newDimension(name, lenp.longValue());
+        dim.annotate(di);
         di.set(dim);
         GroupNotes gp = GroupNotes.find(gid);
         gp.getGroup().addDecl(dim);
         if(isunlimited) {
-            DapAttribute ultag = factory.newAttribute(UCARTAGUNLIM, DapType.INT8, null);
+            DapAttribute ultag = factory.newAttribute(UCARTAGUNLIM, DapType.INT8);
             ultag.setValues(new Object[]{(Byte) (byte) 1});
             dim.addAttribute(ultag);
         }
@@ -257,7 +260,8 @@ public class Nc4DMRCompiler
         if(!isintegertype(base))
             throw new DapException("Enum base type must be integer type");
         errcheck(ret = nc4.nc_inq_enum(ti.gid, ti.id, namep, basetypep, sizep, nmembersp));
-        DapEnumeration de = factory.newEnumeration(name, DapType.lookup(base.getType().getTypeSort()), ti);
+        DapEnumeration de = factory.newEnumeration(name, DapType.lookup(base.getType().getTypeSort()));
+        de.annotate(ti);
         ti.set(de);
         ti.setEnumBaseType(basetype);
         ti.group().addDecl(de);
@@ -268,7 +272,7 @@ public class Nc4DMRCompiler
             errcheck(ret = nc4.nc_inq_enum_member(ti.gid, ti.id, i, namep, valuep));
             String ecname = makeString(namep);
             long ecval = (long) valuep.getValue();
-            DapEnumConst dec = factory.newEnumConst(ecname, ecval, null);
+            DapEnumConst dec = factory.newEnumConst(ecname, ecval);
             de.addEnumConst(dec);
         }
     }
@@ -277,11 +281,11 @@ public class Nc4DMRCompiler
     buildcompoundtype(TypeNotes ti, String name, long nfields)
             throws DapException
     {
-        DapStructure ds = factory.newStructure(name, ti);
+        DapStructure ds = factory.newStructure(name);
+        ds.annotate(ti);
         ds.setTemplate(true);
         ti.set(ds);
         ti.group().addDecl(ds);
-        ti.markCompound();
         for(int i = 0; i < nfields; i++) {
             buildfield(ti, ds, i);
         }
@@ -289,8 +293,9 @@ public class Nc4DMRCompiler
         int ret;
         SizeTByReference sizep = new SizeTByReference();
         SizeTByReference nfieldsp = new SizeTByReference();
+        byte[] namep = new byte[NC_MAX_NAME + 1];
         errcheck(ret = nc4.nc_inq_compound(ti.gid, ti.id, namep, sizep, nfieldsp));
-        ti.setCompoundSize(sizep.getValue());
+        ti.setCompoundSize(sizep.intValue());
     }
 
     protected void
@@ -323,19 +328,22 @@ public class Nc4DMRCompiler
                 .setBaseType(baset);
         switch (baset.getType().getTypeSort()) {
         case Struct:
-            field = factory.newStructure(name, vn);
+            field = factory.newStructure(name);
+            field.annotate(notes);
             break;
         case Seq:
-            field = factory.newSequence(name, vn);
+            field = factory.newSequence(name);
+            field.annotate(notes);
             break;
         default:
-            field = factory.newAtomicVariable(name, baset.getType(), vn);
+            field = factory.newAtomicVariable(name, baset.getType());
+            field.annotate(notes);
             break;
         }
         // set dimsizes
         if(dimsizes.length > 0) {
             for(int i = 0; i < dimsizes.length; i++) {
-                DapDimension dim = factory.newDimension(null, dimsizes[i], null);
+                DapDimension dim = factory.newDimension(null, dimsizes[i]);
                 field.addDimension(dim);
             }
         }
@@ -364,10 +372,12 @@ public class Nc4DMRCompiler
         DapVariable var;
         switch (xtype.node.getSort()) {
         case ATOMICTYPE:
-            var = factory.newAtomicVariable(name, xtype.getType(), vi);
+            var = factory.newAtomicVariable(name, xtype.getType());
+            var.annotate(vi);
             break;
         case ENUMERATION:
-            var = factory.newAtomicVariable(name, xtype.getType(), vi);
+            var = factory.newAtomicVariable(name, xtype.getType());
+            var.annotate(vi);
             break;
         case STRUCTURE:
             DapStructure st = (DapStructure) xtype.getDecl();
@@ -391,7 +401,7 @@ public class Nc4DMRCompiler
         }
         // Now, if this is of type opaque, tag it with the size
         if(xtype.isOpaque()) {
-            DapAttribute sizetag = factory.newAttribute(UCARTAGOPAQUE, DapType.INT64, null);
+            DapAttribute sizetag = factory.newAttribute(UCARTAGOPAQUE, DapType.INT64);
             sizetag.setValues(new Object[]{(long) xtype.opaquelen});
             var.addAttribute(sizetag);
         }
@@ -409,7 +419,8 @@ public class Nc4DMRCompiler
         int ref;
         // We map vlen to a sequence with a single field
         // of the basetype. Field name is same as the vlen type
-        DapSequence ds = factory.newSequence(vname, ti);
+        DapSequence ds = factory.newSequence(vname);
+        ds.annotate(ti);
         ds.setTemplate(true);
         ti.set(ds);
         ti.group().addDecl(ds);
@@ -419,7 +430,7 @@ public class Nc4DMRCompiler
             throw new DapException("Undefined vlen basetype: " + basetype);
         makeField(ti, ds, 0, vname, baset, 0, new int[0]);
         // Annotate to indicate that this came from a vlen
-        DapAttribute tag = factory.newAttribute(UCARTAGVLEN, DapType.INT8, null);
+        DapAttribute tag = factory.newAttribute(UCARTAGVLEN, DapType.INT8);
         tag.setValues(new Object[]{(Byte) (byte) 1});
         ds.addAttribute(tag);
     }
@@ -440,7 +451,7 @@ public class Nc4DMRCompiler
         errcheck(ret = nc4.nc_inq_attlen(gid, vid, name, countp));
         // Get the values of the attribute
         Object[] values = getAttributeValues(gid, vid, name, base, countp.intValue());
-        DapAttribute da = factory.newAttribute(name, (DapType) base.getType(), null);
+        DapAttribute da = factory.newAttribute(name, (DapType) base.getType());
         da.setValues(values);
         if(isglobal) {
             GroupNotes gi = GroupNotes.find(gid);
@@ -858,7 +869,7 @@ public class Nc4DMRCompiler
         fullname = fullname + type.getShortName();
         DapAttribute orig
                 = factory.newAttribute(NetcdfDSP.UCARTAGORIGTYPE,
-                DapType.STRING, null);
+                DapType.STRING);
         orig.setValues(new String[]{fullname});
         return orig;
     }
@@ -874,7 +885,7 @@ public class Nc4DMRCompiler
             throws DapException
     {
         assert template.getSort() == DapSort.ATOMICVARIABLE;
-        DapAtomicVariable dup = factory.newAtomicVariable(template.getShortName(), template.getBaseType(), null);
+        DapAtomicVariable dup = factory.newAtomicVariable(template.getShortName(), template.getBaseType());
         // Duplicate annotation
         Notes notes = (Notes) template.annotation();
         if(notes != null) {
@@ -905,9 +916,9 @@ public class Nc4DMRCompiler
             vname = template.getShortName();
         DapStructure dup;
         if(template.getSort() == DapSort.STRUCTURE)
-            dup = factory.newStructure(vname, null);
+            dup = factory.newStructure(vname);
         else // template.getSort() == DapSort.SEQUENCE)
-            dup = factory.newSequence(vname, null);
+            dup = factory.newSequence(vname);
         // Duplicate annotation
         Notes notes = (Notes) template.annotation();
         if(notes != null)

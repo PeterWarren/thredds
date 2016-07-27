@@ -272,12 +272,12 @@ abstract public class Nc4Notes
 
     static public class FieldNotes extends Notes
     {
-        protected TypeSort parent = null;
+        protected TypeNotes parent = null;
         protected TypeNotes basetype = null;
         protected int fieldid = NOFIELDID;
         protected long offset = -1;
 
-        public FieldNotes(TypeSort parent, int fid, long offset)
+        public FieldNotes(TypeNotes parent, int fid, long offset)
         {
             super(NOGROUP, NOID);
             this.parent = parent;
@@ -306,7 +306,7 @@ abstract public class Nc4Notes
             return this.offset;
         }
 
-        public TypeSort getParent()
+        public TypeNotes getParent()
         {
             return this.parent;
         }

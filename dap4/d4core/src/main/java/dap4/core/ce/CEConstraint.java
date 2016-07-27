@@ -296,7 +296,7 @@ public class CEConstraint implements Constraint
         DataCursor da = (DataCursor) (record.getField(fieldindex));
         if(da == null)
             throw new DapException("No such field: " + field);
-        return da.readAtomic(Index.SCALAR);
+        return da.read(Index.SCALAR);
     }
 
     static protected int
