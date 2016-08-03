@@ -66,7 +66,7 @@ public class TestCDMClient extends DapTestCommon
     //////////////////////////////////////////////////
     // Type Declarations
 
-    static class ClientTest
+    static class TestCase
     {
         static String root = null;
         static String server = null;
@@ -78,7 +78,7 @@ public class TestCDMClient extends DapTestCommon
         String testinputpath;
         String baselinepath;
 
-        ClientTest(String dataset, boolean checksumming, boolean xfail)
+        TestCase(String dataset, boolean checksumming, boolean xfail)
         {
             this.title = dataset;
             this.dataset = dataset;
@@ -137,8 +137,8 @@ public class TestCDMClient extends DapTestCommon
 
     // Test cases
 
-    List<ClientTest> alltestcases = new ArrayList<ClientTest>();
-    List<ClientTest> chosentests = new ArrayList<ClientTest>();
+    List<TestCase> alltestcases = new ArrayList<TestCase>();
+    List<TestCase> chosentests = new ArrayList<TestCase>();
 
     String resourceroot = null;
     String datasetpath = null;
@@ -172,7 +172,7 @@ public class TestCDMClient extends DapTestCommon
             chosentests = locate("test_opaque.nc");
             prop_visual = true;
         } else {
-            for(ClientTest tc : alltestcases) {
+            for(TestCase tc : alltestcases) {
                 chosentests.add(tc);
             }
         }
@@ -181,8 +181,8 @@ public class TestCDMClient extends DapTestCommon
     boolean
     defineAllTestcases(String root, String server)
     {
-        ClientTest.root = root;
-        ClientTest.server = server;
+        TestCase.root = root;
+        TestCase.server = server;
         File testpath = new File(root + "/" + TESTINPUTDIR);
         File basepath = new File(root + "/" + BASELINEDIR);
         if(!basepath.exists() || !basepath.isDirectory() || !basepath.canRead())
@@ -202,7 +202,7 @@ public class TestCDMClient extends DapTestCommon
             assert (index > 0);
             name = name.substring(0, index);
             if(!isDisabledTest(name)) {
-                ClientTest ct = new ClientTest(name, true, isXfailTest(name));
+                TestCase ct = new TestCase(name, true, isXfailTest(name));
                 this.alltestcases.add(ct);
             }
         }
@@ -218,7 +218,7 @@ public class TestCDMClient extends DapTestCommon
             throws Exception
     {
         boolean pass = true;
-        for(ClientTest testcase : chosentests) {
+        for(TestCase testcase : chosentests) {
             if(!doOneTest(testcase)) pass = false;
         }
         Assert.assertTrue("*** Fail: TestCDMClient", pass);
@@ -227,11 +227,13 @@ public class TestCDMClient extends DapTestCommon
     //////////////////////////////////////////////////
     // Primary test method
     boolean
-    doOneTest(ClientTest testcase)
+    doOneTest(TestCase testcase)
             throws Exception
     {
         boolean pass = true;
         System.out.println("Testcase: " + testcase.testinputpath);
+        System.out.println("Baseline: " + testcase.baselinepath+EXTENSION);
+
         String url = testcase.makeurl();
         NetcdfDataset ncfile = null;
         try {
@@ -255,7 +257,6 @@ public class TestCDMClient extends DapTestCommon
 
 
         String testoutput = data;
-
         String baselinefile = testcase.baselinepath + "." + EXTENSION;
 
         if(prop_baseline)
@@ -308,11 +309,11 @@ public class TestCDMClient extends DapTestCommon
     // Utility methods
 
     //Locate the test cases with given prefix
-    List<ClientTest>
+    List<TestCase>
     locate(String prefix)
     {
-        List<ClientTest> results = new ArrayList<ClientTest>();
-        for(ClientTest ct : this.alltestcases) {
+        List<TestCase> results = new ArrayList<TestCase>();
+        for(TestCase ct : this.alltestcases) {
             if(!ct.dataset.startsWith(prefix))
                 continue;
             results.add(ct);

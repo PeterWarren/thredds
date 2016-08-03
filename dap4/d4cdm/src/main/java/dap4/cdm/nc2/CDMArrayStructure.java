@@ -7,23 +7,27 @@ package dap4.cdm.nc2;
 import dap4.cdm.CDMTypeFcns;
 import dap4.cdm.CDMUtil;
 import dap4.core.data.DSP;
-import dap4.core.data.DataAtomic;
-import dap4.core.data.DataCompoundArray;
-import dap4.core.data.DataDataset;
-import dap4.core.dmr.*;
+import dap4.core.data.DataCursor;
+import dap4.core.dmr.DapDimension;
+import dap4.core.dmr.DapStructure;
+import dap4.core.dmr.DapType;
+import dap4.core.dmr.DapVariable;
 import dap4.core.util.*;
-import dap4.dap4lib.*;
+import dap4.core.util.Index;
+import dap4.dap4lib.LibTypeFcns;
 import ucar.ma2.*;
 import ucar.nc2.Group;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 
+import static dap4.core.data.DataCursor.Scheme;
+
 /**
  * Implementation of ArrayStructure that wraps
  * DAP4 databuffer
  * (Note: Needs serious optimization applied).
- * <p/>
+ * <p>
  * Given
  * Structure S {f1,f2,...fm} [d1][d2]...[dn],
  * internally, this is stored as a 2-D array
@@ -39,14 +43,13 @@ import java.util.List;
     // Instance variables
 
     // CDMArry variables
-    protected DataDataset root = null;
     protected Group cdmroot = null;
     protected DSP dsp = null;
     protected DapVariable template = null;
     protected long bytesize = 0;
     protected DapType basetype = null;
+    protected DataCursor data = null;
 
-    protected DataCompoundArray data = null;
     protected long dimsize = 0;
     protected long nmembers = 0;
 
@@ -69,15 +72,15 @@ import java.util.List;
     /**
      * Constructor
      *
-     * @param dsp    the parent DSP
-     * @param cdmroot   the parent CDMDataset
-     * @param data the structure data
+     * @param cdmroot the parent CDMDataset
+     * @param data    the structure data
      */
-    CDMArrayStructure(DSP dsp, Group cdmroot, DataCompoundArray data)
+    CDMArrayStructure(Group cdmroot, DataCursor data)
     {
         super(computemembers((DapStructure) data.getTemplate()),
                 CDMUtil.computeEffectiveShape(((DapVariable) data.getTemplate()).getDimensions()));
-        this.dsp = dsp;
+        assert data.getScheme() == Scheme.STRUCTURE;
+        this.dsp = data.getDSP();
         this.cdmroot = cdmroot;
         this.template = (DapVariable) data.getTemplate();
         this.basetype = this.template.getBaseType();
@@ -87,7 +90,6 @@ import java.util.List;
         this.nmembers = ((DapStructure) template).getFields().size();
 
         // Fill in the instances and structdata vectors
-        // The leaf instances arrays will be filled in by the CDM compiler
         super.sdata = new StructureDataA[(int) this.dimsize];
         instances = new Array[(int) this.dimsize][(int) this.nmembers];
         for(int i = 0; i < dimsize; i++) {
@@ -96,34 +98,42 @@ import java.util.List;
         }
     }
 
-    /*package access*/ void
+    /*package*/ void
     finish()
     {
-        for(int i = 0; i < this.dimsize; i++) {
-            assert instances[i] != null;
+        try {
+            List<DapDimension> dimset = this.template.getDimensions();
+            Odometer odom = Odometer.factory(DapUtil.dimsetSlices(dimset));
+            while(odom.hasNext()) {
+                // create instances[i][j]; consider doing on the fly
+                Index index = odom.next();
+                long offset = index.index();
+                DataCursor ithelement = (DataCursor)this.data.read(index);
+                Array[] ithmembers = instances[(int)offset];
+                for(int j = 0; j < this.nmembers; j++) {
+                    DataCursor dc = ithelement.getField((int)index.index());
+                    ithmembers[j] = new CDMArrayAtomic(dc);
+                }
+            }
+        } catch (DapException e) {
+            throw new IndexOutOfBoundsException(e.getMessage());
         }
         this.bytesize = computeTotalSize();
     }
 
     //////////////////////////////////////////////////
-    // CDMArry Interface
+    // CDMArray Interface
 
     @Override
     public DSP getDSP()
     {
-        return dsp;
-    }
-
-    @Override
-    public DataDataset getRoot()
-    {
-        return root;
+        return this.dsp;
     }
 
     @Override
     public DapVariable getTemplate()
     {
-        return template;
+        return this.template;
     }
 
     @Override
@@ -211,7 +221,7 @@ import java.util.List;
     @Override
     public StructureData getStructureData(int index)
     {
-        assert(super.sdata != null);
+        assert (super.sdata != null);
         if(index < 0 || index >= this.dimsize)
             throw new IllegalArgumentException(index + " >= " + super.sdata.length);
         assert (super.sdata[index] != null);
@@ -224,6 +234,8 @@ import java.util.List;
      * @param recno The instance # of the array of Structure instances
      * @param m     The member of interest in the Structure instance
      * @return The ucar.ma2.Array instance corresponding to the instance.
+     * <p>
+     * Hidden: friend of StructureDataA
      */
     public ucar.ma2.Array
     getArray(int recno, StructureMembers.Member m)
@@ -292,14 +304,13 @@ import java.util.List;
         return (String) data.getObject(recnum).toString();
     }
 
-    public double[] getJavaArrayDouble(int recnum, StructureMembers.Member m)
+    public double[]
+    getJavaArrayDouble(int recnum, StructureMembers.Member m)
     {
         CDMArrayAtomic array = getAtomicArray(recnum, m);
         if(!array.getBaseType().isNumericType())
             throw new IllegalArgumentException("Cannot convert non-numeric type");
-        DataAtomic data = array.getData();
-        DapType atomtype = data.getType();
-        long nelems = data.getCount();
+        DapType atomtype = array.getBaseType();
         try {
             List<Slice> slices = CDMUtil.shapeToSlices(m.getShape());
             Object vector = data.read(slices);
@@ -312,13 +323,14 @@ import java.util.List;
     public float[]
     getJavaArrayFloat(int index, StructureMembers.Member m)
     {
-        DataAtomic data = getAtomicArray(index, m).getData();
-        DapType atype = data.getType();
-        long count = atype.getSize();
+        CDMArrayAtomic array = getAtomicArray(index, m);
+        if(!array.getBaseType().isNumericType())
+            throw new IllegalArgumentException("Cannot convert non-numeric type");
+        DapType atomtype = array.getBaseType();
         try {
             List<Slice> slices = CDMUtil.shapeToSlices(m.getShape());
             Object vector = data.read(slices);
-            return (float[]) LibTypeFcns.convertVector(DapType.FLOAT32, atype, vector);
+            return (float[]) LibTypeFcns.convertVector(DapType.FLOAT32, atomtype, vector);
         } catch (DapException de) {
             throw new UnsupportedOperationException(de);
         }
@@ -327,13 +339,14 @@ import java.util.List;
     public byte[]
     getJavaArrayByte(int index, StructureMembers.Member m)
     {
-        DataAtomic data = getAtomicArray(index, m).getData();
-        DapType atype = data.getType();
-        long count = atype.getSize();
+        CDMArrayAtomic array = getAtomicArray(index, m);
+        if(!array.getBaseType().isNumericType())
+            throw new IllegalArgumentException("Cannot convert non-numeric type");
+        DapType atomtype = array.getBaseType();
         try {
             List<Slice> slices = CDMUtil.shapeToSlices(m.getShape());
             Object vector = data.read(slices);
-            return (byte[]) LibTypeFcns.convertVector(DapType.INT8, atype, vector);
+            return (byte[]) LibTypeFcns.convertVector(DapType.INT8, atomtype, vector);
         } catch (DapException de) {
             throw new UnsupportedOperationException(de);
         }
@@ -342,13 +355,14 @@ import java.util.List;
     public short[]
     getJavaArrayShort(int index, StructureMembers.Member m)
     {
-        DataAtomic data = getAtomicArray(index, m).getData();
-        DapType atype = data.getType();
-        long count = atype.getSize();
+        CDMArrayAtomic array = getAtomicArray(index, m);
+        if(!array.getBaseType().isNumericType())
+            throw new IllegalArgumentException("Cannot convert non-numeric type");
+        DapType atomtype = array.getBaseType();
         try {
             List<Slice> slices = CDMUtil.shapeToSlices(m.getShape());
             Object vector = data.read(slices);
-            return (short[]) LibTypeFcns.convertVector(DapType.INT16, atype, vector);
+            return (short[]) LibTypeFcns.convertVector(DapType.INT16, atomtype, vector);
         } catch (DapException de) {
             throw new UnsupportedOperationException(de);
         }
@@ -357,13 +371,14 @@ import java.util.List;
     public int[]
     getJavaArrayInt(int index, StructureMembers.Member m)
     {
-        DataAtomic data = getAtomicArray(index, m).getData();
-        DapType atype = data.getType();
-        long count = atype.getSize();
+        CDMArrayAtomic array = getAtomicArray(index, m);
+        if(!array.getBaseType().isNumericType())
+            throw new IllegalArgumentException("Cannot convert non-numeric type");
+        DapType atomtype = array.getBaseType();
         try {
             List<Slice> slices = CDMUtil.shapeToSlices(m.getShape());
             Object vector = data.read(slices);
-            return (int[]) LibTypeFcns.convertVector(DapType.INT32, atype, vector);
+            return (int[]) LibTypeFcns.convertVector(DapType.INT32, atomtype, vector);
         } catch (DapException de) {
             throw new UnsupportedOperationException(de);
         }
@@ -372,13 +387,14 @@ import java.util.List;
     public long[]
     getJavaArrayLong(int index, StructureMembers.Member m)
     {
-        DataAtomic data = getAtomicArray(index, m).getData();
-        DapType atype = data.getType();
-        long count = atype.getSize();
+        CDMArrayAtomic array = getAtomicArray(index, m);
+        if(!array.getBaseType().isNumericType())
+            throw new IllegalArgumentException("Cannot convert non-numeric type");
+        DapType atomtype = array.getBaseType();
         try {
             List<Slice> slices = CDMUtil.shapeToSlices(m.getShape());
             Object vector = data.read(slices);
-            return (long[]) LibTypeFcns.convertVector(DapType.INT64, atype, vector);
+            return (long[]) LibTypeFcns.convertVector(DapType.INT64, atomtype, vector);
         } catch (DapException de) {
             throw new UnsupportedOperationException(de);
         }
@@ -387,13 +403,14 @@ import java.util.List;
     public char[]
     getJavaArrayChar(int index, StructureMembers.Member m)
     {
-        DataAtomic data = getAtomicArray(index, m).getData();
-        DapType atype = data.getType();
-        long count = atype.getSize();
+        CDMArrayAtomic array = getAtomicArray(index, m);
+        if(!array.getBaseType().isNumericType())
+            throw new IllegalArgumentException("Cannot convert non-numeric type");
+        DapType atomtype = array.getBaseType();
         try {
             List<Slice> slices = CDMUtil.shapeToSlices(m.getShape());
             Object vector = data.read(slices);
-            return (char[]) LibTypeFcns.convertVector(DapType.CHAR, atype, vector);
+            return (char[]) LibTypeFcns.convertVector(DapType.CHAR, atomtype, vector);
         } catch (DapException de) {
             throw new UnsupportedOperationException(de);
         }
@@ -402,13 +419,12 @@ import java.util.List;
     public String[]
     getJavaArrayString(int index, StructureMembers.Member m)
     {
-        DataAtomic data = getAtomicArray(index, m).getData();
-        DapType atype = data.getType();
-        long count = atype.getSize();
+        CDMArrayAtomic array = getAtomicArray(index, m);
+        DapType atomtype = array.getBaseType();
         try {
             List<Slice> slices = CDMUtil.shapeToSlices(m.getShape());
             Object vector = data.read(slices);
-            return (String[]) LibTypeFcns.convertVector(DapType.STRING, atype, vector);
+            return (String[]) LibTypeFcns.convertVector(DapType.STRING, atomtype, vector);
         } catch (DapException de) {
             throw new UnsupportedOperationException(de);
         }
@@ -417,13 +433,12 @@ import java.util.List;
     public ByteBuffer[]
     getJavaArrayOpaque(int index, StructureMembers.Member m)
     {
-        DataAtomic data = getAtomicArray(index, m).getData();
-        DapType atype = data.getType();
-        long count = atype.getSize();
+        CDMArrayAtomic array = getAtomicArray(index, m);
+        DapType atomtype = array.getBaseType();
         try {
             List<Slice> slices = CDMUtil.shapeToSlices(m.getShape());
             Object vector = data.read(slices);
-            return (ByteBuffer[]) LibTypeFcns.convertVector(DapType.OPAQUE, atype, vector);
+            return (ByteBuffer[]) LibTypeFcns.convertVector(DapType.OPAQUE, atomtype, vector);
         } catch (DapException de) {
             throw new UnsupportedOperationException(de);
         }
@@ -431,7 +446,8 @@ import java.util.List;
 
     // Non-atomic cases
 
-    public StructureData getScalarStructure(int index, StructureMembers.Member m)
+    public StructureData
+    getScalarStructure(int index, StructureMembers.Member m)
     {
         if(m.getDataType() != DataType.STRUCTURE)
             throw new ForbiddenConversionException("Atomic field cannot be converted to Structure");
@@ -442,7 +458,8 @@ import java.util.List;
         return as.getStructureData(0);
     }
 
-    public ArrayStructure getArrayStructure(int index, StructureMembers.Member m)
+    public ArrayStructure
+    getArrayStructure(int index, StructureMembers.Member m)
     {
         if(m.getDataType() != DataType.STRUCTURE)
             throw new ForbiddenConversionException("Atomic field cannot be converted to Structure");
@@ -452,7 +469,8 @@ import java.util.List;
         return (CDMArrayStructure) dd;
     }
 
-    public ArraySequence getArraySequence(StructureMembers.Member m)
+    public ArraySequence
+    getArraySequence(StructureMembers.Member m)
     {
         throw new UnsupportedOperationException("CDMArraySequence");
     }

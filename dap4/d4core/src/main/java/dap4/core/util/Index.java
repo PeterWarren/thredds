@@ -13,6 +13,9 @@ public class Index
     public long[] indices; // allow direct access
     public long[] dimsizes; // allow direct access
 
+    //////////////////////////////////////////////////
+    // Constructor(s)
+
     public Index(int rank)
     {
         this.rank = rank;

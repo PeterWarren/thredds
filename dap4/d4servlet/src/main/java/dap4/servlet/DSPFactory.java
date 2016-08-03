@@ -25,7 +25,7 @@ abstract public class DSPFactory
     {
         // Subclasses should Register known DSP classes: order is important
         // in event that two or more dsps can match a given file
-        // (e.q. FileDSP vs NetcdfDSP).
+        // (e.q. FileDSP vs Nc4DSP).
         // Only used in server
     }
 

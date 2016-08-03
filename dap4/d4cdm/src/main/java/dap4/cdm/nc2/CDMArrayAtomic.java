@@ -6,14 +6,13 @@ package dap4.cdm.nc2;
 
 import dap4.cdm.CDMTypeFcns;
 import dap4.cdm.CDMUtil;
-import dap4.core.data.*;
+import dap4.core.data.DSP;
+import dap4.core.data.DataCursor;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.DapVariable;
 import dap4.core.util.Convert;
 import dap4.core.util.DapException;
-import dap4.core.util.DapSort;
 import dap4.core.util.DapUtil;
-import dap4.dap4lib.LibTypeFcns;
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
 import ucar.ma2.Index;
@@ -21,16 +20,17 @@ import ucar.ma2.IndexIterator;
 import ucar.nc2.Group;
 
 import java.io.IOException;
-import java.util.List;
+
+import static dap4.core.data.DataCursor.Scheme;
 
 /**
- * CDMArrayAtomic wraps a DataAtomic object to present
+ * CDMArrayAtomic wraps a DataCursor object to present
  * the ucar.ma2.Array interface.
  * CDMArrayAtomic manages a single CDM atomic variable:
  * either top-level or for a member.
  */
 
-/*package*/ class CDMArrayAtomic extends Array implements CDMArray, DataAtomic
+/*package*/ class CDMArrayAtomic extends Array implements CDMArray
 {
     /////////////////////////////////////////////////////
     // Constants
@@ -38,17 +38,13 @@ import java.util.List;
     /////////////////////////////////////////////////////
     // Instance variables
 
-    protected DataSort sort = null;
-    protected DapVariable template = null;
-    protected Object source = null;
-
-    // CDMArray variables
-    protected DataDataset root = null;
-    protected Group cdmroot = null;
     protected DSP dsp = null;
+    protected DapVariable template = null;
     protected DapType basetype = null;
 
-    protected DataAtomic data = null;
+    // CDMArray variables
+    protected DataCursor data = null;
+    protected Group cdmroot = null;
     protected int elementsize = 0;    // of one element
     protected long dimsize = 0;        // # of elements in array; scalar uses value 1
     protected long totalsize = 0;      // elementsize*dimsize except when isbytestring
@@ -59,40 +55,20 @@ import java.util.List;
     /**
      * Constructor
      *
-     * @param dsp  the parent DSP
-     * @param data the dap4 databuffer object that provided the actual databuffer
+     * @param data DataCursor object providing the actual data
      */
-    CDMArrayAtomic(DSP dsp, Group cdmroot, DataAtomic data)
+    CDMArrayAtomic(DataCursor data)
             throws DapException
     {
         super(CDMTypeFcns.daptype2cdmtype(((DapVariable) data.getTemplate()).getBaseType()),
                 CDMUtil.computeEffectiveShape(((DapVariable) data.getTemplate()).getDimensions()));
-        this.dsp = dsp;
-        this.root = dsp.getDataset();
+        this.dsp = data.getDSP();
         this.data = data;
         this.template = (DapVariable) this.data.getTemplate();
         this.basetype = this.template.getBaseType();
-        this.sort = computesort();
 
         this.dimsize = DapUtil.dimProduct(this.template.getDimensions());
         this.elementsize = this.basetype.getSize();
-    }
-
-    /////////////////////////////////////////////////
-    // Annotation
-
-    protected Object annotation = null;
-
-    @Override
-    public void annotate(Object o)
-    {
-        this.annotation = o;
-    }
-
-    @Override
-    public Object annotation()
-    {
-        return this.annotation;
     }
 
     /////////////////////////////////////////////////
@@ -112,40 +88,13 @@ import java.util.List;
     }
 
     @Override
-    public DataDataset getRoot()
-    {
-        return this.root;
-    }
-
-    @Override
     public DapVariable getTemplate()
     {
         return this.template;
     }
 
-    @Override
-    public long getSizeBytes()
-    {
-        return this.data.getSizeBytes();
-    }
-
     //////////////////////////////////////////////////
     // Accessors
-
-    public DataAtomic getData()
-    {
-        return data;
-    }
-
-    //////////////////////////////////////////////////
-    // Utilities
-
-    void
-    setup(int index)
-    {
-        if(index < 0 || index > dimsize)
-            throw new IndexOutOfBoundsException("Dap4Array: " + index);
-    }
 
     //////////////////////////////////////////////////
     // Array Interface
@@ -173,203 +122,105 @@ import java.util.List;
         return CDMTypeFcns.cdmElementClass(dt);
     }
 
-    /**
-     * Get the array element at a specific index as a double
-     *
-     * @param index of element to get
-     * @return value at <code>index</code> cast to double if necessary.
-     */
-    public double getDouble(int index)
+    public double getDouble(ucar.ma2.Index cdmidx)
     {
-        setup(index);
-        try {
-            Object value = read(index);
-            return Convert.doubleValue(this.basetype, value);
-        } catch (IOException ioe) {
-            throw new IndexOutOfBoundsException(ioe.getMessage());
-        }
+        return getDouble(CDMArray.cdmIndexToIndex(cdmidx));
     }
 
-    /**
-     * Get the array element at a specific index as a float
-     * converting as needed.
-     *
-     * @param index of element to get
-     * @return value at <code>index</code> cast to float if necessary.
-     */
-    public float getFloat(int index)
+    public float getFloat(ucar.ma2.Index cdmidx)
     {
-        setup(index);
-        try {
-            Object value = read(index);
-            return (float) Convert.doubleValue(this.basetype, value);
-        } catch (IOException ioe) {
-            throw new IndexOutOfBoundsException(ioe.getMessage());
-        }
+        return getFloat(CDMArray.cdmIndexToIndex(cdmidx));
     }
 
-    /**
-     * Get the array element at a specific index as a long
-     *
-     * @param index of element to get
-     * @return value at <code>index</code> cast to long if necessary.
-     */
-    public long getLong(int index)
+    public long getLong(ucar.ma2.Index cdmidx)
     {
-        setup(index);
-        try {
-            Object value = read(index);
-            return Convert.longValue(this.basetype, value);
-        } catch (IOException ioe) {
-            throw new IndexOutOfBoundsException(ioe.getMessage());
-        }
+        return getLong(CDMArray.cdmIndexToIndex(cdmidx));
     }
 
-    /**
-     * Get the array element at a specific index as a integer
-     *
-     * @param index of element to get
-     * @return value at <code>index</code> cast to integer if necessary.
-     */
-    public int getInt(int index)
+    public int getInt(ucar.ma2.Index cdmidx)
     {
-        setup(index);
-        try {
-            Object value = read(index);
-            return (int) Convert.longValue(this.basetype, value);
-        } catch (IOException ioe) {
-            throw new IndexOutOfBoundsException(ioe.getMessage());
-        }
+        return getInt(CDMArray.cdmIndexToIndex(cdmidx));
     }
 
-    /**
-     * Get the array element at a specific index as a short
-     *
-     * @param index of element to get
-     * @return value at <code>index</code> cast to short if necessary.
-     */
-    public short getShort(int index)
+    public short getShort(ucar.ma2.Index cdmidx)
     {
-        setup(index);
-        try {
-            Object value = read(index);
-            return (short) Convert.longValue(this.basetype, value);
-        } catch (IOException ioe) {
-            throw new IndexOutOfBoundsException(ioe.getMessage());
-        }
+        return getShort(CDMArray.cdmIndexToIndex(cdmidx));
     }
 
-    /**
-     * Get the array element at a specific index as a byte
-     *
-     * @param index of element to get
-     * @return value at <code>index</code> cast to byte if necessary.
-     */
-    public byte getByte(int index)
+    public byte getByte(ucar.ma2.Index cdmidx)
     {
-        setup(index);
-        try {
-            Object value = read(index);
-            return (byte) (Convert.longValue(basetype, value) & 0xFFL);
-        } catch (IOException ioe) {
-            throw new IndexOutOfBoundsException(ioe.getMessage());
-        }
+        return getByte(CDMArray.cdmIndexToIndex(cdmidx));
     }
 
-    /**
-     * Get the array element at a specific index as a char
-     *
-     * @param index of element to get
-     * @return value at <code>index</code> cast to char if necessary.
-     */
-    public char getChar(int index)
+    public char getChar(ucar.ma2.Index cdmidx)
     {
-        setup(index);
-        try {
-            Object value = read(index);
-            return (char) (Convert.longValue(basetype, value) & 0xFFL);
-        } catch (IOException ioe) {
-            throw new IndexOutOfBoundsException(ioe.getMessage());
-        }
+        return getChar(CDMArray.cdmIndexToIndex(cdmidx));
     }
 
-    /**
-     * Get the array element at a specific index as a boolean
-     *
-     * @param index of element to get
-     * @return value at <code>index</code> cast to char if necessary.
-     */
-    public boolean getBoolean(int index)
+    public boolean getBoolean(ucar.ma2.Index cdmidx)
     {
-        setup(index);
-        try {
-            Object value = read(index);
-            return (Convert.longValue(basetype, value) != 0);
-        } catch (IOException ioe) {
-            throw new IndexOutOfBoundsException(ioe.getMessage());
-        }
+        return getBoolean(CDMArray.cdmIndexToIndex(cdmidx));
     }
 
-    /**
-     * Get the array element at a specific index as an Object
-     *
-     * @param index of element to get
-     * @return value at <code>index</code> cast to Object if necessary.
-     */
-    public Object getObject(int index)
+    public Object getObject(ucar.ma2.Index cdmidx)
     {
-        setup(index);
-        try {
-            return read(index);
-        } catch (IOException ioe) {
-            throw new IndexOutOfBoundsException(ioe.getMessage());
-        }
+        return getObject(CDMArray.cdmIndexToIndex(cdmidx));
     }
 
-    // Convert index base to int based
-    public double getDouble(Index idx)
+    // Convert int base to Index based
+
+    public double getDouble(int offset)
     {
-        return getDouble((int) (idx.currentElement()));
+        long[] dimsizes = DapUtil.getDimSizes(((DapVariable) getTemplate()).getDimensions());
+        return getDouble(dap4.core.util.Index.offsetToIndex(offset, dimsizes));
     }
 
-    public float getFloat(Index idx)
+    public float getFloat(int offset)
     {
-        return getFloat((int) (idx.currentElement()));
+        long[] dimsizes = DapUtil.getDimSizes(((DapVariable) getTemplate()).getDimensions());
+        return getFloat(dap4.core.util.Index.offsetToIndex(offset, dimsizes));
     }
 
-    public long getLong(Index idx)
+    public long getLong(int offset)
     {
-        return getLong((int) (idx.currentElement()));
+        long[] dimsizes = DapUtil.getDimSizes(((DapVariable) getTemplate()).getDimensions());
+        return getLong(dap4.core.util.Index.offsetToIndex(offset, dimsizes));
     }
 
-    public int getInt(Index idx)
+    public int getInt(int offset)
     {
-        return getInt((int) (idx.currentElement()));
+        long[] dimsizes = DapUtil.getDimSizes(((DapVariable) getTemplate()).getDimensions());
+        return getInt(dap4.core.util.Index.offsetToIndex(offset, dimsizes));
     }
 
-    public short getShort(Index idx)
+    public short getShort(int offset)
     {
-        return getShort((int) (idx.currentElement()));
+        long[] dimsizes = DapUtil.getDimSizes(((DapVariable) getTemplate()).getDimensions());
+        return getShort(dap4.core.util.Index.offsetToIndex(offset, dimsizes));
     }
 
-    public byte getByte(Index idx)
+    public byte getByte(int offset)
     {
-        return getByte((int) (idx.currentElement()));
+        long[] dimsizes = DapUtil.getDimSizes(((DapVariable) getTemplate()).getDimensions());
+        return getByte(dap4.core.util.Index.offsetToIndex(offset, dimsizes));
     }
 
-    public char getChar(Index idx)
+    public char getChar(int offset)
     {
-        return getChar((int) (idx.currentElement()));
+        long[] dimsizes = DapUtil.getDimSizes(((DapVariable) getTemplate()).getDimensions());
+        return getChar(dap4.core.util.Index.offsetToIndex(offset, dimsizes));
     }
 
-    public boolean getBoolean(Index idx)
+    public boolean getBoolean(int offset)
     {
-        return getBoolean((int) (idx.currentElement()));
+        long[] dimsizes = DapUtil.getDimSizes(((DapVariable) getTemplate()).getDimensions());
+        return getBoolean(dap4.core.util.Index.offsetToIndex(offset, dimsizes));
     }
 
-    public Object getObject(Index idx)
+    public Object getObject(int offset)
     {
-        return getObject((int) (idx.currentElement()));
+        long[] dimsizes = DapUtil.getDimSizes(((DapVariable) getTemplate()).getDimensions());
+        return getObject(dap4.core.util.Index.offsetToIndex(offset, dimsizes));
     }
 
     // Unsupported Methods
@@ -485,42 +336,168 @@ import java.util.List;
     }
 
     //////////////////////////////////////////////////
-    // Extended interface to support array extraction
+    // Internal common extractors
 
     /**
-     * Extract a java array of
-     * this.basetype and
-     * convert it to the specified
-     * dsttype, and return the resulting
-     * array as an Object.
-     * <p>
-     * param dsttype Return a java array of these.
-     * param dimsize Return this many consecutive elements
+     * Get the array element at a specific dap4 index as a double
      *
-     * @return a java array corresponding to dsttype
+     * @param idx of element to get
+     * @return value at <code>index</code> cast to double if necessary.
      */
-/*
-    public Object
-    getArray(DapType dsttype, int dimsize)
-        throws DataException
+    protected double getDouble(dap4.core.util.Index idx)
     {
-        TypeSort srctype = this.basetype.getPrimitiveType();
-        TypeSort dstatomtype = dsttype.getPrimitiveType();
-        Object array =
-            Dap4Util.extractVector(this.data, 0, dimsize);
-        if(dstatomtype != srctype) {
-            // dst type and src type differ => Convert
-            array = CDMUtil.convertVector(dsttype, basetype, array);
+        assert data.getScheme() == Scheme.ATOMIC;
+        try {
+            Object value = data.read(idx);
+            return Convert.doubleValue(this.basetype, value);
+        } catch (IOException ioe) {
+            throw new IndexOutOfBoundsException(ioe.getMessage());
         }
-        return array;
     }
-    */
+
+    /**
+     * Get the array element at a specific dap4 index as a float
+     * converting as needed.
+     *
+     * @param idx of element to get
+     * @return value at <code>index</code> cast to float if necessary.
+     */
+    protected float getFloat(dap4.core.util.Index idx)
+    {
+        assert data.getScheme() == Scheme.ATOMIC;
+        try {
+            Object value = data.read(idx);
+            return (float) Convert.doubleValue(this.basetype, value);
+        } catch (IOException ioe) {
+            throw new IndexOutOfBoundsException(ioe.getMessage());
+        }
+    }
+
+    /**
+     * Get the array element at a specific dap4 index as a long
+     *
+     * @param idx of element to get
+     * @return value at <code>index</code> cast to long if necessary.
+     */
+    protected long getLong(dap4.core.util.Index idx)
+    {
+        assert data.getScheme() == Scheme.ATOMIC;
+        try {
+            Object value = data.read(idx);
+            return Convert.longValue(this.basetype, value);
+        } catch (IOException ioe) {
+            throw new IndexOutOfBoundsException(ioe.getMessage());
+        }
+    }
+
+    /**
+     * Get the array element at a specific dap4 index as a integer
+     *
+     * @param idx of element to get
+     * @return value at <code>index</code> cast to integer if necessary.
+     */
+    protected int getInt(dap4.core.util.Index idx)
+    {
+        assert data.getScheme() == Scheme.ATOMIC;
+        try {
+            Object value = data.read(idx);
+            return (int) Convert.longValue(this.basetype, value);
+        } catch (IOException ioe) {
+            throw new IndexOutOfBoundsException(ioe.getMessage());
+        }
+    }
+
+    /**
+     * Get the array element at a specific dap4 index as a short
+     *
+     * @param idx of element to get
+     * @return value at <code>index</code> cast to short if necessary.
+     */
+    protected short getShort(dap4.core.util.Index idx)
+    {
+        assert data.getScheme() == Scheme.ATOMIC;
+        try {
+            Object value = data.read(idx);
+            return (short) Convert.longValue(this.basetype, value);
+        } catch (IOException ioe) {
+            throw new IndexOutOfBoundsException(ioe.getMessage());
+        }
+    }
+
+    /**
+     * Get the array element at a specific dap4 index as a byte
+     *
+     * @param idx of element to get
+     * @return value at <code>index</code> cast to byte if necessary.
+     */
+    protected byte getByte(dap4.core.util.Index idx)
+    {
+        assert data.getScheme() == Scheme.ATOMIC;
+        try {
+            Object value = data.read(idx);
+            return (byte) (Convert.longValue(basetype, value) & 0xFFL);
+        } catch (IOException ioe) {
+            throw new IndexOutOfBoundsException(ioe.getMessage());
+        }
+    }
+
+    /**
+     * Get the array element at a specific dap4 index as a char
+     *
+     * @param idx of element to get
+     * @return value at <code>index</code> cast to char if necessary.
+     */
+    protected char getChar(dap4.core.util.Index idx)
+    {
+        assert data.getScheme() == Scheme.ATOMIC;
+        try {
+            Object value = data.read(idx);
+            return (char) (Convert.longValue(basetype, value) & 0xFFL);
+        } catch (IOException ioe) {
+            throw new IndexOutOfBoundsException(ioe.getMessage());
+        }
+    }
+
+    /**
+     * Get the array element at a specific dap4 index as a boolean
+     *
+     * @param idx of element to get
+     * @return value at <code>index</code> cast to char if necessary.
+     */
+    protected boolean getBoolean(dap4.core.util.Index idx)
+    {
+        assert data.getScheme() == Scheme.ATOMIC;
+        try {
+            Object value = data.read(idx);
+            return (Convert.longValue(basetype, value) != 0);
+        } catch (IOException ioe) {
+            throw new IndexOutOfBoundsException(ioe.getMessage());
+        }
+    }
+
+    /**
+     * Get the array element at a specific dap4 index as an Object
+     *
+     * @param idx of element to get
+     * @return value at <code>index</code> cast to Object if necessary.
+     */
+    protected Object getObject(dap4.core.util.Index idx)
+    {
+        assert data.getScheme() == Scheme.ATOMIC;
+        try {
+            return data.read(idx);
+        } catch (IOException ioe) {
+            throw new IndexOutOfBoundsException(ioe.getMessage());
+        }
+    }
+
 
     //////////////////////////////////////////////////
     // DataAtomic Interface
+
     public DapVariable getVariable()
     {
-        return template;
+        return this.template;
     }
 
     public DapType getType()
@@ -528,65 +505,10 @@ import java.util.List;
         return this.basetype;
     }
 
-    @Override
-    public long getCount()
-    {
-        return dimsize;
-    }
-
-    @Override
-    public DataSort
-    getSort()
-    {
-        return this.sort;
-    }
-
-    @Override
-    public Object
-    getSource()
-    {
-        return this.source;
-    }
-
-    @Override
-    public long getElementSize()
-    {
-        return LibTypeFcns.size(this.basetype);
-    }
-
-    @Override
-    public Object
-    read(List<dap4.core.util.Slice> slices)
-            throws DataException
-    {
-        try {
-            DataAtomic datasrc = this.data;
-            Object vector = datasrc.read(slices);
-            return vector;
-        } catch (DapException de) {
-            throw new DataException(de);
-        }
-    }
-
-    @Override
-    public Object
-    read(dap4.core.util.Index index)
-            throws DataException
-    {
-        return readHelper(index);
-    }
-
-    public Object
-    read(long index)
-            throws DataException
-    {
-        return readHelper(index);
-    }
-
     /*
     protected Object
     read(long index, DapType datatype, DataAtomic content)
-            throws DataException
+            throws DapException
     {
         Object result;
         int i = (int) index;
@@ -649,7 +571,7 @@ import java.util.List;
         case STRUCTURE:
         case SEQUENCE:
         default:
-            throw new DataException("Attempt to read non-atomic value of type: " + datatype);
+            throw new DapException("Attempt to read non-atomic value of type: " + datatype);
         }
         return result;
     }
@@ -657,10 +579,10 @@ import java.util.List;
 
     //////////////////////////////////////////////////
     // Utilities
-
+   /*
     protected DapSort
     computesort(Array array)
-            throws DataException
+            throws DapException
     {
         DapSort sort = null;
         Array content = (Array) this.data;
@@ -687,7 +609,7 @@ import java.util.List;
         default:
             break; // sequence is not supported
         }
-        throw new DataException("Unsupported datatype: " + content.getDataType());
-    }
+        throw new DapException("Unsupported datatype: " + content.getDataType());
+    } */
 }
 

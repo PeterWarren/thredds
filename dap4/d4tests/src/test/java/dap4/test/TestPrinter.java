@@ -8,7 +8,7 @@ import dap4.cdm.nc2.DapNetcdfFile;
 import dap4.core.dmr.DapDataset;
 import dap4.core.util.*;
 import dap4.core.data.DSP;
-import dap4.dap4lib.DMRPrint;
+import dap4.dap4lib.DMRPrinter;
 import ucar.nc2.*;
 
 import java.io.IOException;
@@ -117,8 +117,8 @@ public class TestPrinter
         throws IOException
     {
         printer.setIndent(0);
-        DMRPrint dmrprinter = new DMRPrint(writer);
-        dmrprinter.print(this.dmr);
+        DMRPrinter dmrprinter = new DMRPrinter(this.dmr,writer);
+        dmrprinter.print();
         dmrprinter.flush();
     }
 

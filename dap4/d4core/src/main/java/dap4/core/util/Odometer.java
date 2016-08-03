@@ -13,7 +13,6 @@ import java.util.NoSuchElementException;
  * A classic implementation of an odometer
  * taken from the netcdf-c code.
  * Extended to provide iterator interface
- * Extended to provide contiguous slice info.
  */
 
 public class Odometer implements Iterator<Index>
@@ -39,14 +38,14 @@ public class Odometer implements Iterator<Index>
     }
 
     static public Odometer
-    factory(List<Slice> slices, boolean usecontiguous)
+    factory(List<Slice> slices)
             throws DapException
     {
-        return factory(slices, null, usecontiguous);
+        return factory(slices, null);
     }
 
     static public Odometer
-    factory(List<Slice> slices, List<DapDimension> dimset, boolean usecontiguous)
+    factory(List<Slice> slices, List<DapDimension> dimset)
             throws DapException
     {
         boolean multi = false;
@@ -57,7 +56,12 @@ public class Odometer implements Iterator<Index>
                     break;
                 }
             }
-        return multi ? new MultiOdometer(slices, dimset, usecontiguous) : new Odometer(slices, dimset, usecontiguous);
+        if(slices == null || slices.size() == 0)
+            return factoryScalar();
+        else if(multi)
+            return new MultiOdometer(slices, dimset);
+        else
+            return new Odometer(slices, dimset);
     }
 
     //////////////////////////////////////////////////
@@ -68,11 +72,6 @@ public class Odometer implements Iterator<Index>
     protected int rank = 0;
     protected Slice[] slices = null;
     protected DapDimension[] dimset = null;
-
-    // If usecontiguous is true, then iterate
-    // lock the last slice to the value 0.
-    protected boolean usecontiguous = false;
-    protected int contiguousdelta = (usecontiguous ? 1 : 0); // offset on place to stop
 
     // The current odometer indices
     protected Index index;
@@ -87,13 +86,13 @@ public class Odometer implements Iterator<Index>
     {
     }
 
-    public Odometer(List<Slice> set, boolean usecontiguous)
+    public Odometer(List<Slice> set)
             throws DapException
     {
-        this(set, null, usecontiguous);
+        this(set, null);
     }
 
-    public Odometer(List<Slice> set, List<DapDimension> dimset, boolean usecontiguous)
+    public Odometer(List<Slice> set, List<DapDimension> dimset)
             throws DapException
     {
         if(set == null)
@@ -116,8 +115,6 @@ public class Odometer implements Iterator<Index>
         for(int i = 0; i < this.rank; i++) {
             this.index.dimsizes[i] = slices[i].getMaxSize();
         }
-        this.usecontiguous = usecontiguous;
-        this.contiguousdelta = (usecontiguous ? 1 : 0);
         reset();
     }
 
@@ -132,8 +129,6 @@ public class Odometer implements Iterator<Index>
             } catch (DapException de) {
                 throw new IllegalArgumentException(de);
             }
-            if(usecontiguous)
-                this.index.indices[this.rank - 1] = 0;
         }
     }
 
@@ -215,7 +210,7 @@ public class Odometer implements Iterator<Index>
     public boolean
     hasNext()
     {
-        int stop = this.rank - contiguousdelta;
+        int stop = this.rank;
         switch (this.state) {
         case INITIAL:
             return true;
@@ -237,7 +232,7 @@ public class Odometer implements Iterator<Index>
     next()
     {
         int i;
-        int lastpos = this.rank - contiguousdelta;
+        int lastpos = this.rank;
         int firstpos = 0;
         switch (this.state) {
         case INITIAL:
@@ -263,22 +258,6 @@ public class Odometer implements Iterator<Index>
     }
 
     //////////////////////////////////////////////////
-    // Get contiguous slice info. This only applies to
-    // the last slice.
-
-    public boolean
-    isContiguous()
-    {
-        // currently disabled
-        return false;
-        // return slices[slices.length - 1].isContiguous();
-    }
-
-    public List<Slice>
-    getContiguous()
-    {
-        return slices[slices.length - 1].getContiguous();
-    }
 
     // on entry: indices are the last index set
     // on exit, the indices are the next value
@@ -297,4 +276,6 @@ public class Odometer implements Iterator<Index>
         }
         return -1;
     }
+
+
 }

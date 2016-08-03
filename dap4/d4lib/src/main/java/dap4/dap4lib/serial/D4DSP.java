@@ -8,7 +8,7 @@ import dap4.core.dmr.DapDataset;
 import dap4.core.dmr.DapVariable;
 import dap4.core.util.DapException;
 import dap4.dap4lib.AbstractDSP;
-import dap4.dap4lib.DMRPrint;
+import dap4.dap4lib.DMRPrinter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -31,7 +31,7 @@ abstract public class D4DSP extends AbstractDSP
     //////////////////////////////////////////////////
     // Constants
 
-    static public boolean DEBUG = true;
+    static public boolean DEBUG = false;
 
     static protected final String DAPVERSION = "4.0";
     static protected final String DMRVERSION = "1.0";
@@ -40,8 +40,6 @@ abstract public class D4DSP extends AbstractDSP
     // Instance variables
 
     protected ByteBuffer databuffer = null; // local copy of AbstractDSP.getSource
-
-    protected Map<DapVariable, D4Cursor> toplevel = new HashMap<>();
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -64,21 +62,6 @@ abstract public class D4DSP extends AbstractDSP
           return databuffer;
     }
 
-    public D4Cursor
-    getVariable(DapVariable var)
-    {
-          return toplevel.get(var);
-    }
-
-    public D4DSP
-    addVariable(DapVariable var, D4Cursor data)
-    {
-        if(!var.isTopLevel())
-            throw new IllegalArgumentException("not a toplevel var:"+var);
-        toplevel.put(var,data);
-        return this;
-    }
-
     //////////////////////////////////////////////////
     // Compilation
 
@@ -90,8 +73,8 @@ abstract public class D4DSP extends AbstractDSP
         if(DEBUG)  {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            DMRPrint printer = new DMRPrint(pw);
-            try {printer.print(dmr); pw.close(); sw.close();} catch (IOException e) {};
+            DMRPrinter printer = new DMRPrinter(dmr,pw);
+            try {printer.print(); pw.close(); sw.close();} catch (IOException e) {};
             System.err.println("+++++++++++++++++++++");
             System.err.println(sw.toString());
             System.err.println("+++++++++++++++++++++");
@@ -114,8 +97,7 @@ abstract public class D4DSP extends AbstractDSP
     {
         setDMR(dmr);
         // "Compile" the databuffer section of the server response
-        setSource(ByteBuffer.wrap(serialdata).order(order));
-        this.databuffer = (ByteBuffer) getAnnotation();
+        this.databuffer = ByteBuffer.wrap(serialdata).order(order);
         D4DataCompiler compiler = new D4DataCompiler(this, checksummode, this.databuffer);
         compiler.compile();
     }

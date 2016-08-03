@@ -6,6 +6,7 @@ import dap4.dap4lib.AbstractDSP;
 import dap4.dap4lib.ChunkInputStream;
 import dap4.dap4lib.FileDSP;
 import dap4.dap4lib.RequestMode;
+import dap4.dap4lib.netcdf.Nc4DSP;
 import dap4.servlet.DapCache;
 import dap4.servlet.Generator;
 import dap4.servlet.SynDSP;
@@ -208,10 +209,10 @@ public class TestServlet extends DapTestCommon
     protected void
     chooseTestcases()
     {
-        if(false) {
-            chosentests = locate("test_atomic_types.nc");
-            prop_visual = true;
-            prop_debug = true;
+        if(true) {
+            chosentests = locate("test_struct_type.nc");
+            prop_visual = false;
+            prop_debug = false;
             prop_generate = false;
         } else {
             for(TestCase tc : alltestcases) {
@@ -762,8 +763,8 @@ public class TestServlet extends DapTestCommon
     doOneTest(TestCase testcase)
             throws Exception
     {
-        System.out.println("Testcase: " + testcase.testinputpath);
-        System.out.println("Baseline: " + testcase.baselinepath);
+        System.err.println("Testcase: " + testcase.testinputpath);
+        System.err.println("Baseline: " + testcase.baselinepath);
 
         for(String extension : testcase.extensions) {
             RequestMode ext = RequestMode.modeFor(extension);
@@ -802,7 +803,7 @@ public class TestServlet extends DapTestCommon
         } else if(prop_diff) { //compare with baseline
             // Read the baseline file
             String baselinecontent = readfile(testcase.baselinepath + ".dmr");
-            System.out.println("DMR Comparison");
+            System.err.println("DMR Comparison");
             Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdmr));
         }
     }
@@ -854,7 +855,7 @@ public class TestServlet extends DapTestCommon
         if(prop_diff) {
             //compare with baseline
             // Read the baseline file
-            System.out.println("Note Comparison:");
+            System.err.println("Note Comparison:");
             String baselinecontent = readfile(testcase.baselinepath + ".dap");
             Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdata));
         }

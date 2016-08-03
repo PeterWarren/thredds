@@ -4,14 +4,15 @@
 
 package dap4.cdm.nc2;
 
-import dap4.core.data.DataDataset;
+import dap4.core.data.DSP;
+import dap4.core.data.DataCursor;
 import dap4.core.dmr.DapStructure;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.DapVariable;
-import dap4.core.dmr.TypeSort;
-import dap4.core.data.DSP;
-import dap4.core.data.DataSequence;
-import dap4.core.data.DSP;
+import dap4.core.util.DapException;
+import dap4.core.util.DapUtil;
+import dap4.core.util.Odometer;
+import dap4.core.util.Slice;
 import ucar.ma2.*;
 import ucar.nc2.Group;
 
@@ -97,14 +98,12 @@ import java.util.List;
     //////////////////////////////////////////////////
     // Instance variables
 
-    protected DataDataset root = null;
-    protected Group cdmroot = null;
     protected DSP dsp = null;
     protected DapVariable template = null;
     protected long bytesize = 0;
     protected DapType basetype = null;
 
-    protected DataSequence d4data = null;
+    protected DataCursor d4data = null;
     protected long nmembers = 0;
 
     /**
@@ -125,17 +124,15 @@ import java.util.List;
     /**
      * Constructor
      *
-     * @param dsp      the parent DSP
-     * @param cdmroot     the parent CDMDataset
-     * @param template the structure template
+     * @param data
      */
-    CDMArraySequence(DSP dsp, Group cdmroot, DapStructure template, DataSequence d4data)
+    CDMArraySequence(Group group, DataCursor data)
+    throws DapException
     {
-        super(CDMArrayStructure.computemembers((DapStructure) d4data.getTemplate()),
-                new SDI(), (int) d4data.getRecordCount());
+        super(CDMArrayStructure.computemembers((DapStructure) data.getTemplate()),
+                new SDI(), (int) data.getRecordCount());
         this.dsp = dsp;
-        this.cdmroot = cdmroot;
-        this.template = (DapVariable) d4data.getTemplate();
+        this.template = (DapVariable) data.getTemplate();
         this.d4data = d4data;
         this.nmembers = ((DapStructure) template).getFields().size();
         this.nrecords = d4data.getRecordCount();
@@ -155,8 +152,16 @@ import java.util.List;
     /*package*/ void
     finish()
     {
-        for(int i = 0; i < this.nrecords; i++) {
-            assert records[i] != null;
+        try {
+            List<Slice> dimset = DapUtil.dimsetSlices(this.template.getDimensions());
+            Odometer odom = Odometer.factory(dimset);
+            while(odom.hasNext()) {
+                /* create instances[i][j]; consider doing on the fly */
+                dap4.core.util.Index index = odom.next();
+                DataCursor ithelement = (DataCursor)this.d4data.read(index);
+            }
+        } catch (DapException e) {
+            throw new IndexOutOfBoundsException(e.getMessage());
         }
         this.bytesize = computeTotalSize();
     }
@@ -191,12 +196,6 @@ import java.util.List;
     public DSP getDSP()
     {
         return this.dsp;
-    }
-
-    @Override
-    public DataDataset getRoot()
-    {
-        return root;
     }
 
     @Override

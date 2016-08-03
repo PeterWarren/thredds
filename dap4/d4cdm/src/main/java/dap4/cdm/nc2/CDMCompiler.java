@@ -7,8 +7,6 @@ package dap4.cdm.nc2;
 
 import dap4.cdm.NodeMap;
 import dap4.core.data.DSP;
-import dap4.core.data.DataDataset;
-import dap4.core.data.DataSort;
 import dap4.core.dmr.DapDataset;
 import dap4.core.util.DapException;
 import ucar.ma2.Array;
@@ -45,7 +43,6 @@ public class CDMCompiler
     protected DapNetcdfFile ncfile = null;
     protected DSP dsp = null;
     protected DapDataset dmr = null;
-    protected DataDataset d4root = null;
     protected Group cdmroot = null;
     protected NodeMap nodemap = null;
     protected Map<Variable, Array> arraymap = null;
@@ -65,7 +62,6 @@ public class CDMCompiler
     {
         this.ncfile = ncfile;
         this.dsp = dsp;
-        this.d4root = (DataDataset) dsp.getDataset();
         this.dmr = dsp.getDMR();
     }
 
@@ -95,7 +91,6 @@ public class CDMCompiler
     compile()
             throws DapException
     {
-        assert d4root.getSort() == DataSort.DATASET;
         compileDMR();
         compileData();
     }    

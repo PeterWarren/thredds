@@ -4,7 +4,7 @@
 
 package dap4.dap4lib;
 
-import dap4.core.data.DataException;
+import dap4.core.util.DapException;
 import dap4.core.dmr.DapEnumeration;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.TypeSort;
@@ -63,7 +63,7 @@ abstract public class LibTypeFcns
 
     static public Object
     newVector(DapType type, long count)
-            throws DataException
+            throws DapException
     {
         int icount = (int) count;
         Object vector = null;
@@ -103,7 +103,7 @@ abstract public class LibTypeFcns
         case Enum:
             return newVector(((DapEnumeration)type).getBaseType(),count);
         default:
-            throw new DataException("Illegal Conversion");
+            throw new DapException("Illegal Conversion");
         }
         return vector;
     }
@@ -120,7 +120,7 @@ abstract public class LibTypeFcns
 
     static public Object
     convertVector(DapType dsttype, DapType srctype, Object src)
-            throws DataException
+            throws DapException
     {
         int i;
 
@@ -769,10 +769,10 @@ abstract public class LibTypeFcns
             break;
 
         default:
-            throw new DataException(String.format("Illegal Conversion: %s->%s", srctype, dsttype));
+            throw new DapException(String.format("Illegal Conversion: %s->%s", srctype, dsttype));
         }
         if(!ok)
-            throw new DataException(String.format("Illegal Conversion: %s->%s", srctype, dsttype));
+            throw new DapException(String.format("Illegal Conversion: %s->%s", srctype, dsttype));
         return result;
     }
 }

@@ -4,8 +4,7 @@
 
 package dap4.cdm;
 
-import dap4.core.data.DataAtomic;
-import dap4.core.data.DataException;
+import dap4.core.data.DataCursor;
 import dap4.core.dmr.DapDimension;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.TypeSort;
@@ -44,7 +43,7 @@ abstract public class CDMUtil
      */
     static public List<Slice>
     createSlices(List<Range> rangelist)
-            throws DapException
+            throws dap4.core.util.DapException
     {
         List<Slice> slices = new ArrayList<Slice>(rangelist.size());
         for(int i = 0; i < rangelist.size(); i++) {
@@ -74,15 +73,15 @@ abstract public class CDMUtil
 
     static public boolean
     isWhole(List<Range> rangelist, List<DapDimension> dimset, int start, int stop)
-            throws DapException
+            throws dap4.core.util.DapException
     {
         int rsize = (rangelist == null ? 0 : rangelist.size());
         if(rsize != dimset.size())
-            throw new DapException("range/dimset rank mismatch");
+            throw new dap4.core.util.DapException("range/dimset rank mismatch");
         if(rsize == 0)
             return true;
         if(start < 0 || stop < start || stop > rsize)
-            throw new DapException("Invalid start/stop indices");
+            throw new dap4.core.util.DapException("Invalid start/stop indices");
 
         for(int i = start; i < stop; i++) {
             Range r = rangelist.get(i);
@@ -104,7 +103,7 @@ abstract public class CDMUtil
      */
     static public boolean
     isWhole(List<Range> rangelist, List<Slice> slices)
-            throws DapException
+            throws dap4.core.util.DapException
     {
         if(rangelist.size() != slices.size())
             return false;
@@ -128,7 +127,7 @@ abstract public class CDMUtil
      */
     static public boolean
     isWhole(List<Range> rangelist, Variable var)
-            throws DapException
+            throws dap4.core.util.DapException
     {
         List<Dimension> dimset = var.getDimensions();
         if(rangelist.size() != dimset.size())
@@ -310,15 +309,11 @@ abstract public class CDMUtil
      */
 
     static public long
-    extractLongValue(TypeSort atomtype, DataAtomic dataset, Index index)
-            throws DataException
+    extractLongValue(TypeSort atomtype, DataCursor dataset, Index index)
+            throws DapException
     {
         Object result;
-        try {
-            result = dataset.read(index);
-        } catch (IOException ioe) {
-            throw new DataException(ioe);
-        }
+        result = dataset.read(index);
         long lvalue = CDMTypeFcns.extract(atomtype, result);
         return lvalue;
     }
@@ -336,15 +331,11 @@ abstract public class CDMUtil
      */
 
     static public double
-    extractDoubleValue(TypeSort atomtype, DataAtomic dataset, Index index)
-            throws DataException
+    extractDoubleValue(TypeSort atomtype, DataCursor dataset, Index index)
+            throws DapException
     {
         Object result;
-        try {
             result = dataset.read(index);
-        } catch (IOException ioe) {
-            throw new DataException(ioe);
-        }
         double dvalue = 0.0;
         if(atomtype.isIntegerType() || atomtype.isEnumType()) {
             long lvalue = extractLongValue(atomtype, dataset, index);
@@ -371,13 +362,13 @@ abstract public class CDMUtil
     /*
     static public Object
     extractVector(DataAtomic dataset, long index, long count, long offset)
-        throws DataException
+        throws DapException
     {
         Object vector = createVector(dataset.getType().getPrimitiveType(),count);
         try {
             dataset.read(index, count, vector, offset);
         } catch (IOException ioe) {
-            throw new DataException(ioe);
+            throw new DapException(ioe);
         }
         return vector;
     }
@@ -528,7 +519,7 @@ abstract public class CDMUtil
 
     static public List<Range>
     dimsetToRanges(List<DapDimension> dimset)
-            throws DapException
+            throws dap4.core.util.DapException
     {
         if(dimset == null)
             return null;
@@ -539,7 +530,7 @@ abstract public class CDMUtil
                 Range r = new Range(dim.getShortName(), 0, (int) dim.getSize() - 1, 1);
                 ranges.add(r);
             } catch (InvalidRangeException ire) {
-                throw new DapException(ire);
+                throw new dap4.core.util.DapException(ire);
             }
         }
         return ranges;
@@ -547,7 +538,7 @@ abstract public class CDMUtil
 
     static public List<Slice>
     shapeToSlices(int[] shape)
-            throws DapException
+            throws dap4.core.util.DapException
     {
         if(shape == null)
             return null;

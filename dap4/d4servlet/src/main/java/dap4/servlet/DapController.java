@@ -5,10 +5,7 @@
 
 package dap4.servlet;
 
-import dap4.core.ce.CEAST;
-import dap4.core.ce.CECompiler;
 import dap4.core.ce.CEConstraint;
-import dap4.core.ce.parser.CEParserImpl;
 import dap4.core.data.DSP;
 import dap4.core.dmr.DapDataset;
 import dap4.core.dmr.ErrorResponse;
@@ -324,8 +321,8 @@ abstract public class DapController extends HttpServlet
         PrintWriter pw = new PrintWriter(sw);
 
         // Get the DMR as a string
-        DMRPrint dapprinter = new DMRPrint(pw);
-        dapprinter.print(ce, dmr);
+        DMRPrinter dapprinter = new DMRPrinter(dmr,ce,pw);
+        dapprinter.print();
         pw.close();
         sw.close();
 
@@ -373,8 +370,8 @@ abstract public class DapController extends HttpServlet
         PrintWriter pw = new PrintWriter(sw);
 
         // Get the DMR as a string
-        DMRPrint dapprinter = new DMRPrint(pw);
-        dapprinter.print(ce, dmr);
+        DMRPrinter dapprinter = new DMRPrinter(dmr,ce,pw);
+        dapprinter.print();
         pw.close();
         sw.close();
 

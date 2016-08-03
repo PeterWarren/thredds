@@ -5,7 +5,6 @@
 
 package dap4.dap4lib.serial;
 
-import dap4.core.data.DSP;
 import dap4.core.dmr.*;
 import dap4.core.util.DapDump;
 import dap4.core.util.DapException;
@@ -15,11 +14,10 @@ import dap4.dap4lib.ChecksumMode;
 import dap4.dap4lib.LibTypeFcns;
 import dap4.dap4lib.RequestMode;
 
-import java.io.SequenceInputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import static dap4.core.data.DataCursor.Format;
+import static dap4.core.data.DataCursor.Scheme;
 
 public class D4DataCompiler
 {
@@ -79,7 +77,7 @@ public class D4DataCompiler
      * @return
      * @throws DapException
      */
-    public D4Cursor
+    public void
     compile()
             throws DapException
     {
@@ -87,13 +85,11 @@ public class D4DataCompiler
         if(DEBUG) {
             DapDump.dumpbytes(this.databuffer, false);
         }
-        D4Cursor root = new D4Cursor(Format.DATASET,this.dsp, this.dsp.getDMR());
         // iterate over the variables represented in the databuffer
         for(DapVariable vv : this.dataset.getTopVariables()) {
             D4Cursor data = compileVar(vv, null);
-            root.addVariable(data);
+            this.dsp.addVariableData(vv, data);
         }
-        return root;
     }
 
     protected D4Cursor
@@ -115,7 +111,6 @@ public class D4DataCompiler
             else
                 array = compileSequenceArray(dapvar, container);
         }
-        if(array != null) array.setPos(0);
         if(dapvar.isTopLevel()) {
             // extract the checksum from databuffer src,
             // attach to the array, and make into an attribute
@@ -126,7 +121,6 @@ public class D4DataCompiler
     }
 
     /**
-     *
      * @param atomvar
      * @param container
      * @return
@@ -137,13 +131,13 @@ public class D4DataCompiler
             throws DapException
     {
         DapType daptype = atomvar.getBaseType();
-        D4Cursor data = new D4Cursor(Format.ATOMIC,this.dsp, atomvar)
-                .setContainer(container).setPos(getPos(this.databuffer));
+        D4Cursor data = new D4Cursor(Scheme.ATOMIC, this.dsp, atomvar);
+        data.setOffset(getPos(this.databuffer));
         long total = 0;
         long dimproduct = atomvar.getCount();
         if(!daptype.isEnumType() && !daptype.isFixedSize()) {
             // this is a string, url, or opaque
-            int[] positions = new int[(int) dimproduct];
+            long[] positions = new long[(int) dimproduct];
             int savepos = databuffer.position();
             // Walk the bytestring and return the instance count (in databuffer)
             total = walkByteStrings(positions, databuffer);
@@ -159,7 +153,7 @@ public class D4DataCompiler
     /**
      * Compile a structure array.
      *
-     * @param dapvar the template
+     * @param dapvar    the template
      * @param container if inside a compound object
      * @return A DataCompoundArray for the databuffer for this struct.
      * @throws DapException
@@ -169,12 +163,12 @@ public class D4DataCompiler
             throws DapException
     {
         DapStructure struct = (DapStructure) dapvar;
-        D4Cursor structarray = new D4Cursor(Format.STRUCTURE, this.dsp, struct)
-                .setContainer(container).setPos(getPos(this.databuffer));
+        D4Cursor structarray = new D4Cursor(Scheme.STRUCTARRAY, this.dsp, struct)
+                .setOffset(getPos(this.databuffer));
         long dimproduct = struct.getCount();
         for(int i = 0; i < dimproduct; i++) {
             D4Cursor instance = compileStructure(struct, structarray);
-            structarray.addElement(instance);
+            structarray.addElement(i, instance);
         }
         return structarray;
     }
@@ -192,8 +186,8 @@ public class D4DataCompiler
             throws DapException
     {
         int pos = getPos(this.databuffer);
-        D4Cursor d4ds = new D4Cursor(Format.STRUCTURE, this.dsp, dapstruct)
-        .setContainer(container).setPos(pos);
+        D4Cursor d4ds = new D4Cursor(Scheme.STRUCTURE, this.dsp, dapstruct)
+                .setOffset(pos);
         List<DapVariable> dfields = dapstruct.getFields();
         for(int m = 0; m < dfields.size(); m++) {
             DapVariable dfield = dfields.get(m);
@@ -215,13 +209,12 @@ public class D4DataCompiler
             throws DapException
     {
         DapSequence dapseq = (DapSequence) dapvar;
-        D4Cursor seqarray = new D4Cursor(Format.SEQUENCE,this.dsp, dapseq)
-                .setContainer(container).setPos(getPos(this.databuffer));
+        D4Cursor seqarray = new D4Cursor(Scheme.SEQARRAY, this.dsp, dapseq)
+                .setOffset(getPos(this.databuffer));
         long dimproduct = dapseq.getCount();
         for(int i = 0; i < dimproduct; i++) {
-            D4Cursor instance = compileSequence(dapseq, seqarray)
-                    .setContainer(container);
-            seqarray.addElement(instance);
+            D4Cursor instance = compileSequence(dapseq, seqarray);
+            seqarray.addElement(i, instance);
         }
         return seqarray;
     }
@@ -239,15 +232,15 @@ public class D4DataCompiler
             throws DapException
     {
         int pos = getPos(this.databuffer);
-        D4Cursor seq = new D4Cursor(Format.SEQUENCE,this.dsp, dapseq)
-                .setContainer(container).setPos(pos);
+        D4Cursor seq = new D4Cursor(Scheme.SEQUENCE, this.dsp, dapseq)
+                .setOffset(pos);
         List<DapVariable> dfields = dapseq.getFields();
         // Get the count of the number of records
         long nrecs = getCount(this.databuffer);
         for(int r = 0; r < nrecs; r++) {
             pos = getPos(this.databuffer);
-            D4Cursor rec = new D4Cursor(this.dsp, dapseq)
-            .setContainer(seq).setPos(pos);
+            D4Cursor rec = new D4Cursor(D4Cursor.Scheme.SEQUENCE, this.dsp, dapseq)
+                    .setOffset(pos);
             for(int m = 0; m < dfields.size(); m++) {
                 DapVariable dfield = dfields.get(m);
                 D4Cursor dvfield = compileVar(dfield, rec);
@@ -293,7 +286,6 @@ public class D4DataCompiler
         return data.position();
     }
 
-
     /**
      * Compute the size in databuffer of the serialized form
      *
@@ -307,7 +299,7 @@ public class D4DataCompiler
     }
 
     static protected long
-    walkByteStrings(int[] positions, ByteBuffer databuffer)
+    walkByteStrings(long[] positions, ByteBuffer databuffer)
     {
         int count = positions.length;
         long total = 0;

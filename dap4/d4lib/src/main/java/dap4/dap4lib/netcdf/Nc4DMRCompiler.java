@@ -20,7 +20,7 @@ import java.util.Map;
 import static dap4.dap4lib.netcdf.DapNetcdf.*;
 import static dap4.dap4lib.netcdf.Nc4Cursor.Mem;
 import static dap4.dap4lib.netcdf.Nc4Notes.*;
-import static dap4.dap4lib.netcdf.NetcdfDSP.EXTENSIONS;
+import static dap4.dap4lib.netcdf.Nc4DSP.EXTENSIONS;
 
 
 /**
@@ -34,9 +34,9 @@ public class Nc4DMRCompiler
     static public final boolean DEBUG = true;
 
     // Define reserved attributes
-    static public final String UCARTAGVLEN = NetcdfDSP.UCARTAGVLEN;
-    static public final String UCARTAGOPAQUE = NetcdfDSP.UCARTAGOPAQUE;
-    static public final String UCARTAGUNLIM = NetcdfDSP.UCARTAGUNLIM;
+    static public final String UCARTAGVLEN = Nc4DSP.UCARTAGVLEN;
+    static public final String UCARTAGOPAQUE = Nc4DSP.UCARTAGOPAQUE;
+    static public final String UCARTAGUNLIM = Nc4DSP.UCARTAGUNLIM;
 
     static final Pointer NC_NULL = Pointer.NULL;
     static final int NC_FALSE = 0;
@@ -85,13 +85,13 @@ public class Nc4DMRCompiler
     protected String pathprefix = null;
 
     protected DMRFactory factory = null;
-    protected NetcdfDSP dsp = null;
+    protected Nc4DSP dsp = null;
     protected DapDataset dmr = null;
 
     //////////////////////////////////////////////////
     // Constructor(s)
 
-    public Nc4DMRCompiler(NetcdfDSP dsp, int ncid, DMRFactory factory)
+    public Nc4DMRCompiler(Nc4DSP dsp, int ncid, DMRFactory factory)
             throws DapException
     {
         this.dsp = dsp;
@@ -201,7 +201,7 @@ public class Nc4DMRCompiler
             dim.addAttribute(ultag);
         }
         if(trace)
-            System.out.printf("NetcdfDSP: dimension: %s size=%d%n", name, dim.getSize());
+            System.out.printf("Nc4DSP: dimension: %s size=%d%n", name, dim.getSize());
     }
 
     protected void
@@ -868,7 +868,7 @@ public class Nc4DMRCompiler
             fullname = fullname + "/";
         fullname = fullname + type.getShortName();
         DapAttribute orig
-                = factory.newAttribute(NetcdfDSP.UCARTAGORIGTYPE,
+                = factory.newAttribute(Nc4DSP.UCARTAGORIGTYPE,
                 DapType.STRING);
         orig.setValues(new String[]{fullname});
         return orig;

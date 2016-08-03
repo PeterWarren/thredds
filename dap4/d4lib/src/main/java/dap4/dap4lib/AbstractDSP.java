@@ -4,21 +4,19 @@
 
 package dap4.dap4lib;
 
-import dap4.core.ce.CEConstraint;
 import dap4.core.data.DSP;
+import dap4.core.util.DapException;
 import dap4.core.data.DataCursor;
-import dap4.core.dmr.DMRFactory;
-import dap4.core.dmr.DapAttribute;
-import dap4.core.dmr.DapDataset;
-import dap4.core.dmr.DapNode;
+import dap4.core.dmr.*;
 import dap4.core.dmr.parser.Dap4Parser;
 import dap4.core.dmr.parser.Dap4ParserImpl;
 import dap4.core.util.DapContext;
-import dap4.core.util.DapException;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,10 +42,9 @@ abstract public class AbstractDSP implements DSP
     protected DapContext context = null;
     protected DapDataset dmr = null;
     protected String location = null;
-    protected Object source = null;
     protected ByteOrder order = null;
     protected ChecksumMode checksummode = ChecksumMode.DAP;
-    protected DataCursor dataset = null;
+    protected Map<DapVariable,DataCursor> variables = new HashMap<>();
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -66,20 +63,24 @@ abstract public class AbstractDSP implements DSP
      *
      * @param location - path to the data source; must be abolute file path or url.
      * @return = wrapping dsp
-     * @throws DapException
+     * @throws dap4.core.util.DapException
      */
-    abstract public DSP open(String location) throws DapException;
+    abstract public DSP open(String location) throws dap4.core.util.DapException;
+
+    /**
+     *
+     * @throws IOException
+     */
+    abstract public void close() throws IOException;
 
     //////////////////////////////////////////////////
+    // Implemented
 
-    public DataCursor getDataset()
+    @Override
+    public DataCursor
+    getVariableData(DapVariable var) throws DapException
     {
-        return this.dataset;
-    }
-
-    public void setDataset(DataCursor dds)
-    {
-        this.dataset = dds;
+        return this.variables.get(var);
     }
 
     @Override
@@ -129,20 +130,9 @@ abstract public class AbstractDSP implements DSP
 
     protected void
     setDataset(DapDataset dataset)
-            throws DapException
+            throws dap4.core.util.DapException
     {
         this.dmr = dataset;
-    }
-
-    @Override
-    public Object getAnnotation()
-    {
-        return this.source;
-    }
-
-    public void setSource(Object src)
-    {
-        this.source = src;
     }
 
     public ByteOrder
@@ -167,6 +157,12 @@ abstract public class AbstractDSP implements DSP
         this.checksummode = mode;
     }
 
+    public void
+    addVariableData(DapVariable var, DataCursor cursor)
+    {
+        this.variables.put(var,cursor);
+    }
+
     //////////////////////////////////////////////////
     // Utilities
 
@@ -176,12 +172,12 @@ abstract public class AbstractDSP implements DSP
      *
      * @param document the dmr to parse
      * @return the parsed dmr
-     * @throws DapException on parse errors
+     * @throws dap4.core.util.DapException on parse errors
      */
 
     protected DapDataset
     parseDMR(String document)
-            throws DapException
+            throws dap4.core.util.DapException
     {
         // Parse the dmr
         Dap4Parser parser;
@@ -193,12 +189,12 @@ abstract public class AbstractDSP implements DSP
             parser.setDebugLevel(1);
         try {
             if(!parser.parse(document))
-                throw new DapException("DMR Parse failed");
+                throw new dap4.core.util.DapException("DMR Parse failed");
         } catch (SAXException se) {
-            throw new DapException(se);
+            throw new dap4.core.util.DapException(se);
         }
         if(parser.getErrorResponse() != null)
-            throw new DapException("Error Response Document not supported");
+            throw new dap4.core.util.DapException("Error Response Document not supported");
         DapDataset result = parser.getDMR();
         processAttributes(result);
         return result;
@@ -212,7 +208,7 @@ abstract public class AbstractDSP implements DSP
      */
     protected void
     processAttributes(DapDataset dataset)
-            throws DapException
+            throws dap4.core.util.DapException
     {
         List<DapNode> nodes = dataset.getNodeList();
         for(DapNode node : nodes) {

@@ -98,106 +98,14 @@ public class SerialWriter
     /**
      * Encode an array of primitive values.
      *
-     * @param vtype The type of the object
-     * @param value The value
-     * @return bytebuffer encoding of the value using the
-     *         platform's native encoding.
-     */
-    public ByteBuffer
-    encodeObject(DapType vtype, Object value)
-            throws IOException
-    {
-        return encodeObject(vtype, value, this.order);
-    }
-
-
-    /**
-     * Encode an array of primitive values.
-     *
-     * @param vtype The type of the object
-     * @param value The value
-     * @param order the byteorder to use
-     * @return bytebuffer encoding of the value using the
-     *         platform's native encoding.
-     */
-    static public ByteBuffer
-    encodeObject(DapType vtype, Object value, ByteOrder order)
-            throws IOException
-    {
-        TypeSort atomtype = vtype.getAtomicType();
-        int total = (int) TypeSort.getSize(atomtype);
-        ByteBuffer buf = ByteBuffer.allocate(total).order(order);
-        switch (atomtype) {
-        case Char:
-            byte b = (byte) (0xFFL & (long) ((Character) value).charValue());
-            buf.put(b);
-            break;
-        case UInt8:
-        case Int8:
-            buf.put((byte) (Byte) value);
-            break;
-        case Int16:
-        case UInt16:
-            buf.putShort((Short) value);
-            break;
-        case Int32:
-        case UInt32:
-            buf.putInt(((Number) value).intValue());
-            break;
-        case Int64:
-        case UInt64:
-            buf.putLong(((Number) value).longValue());
-            break;
-        case Float32:
-            buf.putFloat(((Number) value).floatValue());
-            break;
-        case Float64:
-            buf.putDouble(((Number) value).doubleValue());
-            break;
-
-        case URL:
-        case String:
-            // Convert the string to a counted UTF-8 bytestring
-            String content = value.toString();
-            byte[] bytes = content.getBytes(DapUtil.UTF8);
-            buf = ByteBuffer.allocate(bytes.length + COUNTSIZE)
-                    .order(order);
-            buf.putLong(bytes.length);
-            buf.put(bytes);
-            break;
-
-        case Opaque:
-            ByteBuffer opaquedata = (ByteBuffer) value;
-            int pos = opaquedata.position();
-            // the data may be at an offset in the buffer
-            int size = opaquedata.remaining(); // should be limit - pos
-            buf = ByteBuffer.allocate(size + COUNTSIZE)
-                    .order(order);
-            buf.putLong(size);
-            buf.put(opaquedata);
-            opaquedata.position(pos);
-            break;
-
-        case Enum: // handled by getPrimitiveType() above
-            assert false : "Unexpected ENUM type";
-        default:
-            throw new DapException("Unknown type: " + vtype.getTypeName());
-        }
-        return buf;
-    }
-
-
-    /**
-     * Encode an array of primitive values.
-     *
      * @param vtype  The type of the object
      * @param values The value array
      * @return bytebuffer encoding of the array using the
      *         platform's native encoding.
      */
 
-    public ByteBuffer
-    encodeArray(DapType vtype, Object values)
+    static public ByteBuffer
+    encodeArray(DapType vtype, Object values, ByteOrder order)
             throws IOException
     {
         TypeSort atomtype = vtype.getAtomicType();
@@ -286,7 +194,7 @@ public class SerialWriter
                 size = opaquedata.remaining(); // should be limit - pos
                 buf.putLong(size);
                 int savepos = opaquedata.position();
-                buf.put(opaquedata);
+                 buf.put(opaquedata);
                 opaquedata.position(savepos);
             }
             break;
@@ -352,35 +260,6 @@ public class SerialWriter
     // Write API
 
     /**
-     * Write out a single atomic object
-     *
-     * @param daptype the type of the object
-     * @param value   the object to write out
-     * @throws IOException
-     */
-    public void
-    writeAtomicObject(DapType daptype, Object value)
-            throws IOException
-    {
-        ByteBuffer buf = encodeObject(daptype, value);
-        byte[] bytes = buf.array();
-        int len = buf.position();
-        if(checksumming)
-            checksum.update(bytes, 0, len);
-        if(DEBUG)
-            DapDump.dumpbytes(buf);
-        output.write(bytes, 0, len);
-        if(DEBUG) {
-            System.err.printf("%s: ", daptype.getShortName());
-            for(int i = 0; i < len; i++) {
-                int x = (int)bytes[i];
-                System.err.printf("%02x", (int) (x & 0xff));
-            }
-            System.err.println();
-        }
-    }
-
-    /**
      * Write out a prefix count
      *
      * @param count the count to write out
@@ -404,14 +283,14 @@ public class SerialWriter
      * Write out an array of atomic values
      *
      * @param daptype the type of the object
-     * @param value the array of values
+     * @param values the array of values
      * @throws IOException
      */
     public void
-    writeArray(DapType daptype, Object values)
+    writeAtomicArray(DapType daptype, Object values)
             throws IOException
     {
-        ByteBuffer buf = encodeArray(daptype, values);
+        ByteBuffer buf = SerialWriter.encodeArray(daptype, values,this.order);
         byte[] bytes = buf.array();
         int len = buf.position();
         if(checksumming)

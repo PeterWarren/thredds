@@ -4,7 +4,7 @@
 
 package dap4.cdm;
 
-import dap4.core.data.DataException;
+import dap4.core.util.DapException;
 import dap4.core.dmr.DapEnumeration;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.TypeSort;
@@ -986,7 +986,7 @@ abstract public class CDMTypeFcns
 
     static public void
     vectorcopy(DapType datatype, Object src, Object dst, long srcoffset, long dstoffset)
-            throws DataException
+            throws DapException
     {
         switch (datatype.getTypeSort()) {
         case UInt8:
@@ -1030,7 +1030,7 @@ abstract public class CDMTypeFcns
         case Struct:
         case Seq:
         default:
-            throw new DataException("Attempt to read non-atomic value of type: " + datatype);
+            throw new DapException("Attempt to read non-atomic value of type: " + datatype);
         }
     }
 

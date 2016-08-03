@@ -7,10 +7,9 @@ package dap4.servlet;
 import dap4.core.ce.CEConstraint;
 import dap4.core.dmr.*;
 import dap4.core.util.*;
-import dap4.dap4lib.DMRPrint;
+import dap4.dap4lib.DMRPrinter;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
 
@@ -156,8 +155,8 @@ public class Generator extends DapSerializer
         try {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            DMRPrint dp = new DMRPrint(pw);
-            dp.print(this.ce, dmr);
+            DMRPrinter dp = new DMRPrinter(dmr,this.ce,pw);
+            dp.print();
             pw.close();
             sw.close();
             String tmp = sw.toString();
@@ -215,7 +214,7 @@ public class Generator extends DapSerializer
             // get the slices from the constraint
             List<Slice> slices = ce.getConstrainedSlices(dapvar);
             // Create an odometer from the slices
-            odom = Odometer.factory(slices, dapvar.getDimensions(),false);
+            odom = Odometer.factory(slices, dapvar.getDimensions());
         }
         while(odom.hasNext()) {
             Object value = values.nextValue(basetype);
@@ -225,7 +224,7 @@ public class Generator extends DapSerializer
             }
             try {
                 assert(writer != null);
-                writer.writeObject(basetype, value);
+                writer.writeAtomicArray(basetype, value);
             } catch (IOException ioe) {
                 throw new DapException(ioe);
             }
@@ -243,7 +242,7 @@ public class Generator extends DapSerializer
             odom = new ScalarOdometer();
         } else {// dimensioned
             List<Slice> slices = ce.getConstrainedSlices(struct);
-            odom = Odometer.factory(slices, struct.getDimensions(),false);
+            odom = Odometer.factory(slices, struct.getDimensions());
         }
         while(odom.hasNext()) {
             // generate a value for each field recursively
@@ -265,14 +264,14 @@ public class Generator extends DapSerializer
             odom = new ScalarOdometer();
         } else {// dimensioned
             List<Slice> slices = ce.getConstrainedSlices(seq);
-            odom = Odometer.factory(slices, seq.getDimensions(), false);
+            odom = Odometer.factory(slices, seq.getDimensions());
         }
         try {
             while(odom.hasNext()) {
                 // Decide how many rows for this sequence
                 int nrows = (rowcount == 0 ? this.values.nextCount(MAXROWS)
                     : rowcount);
-                writer.writeObject(DapType.INT64, (long) nrows);
+                writer.writeAtomicArray(DapType.INT64, new long[]{ nrows});
                 for(int i = 0;i < nrows;i++) {
                     for(int j = 0;j < fields.size();j++) {
                         DapVariable field = fields.get(j);

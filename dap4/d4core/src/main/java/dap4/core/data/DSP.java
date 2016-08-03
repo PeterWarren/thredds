@@ -4,8 +4,8 @@
 
 package dap4.core.data;
 
-import dap4.core.ce.CEConstraint;
 import dap4.core.dmr.DapDataset;
+import dap4.core.dmr.DapVariable;
 import dap4.core.util.DapContext;
 import dap4.core.util.DapException;
 
@@ -31,9 +31,9 @@ public interface DSP
      * @param path It is assumed that the path is appropriate to the dsp
      *             E.g. an absolute path or a url.
      * @return DSP wrapping the path source
-     * @throws DapException
+     * @throws dap4.core.util.DapException
      */
-    public DSP open(String path) throws DapException;
+    public DSP open(String path) throws dap4.core.util.DapException;
 
     public String getLocation();
 
@@ -43,14 +43,10 @@ public interface DSP
 
     public void setContext(DapContext cxt);
 
-    public DapDataset getDMR() throws DapException;
+    public DapDataset getDMR() throws dap4.core.util.DapException;
 
-    public DataCursor getDataset() throws DataException;
-
-    public void setDataset(DataCursor ds);
+    public DataCursor getVariableData(DapVariable var) throws DapException; // get top level cursor
 
     public void close() throws IOException;
-
-    public Object getAnnotation();
 
 }

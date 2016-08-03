@@ -4,7 +4,6 @@
 
 package dap4.cdm.nc2;
 
-import dap4.core.data.DataDataset;
 import dap4.core.dmr.*;
 import dap4.core.data.DSP;
 import dap4.core.data.DSP;
@@ -21,7 +20,6 @@ import dap4.core.data.DSP;
 
 /*package*/ class CDMArrayDelegate implements CDMArray
 {
-    protected DataDataset root = null;
     protected DSP dsp = null;
     protected DapVariable template = null;
     protected long bytesize = 0;
@@ -43,12 +41,6 @@ import dap4.core.data.DSP;
     public DSP getDSP()
     {
         return this.dsp;
-    }
-
-    @Override
-    public DataDataset getRoot()
-    {
-        return this.root;
     }
 
     @Override

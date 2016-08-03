@@ -3,8 +3,12 @@
 
 package dap4.core.util;
 
-import dap4.core.dmr.*;
+import dap4.core.dmr.DapEnumConst;
+import dap4.core.dmr.DapEnumeration;
+import dap4.core.dmr.DapType;
+import dap4.core.dmr.TypeSort;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
@@ -17,11 +21,11 @@ import java.net.URL;
  * The Java type system is also
  * involved because neither DAP nor
  * CDM have perfect mappings to Java.
- * <p/>
+ * <p>
  * In any case, this means that we have to
  * use switches that operate on DAP X CDM
  * atomic types and this is really ugly.
- * <p/>
+ * <p>
  * * Special note about DAP4 char: this is treated
  * * as equivalent to Byte, so it does not appear here.
  * * Note also, this may turn out to be a really bad idea.
@@ -103,17 +107,17 @@ public abstract class Convert
 
         // presage
 
-        result = CoreTypeFcns.cvt(dsttype,value);
+        result = CoreTypeFcns.cvt(dsttype, value);
         if(result == null) {
             throw new ConversionException(
-                String.format("Cannot convert: %s -> %s", srcatomtype, dstatomtype));
+                    String.format("Cannot convert: %s -> %s", srcatomtype, dstatomtype));
         }
         return result;
     }
 
     /**
      * Special case of convertValue restricted to integer conversions
-     * <p/>
+     * <p>
      * Convert numeric value to a value consistent with the given type.
      *
      * @param srctype Assumed type of the value; must be a numeric type
@@ -148,12 +152,12 @@ public abstract class Convert
             return ((Double) value).longValue();
         else
             throw new ConversionException(
-                String.format("Cannot convert: %s -> long", srcatomtype));
+                    String.format("Cannot convert: %s -> long", srcatomtype));
     }
 
     /**
      * Special case of convertValue restricted to numeric conversions
-     * <p/>
+     * <p>
      * Convert numeric value to a double value
      *
      * @param srctype Assumed type of the value; must be a numeric type
@@ -167,6 +171,11 @@ public abstract class Convert
     static public double
     doubleValue(DapType srctype, Object value)
     {
+        if(value.getClass().isArray()) {
+            assert Array.getLength(value) == 1;
+            return doubleValue(srctype, Array.get(value, 0));
+        }
+
         TypeSort srcatomtype = srctype.getTypeSort();
 
         if(srcatomtype.isEnumType())
@@ -189,7 +198,7 @@ public abstract class Convert
             dvalue = (Double) value;
         else
             throw new ConversionException(
-                String.format("Cannot convert: %s -> double", srcatomtype));
+                    String.format("Cannot convert: %s -> double", srcatomtype));
         return dvalue;
     }
 
@@ -210,7 +219,6 @@ public abstract class Convert
     }
 
 
-
     /**
      * Force a double value into either float or double range
      *
@@ -221,7 +229,7 @@ public abstract class Convert
      */
     static public double
     forceRange(TypeSort basetype, double value)
-        throws DapException
+            throws DapException
     {
         assert basetype.isFloatType() : "Internal error";
         if(basetype == TypeSort.Float32) {
@@ -313,7 +321,7 @@ public abstract class Convert
             }
             byte[] b = new byte[len];
             int index = 0;
-            for(int i = 0;i < len;i += 2) {
+            for(int i = 0; i < len; i += 2) {
                 int digit1 = Escape.fromHex(opaque.charAt(i));
                 int digit2 = Escape.fromHex(opaque.charAt(i + 1));
                 if(digit1 < 0 || digit2 < 0)

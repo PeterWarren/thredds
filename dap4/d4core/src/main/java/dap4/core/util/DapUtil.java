@@ -3,7 +3,6 @@
 
 package dap4.core.util;
 
-import dap4.core.data.DataException;
 import dap4.core.dmr.*;
 
 import java.io.*;
@@ -307,7 +306,7 @@ abstract public class DapUtil // Should only contain static methods
                 if(cnt <= 0) break;
                 bytes.write(tmp, 0, cnt);
             } catch (IOException ioe) {
-                throw new DapException(ioe);
+                throw new dap4.core.util.DapException(ioe);
             }
         }
         return bytes.toByteArray();
@@ -425,7 +424,7 @@ abstract public class DapUtil // Should only contain static methods
 */
     static public List<Slice>
     dimsetSlices(List<DapDimension> dimset)
-            throws DapException
+            throws dap4.core.util.DapException
     {
         List<Slice> slices = new ArrayList<Slice>(dimset.size());
         for(int i = 0; i < dimset.size(); i++) {
@@ -463,9 +462,10 @@ abstract public class DapUtil // Should only contain static methods
     sliceProduct(List<Slice> slices) // another crossproduct
     {
         long count = 1;
-        for(Slice slice : slices) {
-            count *= slice.getCount();
-        }
+        if(slices != null)
+            for(Slice slice : slices) {
+                count *= slice.getCount();
+            }
         return count;
     }
 
@@ -535,7 +535,7 @@ abstract public class DapUtil // Should only contain static methods
     /**
      * Return the set of leading protocols for a url; may be more than one.
      *
-     * @param url the url whose protocols to return
+     * @param url        the url whose protocols to return
      * @param breakpoint return the index past last protocol
      * @return list of leading protocols without the trailing :
      */
@@ -602,21 +602,6 @@ abstract public class DapUtil // Should only contain static methods
         return buf.toString();
     }
 
-    static public boolean
-    isContiguous(List<Slice> slices)
-    {
-        return false; // temporary
-        /*
-        if(slices == null)
-            return false;
-        for(Slice s : slices) {
-            if(!s.isContiguous())
-                return false;
-        }
-        return true; */
-    }
-
-
     /**
      * Re-throw run-time exceptions
      */
@@ -678,15 +663,23 @@ abstract public class DapUtil // Should only contain static methods
      * @param indices  indicate value to read
      * @param template variable template
      * @return corresponding List<Slice>
-     * @throws DataException
+     * @throws DapException
      */
 
     static public List<Slice>
     indexToSlices(Index indices, DapVariable template)
-            throws DataException
+            throws dap4.core.util.DapException
     {
         List<DapDimension> dims = template.getDimensions();
-        List<Slice> slices = Slice.indexToSlices(indices);
+        List<Slice> slices = indexToSlices(indices, dims);
+        return slices;
+    }
+
+    static public List<Slice>
+    indexToSlices(Index indices, List<DapDimension> dimset)
+            throws dap4.core.util.DapException
+    {
+        List<Slice> slices = indexToSlices(indices);
         return slices;
     }
 
@@ -697,18 +690,51 @@ abstract public class DapUtil // Should only contain static methods
      * @param offset
      * @param template variable template
      * @return
-     * @throws DataException
+     * @throws dap4.core.util.DapException
      */
     static public List<Slice>
     offsetToSlices(long offset, DapVariable template)
-            throws DataException
+            throws DapException
     {
         List<DapDimension> dims = template.getDimensions();
         long[] dimsizes = DapUtil.getDimSizes(dims);
         return indexToSlices(Index.offsetToIndex(offset, dimsizes), template);
     }
 
+    /**
+     * Given an offset (single index) and a set of dimensions
+     * compute the set of dimension indices that correspond
+     * to the offset.
+     */
 
+    static public List<Slice>
+    indexToSlices(Index indices)
+            throws DapException
+    {
+        // offset = d3*(d2*(d1*(x1))+x2)+x3
+        List<Slice> slices = new ArrayList<>(indices.rank);
+        for(int i = 0; i < indices.rank; i++) {
+            long isize = indices.indices[i];
+            slices.add(new Slice(isize, isize, 1, indices.dimsizes[i]));
+        }
+        return slices;
+    }
+
+    /**
+     * Test if a set of slices represent a contiguous region
+     * This is equivalent to saying all strides are one
+     *
+     * @param slices
+     * @return
+     */
+    static public boolean
+    isContiguous(List<Slice> slices)
+    {
+        for(Slice sl : slices) {
+            if(sl.getStride() != 1) return false;
+        }
+        return true;
+    }
 
 }
 
