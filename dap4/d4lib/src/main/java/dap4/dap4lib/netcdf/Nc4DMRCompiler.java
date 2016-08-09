@@ -31,7 +31,7 @@ public class Nc4DMRCompiler
     //////////////////////////////////////////////////
     // Constants
 
-    static public final boolean DEBUG = true;
+    static public final boolean DEBUG = false;
 
     // Define reserved attributes
     static public final String UCARTAGVLEN = Nc4DSP.UCARTAGVLEN;
@@ -327,11 +327,11 @@ public class Nc4DMRCompiler
         FieldNotes notes = new FieldNotes(parent, index, offset)
                 .setBaseType(baset);
         switch (baset.getType().getTypeSort()) {
-        case Struct:
+        case Structure:
             field = factory.newStructure(name);
             field.annotate(notes);
             break;
-        case Seq:
+        case Sequence:
             field = factory.newSequence(name);
             field.annotate(notes);
             break;

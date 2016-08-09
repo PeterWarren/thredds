@@ -113,7 +113,7 @@ public class TestNc4Iosp extends DapTestCommon
     void
     chooseTestcases()
     {
-        if(true) {
+        if(false) {
             chosentests = locate("test_atomic_types.nc");
             prop_visual = true;
             prop_debug = true;
@@ -162,7 +162,7 @@ public class TestNc4Iosp extends DapTestCommon
     doOneTest(Nc4IospTest testcase)
             throws Exception
     {
-        System.out.println("Testcase: " + testcase.testinputpath);
+        System.err.println("Testcase: " + testcase.testinputpath);
 
         NetcdfDataset ncfile = openDataset(testcase.testinputpath);
 
@@ -191,7 +191,7 @@ public class TestNc4Iosp extends DapTestCommon
             String baselinecontent = null;
             if(mode == Mode.DMR || mode == Mode.BOTH) {
                 // Read the baseline file(s)
-                System.out.println("DMR Comparison:");
+                System.err.println("DMR Comparison:");
                 try {
                     baselinecontent = readfile(baselinefile + ".dmr");
                     Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, metadata));
@@ -200,7 +200,7 @@ public class TestNc4Iosp extends DapTestCommon
                 }
             }
             if(mode == Mode.DATA || mode == Mode.BOTH) {
-                System.out.println("DATA Comparison:");
+                System.err.println("DATA Comparison:");
                 try {
                     baselinecontent = readfile(baselinefile + ".dap");
                     Assert.assertTrue("***Data Fail", same(getTitle(), baselinecontent, data));

@@ -335,7 +335,7 @@ abstract public class CDMUtil
             throws DapException
     {
         Object result;
-            result = dataset.read(index);
+        result = dataset.read(index);
         double dvalue = 0.0;
         if(atomtype.isIntegerType() || atomtype.isEnumType()) {
             long lvalue = extractLongValue(atomtype, dataset, index);
@@ -548,6 +548,31 @@ abstract public class CDMUtil
             slices.add(sl);
         }
         return slices;
+    }
+
+    static public dap4.core.util.Index
+    cdmIndexToIndex(ucar.ma2.Index cdmidx)
+    {
+        int rank = cdmidx.getRank();
+        int[] shape = cdmidx.getShape();
+        long[] indices = new long[shape.length];
+        for(int i = 0; i < rank; i++) {
+            indices[i] = shape[i];
+        }
+        dap4.core.util.Index dapidx = new dap4.core.util.Index(indices, indices);
+        return dapidx;
+    }
+
+    static public ucar.ma2.Index
+    indexToCcMIndex(dap4.core.util.Index d4)
+    {
+        int rank = d4.getRank();
+        int[] shape = new int[rank];
+        for(int i = 0; i < rank; i++) {
+            shape[i] = (int)d4.get(i);
+        }
+        ucar.ma2.Index cdm =  ucar.ma2.Index.factory(shape);
+        return cdm;
     }
 
 }

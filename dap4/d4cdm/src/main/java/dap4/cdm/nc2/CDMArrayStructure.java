@@ -8,12 +8,13 @@ import dap4.cdm.CDMTypeFcns;
 import dap4.cdm.CDMUtil;
 import dap4.core.data.DSP;
 import dap4.core.data.DataCursor;
-import dap4.core.dmr.DapDimension;
 import dap4.core.dmr.DapStructure;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.DapVariable;
-import dap4.core.util.*;
-import dap4.core.util.Index;
+import dap4.core.util.DapException;
+import dap4.core.util.DapSort;
+import dap4.core.util.DapUtil;
+import dap4.core.util.Slice;
 import dap4.dap4lib.LibTypeFcns;
 import ucar.ma2.*;
 import ucar.nc2.Group;
@@ -37,8 +38,25 @@ import static dap4.core.data.DataCursor.Scheme;
  * of fields in the sequence.
  */
 
-/*package*/ class CDMArrayStructure extends ArrayStructure implements CDMArray
+/*package*/ class
+CDMArrayStructure extends ArrayStructure implements CDMArray
 {
+    //////////////////////////////////////////////////
+    // Type decls
+
+    // Define an open wrapper around a field array in order
+    // to make the code somewhat more clear
+
+    static protected class FieldSet
+    {
+        public Array[] fields;
+
+        FieldSet(int nfields)
+        {
+            fields = new Array[nfields];
+        }
+    }
+
     //////////////////////////////////////////////////
     // Instance variables
 
@@ -46,24 +64,26 @@ import static dap4.core.data.DataCursor.Scheme;
     protected Group cdmroot = null;
     protected DSP dsp = null;
     protected DapVariable template = null;
-    protected long bytesize = 0;
     protected DapType basetype = null;
+    protected long dimsize = 0;
+    protected int nmembers = 0;
+
     protected DataCursor data = null;
 
-    protected long dimsize = 0;
-    protected long nmembers = 0;
-
     /**
-     * Since we are using StructureData,
-     * we do not actually need to keep the
-     * DataStructure instances as such.
-     * We need a mapping from index X member to a
-     * CDMArray object.
-     * Total number of objects is dimsize * |members|.
-     * Accessed by StructureData.
+     * Since we are using StructureDataA,
+     * we store a list Field sets
+     * So we have a map: index -> Field object.
+     * Total number of objects is dimsize.
+     * Accessed by calls from StructureDataA.
+     * Note: We use the super.sdata field to store
+     * the StructureData instances.
      */
 
-    protected Array[][] instances = null;
+    // Note: term records here means the elements of the array,
+    // not record as in Sequence
+
+    protected FieldSet[] records = null; // list of Structure elements
 
 
     //////////////////////////////////////////////////
@@ -79,48 +99,35 @@ import static dap4.core.data.DataCursor.Scheme;
     {
         super(computemembers((DapStructure) data.getTemplate()),
                 CDMUtil.computeEffectiveShape(((DapVariable) data.getTemplate()).getDimensions()));
-        assert data.getScheme() == Scheme.STRUCTURE;
+        this.template = (DapVariable) data.getTemplate();
+        assert (this.template.getRank() == 0 && data.getScheme() == Scheme.STRUCTURE)
+                || data.getScheme() == Scheme.STRUCTARRAY;
         this.dsp = data.getDSP();
         this.cdmroot = cdmroot;
-        this.template = (DapVariable) data.getTemplate();
         this.basetype = this.template.getBaseType();
-
         this.dimsize = DapUtil.dimProduct(template.getDimensions());
-        this.data = data;
         this.nmembers = ((DapStructure) template).getFields().size();
 
-        // Fill in the instances and structdata vectors
+        this.data = data;
+
+        // Fill in the structdata (in parent) and instance vectors
         super.sdata = new StructureDataA[(int) this.dimsize];
-        instances = new Array[(int) this.dimsize][(int) this.nmembers];
+        records = new FieldSet[(int) this.dimsize];
         for(int i = 0; i < dimsize; i++) {
             super.sdata[i] = new StructureDataA(this, i);
-            instances[i] = new Array[(int) this.nmembers];
+            records[i] = new FieldSet(this.nmembers);
         }
     }
 
-    /*package*/ void
-    finish()
+    /*package*/
+    void
+    add(long recno, int fieldno, Array field)
     {
-        try {
-            List<DapDimension> dimset = this.template.getDimensions();
-            Odometer odom = Odometer.factory(DapUtil.dimsetSlices(dimset));
-            while(odom.hasNext()) {
-                // create instances[i][j]; consider doing on the fly
-                Index index = odom.next();
-                long offset = index.index();
-                DataCursor ithelement = (DataCursor)this.data.read(index);
-                Array[] ithmembers = instances[(int)offset];
-                for(int j = 0; j < this.nmembers; j++) {
-                    DataCursor dc = ithelement.getField((int)index.index());
-                    ithmembers[j] = new CDMArrayAtomic(dc);
-                }
-            }
-        } catch (DapException e) {
-            throw new IndexOutOfBoundsException(e.getMessage());
-        }
-        this.bytesize = computeTotalSize();
+        FieldSet fs = records[(int) recno];
+        if(fs == null)
+            records[(int) recno] = (fs = new FieldSet(this.nmembers));
+        fs.fields[fieldno] = field;
     }
-
     //////////////////////////////////////////////////
     // CDMArray Interface
 
@@ -151,22 +158,6 @@ import static dap4.core.data.DataCursor.Scheme;
         return this.dimsize;
     }
 
-    void addField(long pos, StructureMembers.Member m, Array instance)
-    {
-        int mindex = memberIndex(m);
-        addField(pos, mindex, instance);
-    }
-
-    void addField(long offset, int mindex, Array instance)
-    {
-        assert this.instances != null : "Internal Error";
-        if(offset < 0 || offset >= this.dimsize)
-            throw new ArrayIndexOutOfBoundsException("CDMArrayStructure: dimension index out of range: " + offset);
-        if(mindex < 0 || mindex >= this.nmembers)
-            throw new ArrayIndexOutOfBoundsException("CDMArrayStructure: member index out of range: " + mindex);
-        this.instances[(int) offset][mindex] = instance; // WARNING: overwrites
-    }
-
     //////////////////////////////////////////////////
 
     public String toString()
@@ -179,30 +170,15 @@ import static dap4.core.data.DataCursor.Scheme;
                 buf.append("\n");
             buf.append("Structure {\n");
             if(fields != null) {
-                int nmembers = fields.size();
-                for(int j = 0; j < nmembers; j++) {
-                    DapVariable field = fields.get(j);
-                    String sfield;
-                    Array array = instances[i][j];
-                    sfield = (array == null ? "null" : array.toString());
+                for(int j = 0; j < this.nmembers; j++) {
+                    Array field = records[i].fields[j];
+                    String sfield = (field == null ? "null" : fields.toString());
                     buf.append(sfield + "\n");
                 }
             }
             buf.append(String.format("} [%d/%d]", i, dimsize));
         }
         return buf.toString();
-    }
-
-    public long
-    computeTotalSize()
-    {
-        long totalsize = 0;
-        for(int recno = 0; recno < this.dimsize; recno++) {
-            for(int m = 0; m < this.nmembers; m++) {
-                totalsize += instances[recno][m].getSizeBytes();
-            }
-        }
-        return totalsize;
     }
 
     //////////////////////////////////////////////////
@@ -219,28 +195,14 @@ import static dap4.core.data.DataCursor.Scheme;
      * @return
      */
     @Override
-    public StructureData getStructureData(int index)
+    public StructureData
+    getStructureData(int index)
     {
         assert (super.sdata != null);
         if(index < 0 || index >= this.dimsize)
             throw new IllegalArgumentException(index + " >= " + super.sdata.length);
         assert (super.sdata[index] != null);
         return super.sdata[index];
-    }
-
-    /**
-     * Key interface method coming in from StructureDataA.
-     *
-     * @param recno The instance # of the array of Structure instances
-     * @param m     The member of interest in the Structure instance
-     * @return The ucar.ma2.Array instance corresponding to the instance.
-     * <p>
-     * Hidden: friend of StructureDataA
-     */
-    public ucar.ma2.Array
-    getArray(int recno, StructureMembers.Member m)
-    {
-        return (ucar.ma2.Array) memberArray(recno, memberIndex(m));
     }
 
     public double getScalarDouble(int index, StructureMembers.Member m)
@@ -481,6 +443,25 @@ import static dap4.core.data.DataCursor.Scheme;
         return this; // temporary
     }
 
+    /////////////////////////
+    // Define API required by StructureDataA
+
+    /**
+     * Key interface method coming in from StructureDataA.
+     *
+     * @param recno The instance # of the array of Structure instances
+     * @param m     The member of interest in the Structure instance
+     * @return The ucar.ma2.Array instance corresponding to the instance.
+     * <p>
+     * Hidden: friend of StructureDataA
+     */
+    @Override
+    public ucar.ma2.Array
+    getArray(int recno, StructureMembers.Member m)
+    {
+        return (ucar.ma2.Array) memberArray(recno, memberIndex(m));
+    }
+
     //////////////////////////////////////////////////
     // Utilities
 
@@ -510,10 +491,12 @@ import static dap4.core.data.DataCursor.Scheme;
         List<DapVariable> fields = ds.getFields();
         for(int i = 0; i < fields.size(); i++) {
             DapVariable field = fields.get(i);
+            DapType dt = field.getBaseType();
+            DataType cdmtype = CDMTypeFcns.daptype2cdmtype(dt);
             StructureMembers.Member m =
                     sm.addMember(
                             field.getShortName(), "", null,
-                            CDMTypeFcns.daptype2cdmtype(field.getBaseType()),
+                            cdmtype,
                             CDMUtil.computeEffectiveShape(ds.getDimensions()));
             m.setDataParam(i); // So we can index into various lists
             // recurse if this field is itself a structure
@@ -528,8 +511,19 @@ import static dap4.core.data.DataCursor.Scheme;
     protected Array
     memberArray(int recno, int memberindex)
     {
-        Array cdmdata = instances[recno][memberindex];
-        return cdmdata;
+        DapStructure template = (DapStructure) this.getTemplate();
+        DapVariable field = template.getField(memberindex);
+        DapType base = field.getBaseType();
+        if(base == null)
+            throw new IllegalStateException("Unknown field type: " + field);
+        Object[] values = new Object[(int) field.getCount()];
+        FieldSet fs = records[recno];
+        Array fa = fs.fields[memberindex];
+        DataType dt = CDMTypeFcns.daptype2cdmtype(base);
+        Object storage = fa.get1DJavaArray(dt);
+        Class elemtype = CDMTypeFcns.cdmElementClass(dt);
+        int shape[] = new int[]{(int)field.getCount()};
+        return Array.makeFromJavaArray(storage, dt.isUnsigned());
     }
 
     static protected int

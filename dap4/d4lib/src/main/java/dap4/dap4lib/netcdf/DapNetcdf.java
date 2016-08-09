@@ -292,31 +292,31 @@ public interface DapNetcdf extends Library
     int nc_get_var_string(int ncid, int varid, String[] sarray);
 
     // read single element
-    int nc_get_var1(int ncid, int varid, SizeTByReference indexp, Pointer p);
+    int nc_get_var1(int ncid, int varid, SizeT[] indexp, Pointer p);
 
-    int nc_get_var1_text(int ncid, int varid, SizeTByReference indexp, byte[] op);
+    int nc_get_var1_text(int ncid, int varid, SizeT[] indexp, byte[] op);
 
-    int nc_get_var1_schar(int ncid, int varid, SizeTByReference indexp, byte[] ip);
+    int nc_get_var1_schar(int ncid, int varid, SizeT[] indexp, byte[] ip);
 
-    int nc_get_var1_ubyte(int ncid, int varid, SizeTByReference indexp, byte[] ip);
+    int nc_get_var1_ubyte(int ncid, int varid, SizeT[] indexp, byte[] ip);
 
-    int nc_get_var1_short(int ncid, int varid, SizeTByReference indexp, short[] ip);
+    int nc_get_var1_short(int ncid, int varid, SizeT[] indexp, short[] ip);
 
-    int nc_get_var1_ushort(int ncid, int varid, SizeTByReference indexp, short[] ip);
+    int nc_get_var1_ushort(int ncid, int varid, SizeT[] indexp, short[] ip);
 
-    int nc_get_var1_int(int ncid, int varid, SizeTByReference indexp, int[] ip);
+    int nc_get_var1_int(int ncid, int varid, SizeT[] indexp, int[] ip);
 
-    int nc_get_var1_uint(int ncid, int varid, SizeTByReference indexp, int[] ip);
+    int nc_get_var1_uint(int ncid, int varid, SizeT[] indexp, int[] ip);
 
-    int nc_get_var1_longlong(int ncid, int varid, SizeTByReference indexp, long[] ip);
+    int nc_get_var1_longlong(int ncid, int varid, SizeT[] indexp, long[] ip);
 
-    int nc_get_var1_ulonglong(int ncid, int varid, SizeTByReference indexp, long[] ip);
+    int nc_get_var1_ulonglong(int ncid, int varid, SizeT[] indexp, long[] ip);
 
-    int nc_get_var1_float(int ncid, int varid, SizeTByReference indexp, float[] ip);
+    int nc_get_var1_float(int ncid, int varid, SizeT[] indexp, float[] ip);
 
-    int nc_get_var1_double(int ncid, int varid, SizeTByReference indexp, double[] ip);
+    int nc_get_var1_double(int ncid, int varid, SizeT[] indexp, double[] ip);
 
-    int nc_get_var1_string(int ncid, int varid, SizeTByReference indexp, String[] sarray);
+    int nc_get_var1_string(int ncid, int varid, SizeT[] indexp, String[] sarray);
 
     // read array section
 

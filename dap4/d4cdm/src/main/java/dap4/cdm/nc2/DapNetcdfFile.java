@@ -73,6 +73,7 @@ public class DapNetcdfFile extends NetcdfFile
     static protected DSPRegistry dspregistry = new DSPRegistry();
 
     static {
+        dspregistry.register(FileDSP.class, DSPRegistry.FIRST);
         dspregistry.register(HttpDSP.class, DSPRegistry.FIRST);
     }
 

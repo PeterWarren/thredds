@@ -34,7 +34,7 @@ abstract public class DapController extends HttpServlet
     //////////////////////////////////////////////////
     // Constants
 
-    static public final boolean DEBUG = true;
+    static public final boolean DEBUG = false;
 
     static public final boolean PARSEDEBUG = false;
 

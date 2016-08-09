@@ -25,8 +25,10 @@ import ucar.unidata.util.test.UnitTestCommon;
 
 import javax.servlet.ServletException;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
 @ContextConfiguration
 @WebAppConfiguration("file:src/test/data")
@@ -151,6 +153,53 @@ abstract public class DapTestCommon extends UnitTestCommon
                 throw new DapException("Mocker: no controller");
             this.controller.handleRequest(this.req, this.resp);
             return this.resp.getContentAsByteArray();
+        }
+    }
+
+    static class TestFilter implements FileFilter
+    {
+        boolean debug;
+        boolean strip;
+        String[] extensions;
+
+        public TestFilter(boolean debug, String[] extensions)
+        {
+            this.debug = debug;
+            this.strip = strip;
+            this.extensions = extensions;
+        }
+
+        public boolean accept(File file)
+        {
+            boolean ok = false;
+            if(file.isFile() && file.canRead()) {
+                // Check for proper extension
+                String name = file.getName();
+                if(name != null) {
+                    for(String ext : extensions) {
+                        if(name.endsWith(ext))
+                            ok = true;
+                    }
+                }
+                if(!ok && debug)
+                    System.err.println("Ignoring: " + file.toString());
+            }
+            return ok;
+        }
+
+        static void
+        filterfiles(String path,List<String> matches, String... extensions)
+        {
+            File testdirf = new File(path);
+            assert (testdirf.canRead());
+            TestFilter tf = new TestFilter(DEBUG, extensions);
+            File[] filelist = testdirf.listFiles(tf);
+            for(int i = 0; i < filelist.length; i++) {
+                File file = filelist[i];
+                if(file.isDirectory()) continue;
+                String fname = DapUtil.canonicalpath(file.getAbsolutePath());
+                matches.add(fname);
+            }
         }
     }
 

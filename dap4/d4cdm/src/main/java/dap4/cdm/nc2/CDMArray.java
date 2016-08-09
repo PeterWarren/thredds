@@ -20,17 +20,5 @@ the CDM array classes
     public long getSizeBytes(); // In bytes
     public DapType getBaseType();
 
-    //////////////////////////////////////////////////
-    // Utilities
 
-    static dap4.core.util.Index
-    cdmIndexToIndex(ucar.ma2.Index cdmidx)
-    {
-	int rank = cdmidx.getRank();
-	int[] shape = cdmidx.getShape();
-	long[] indices = new long[shape.length];
-	for(int i=0;i<rank;i++) indices[i] = shape[i];
-	dap4.core.util.Index dapidx = new dap4.core.util.Index(indices,indices);
-	return dapidx;
-    }
 }

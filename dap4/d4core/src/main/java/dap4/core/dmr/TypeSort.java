@@ -53,8 +53,8 @@ public enum TypeSort
     URL("URL", ISSTRING | ISLEGALATTRTYPE | ISATOMIC),
     Opaque("Opaque", ISOPAQUE | ISLEGALATTRTYPE | ISATOMIC),
     Enum("Enum", ISENUM | ISFIXEDSIZE | ISLEGALATTRTYPE),
-    Struct("Struct", ISSTRUCT|ISCOMPOUND), // Add this to avoid having to check the DapSort
-    Seq("Seq", ISSEQ|ISCOMPOUND); // Add this to avoid having to check the DapSort
+    Structure("Struct", ISSTRUCT|ISCOMPOUND), // Add this to avoid having to check the DapSort
+    Sequence("Seq", ISSEQ|ISCOMPOUND); // Add this to avoid having to check the DapSort
 
     private final String typename;
     private final int classification;
@@ -157,6 +157,16 @@ public enum TypeSort
     }
 
     public boolean isStructType()
+    {
+        return (classification & ISSTRUCT) != 0;
+    }
+
+    public boolean isSeqType()
+    {
+        return (classification & ISSEQ) != 0;
+    }
+
+    public boolean isCompoundType()
     {
         return (classification & ISSTRUCT) != 0 || (classification & ISSEQ) != 0;
     }

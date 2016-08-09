@@ -4,11 +4,11 @@
 
 package dap4.cdm;
 
-import dap4.core.util.DapException;
 import dap4.core.dmr.DapEnumeration;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.TypeSort;
 import dap4.core.util.ConversionException;
+import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
 import ucar.ma2.DataType;
 import ucar.ma2.ForbiddenConversionException;
@@ -201,6 +201,7 @@ abstract public class CDMTypeFcns
     static public DataType
     daptype2cdmtype(DapType type)
     {
+        assert(type != null);
         switch (type.getTypeSort()) {
         case Char:
             return DataType.CHAR;
@@ -251,9 +252,9 @@ abstract public class CDMTypeFcns
                 break;
             }
             break;
-        case Struct:
+        case Structure:
             return DataType.STRUCTURE;
-        case Seq:
+        case Sequence:
             return DataType.SEQUENCE;
         default:
             break;
@@ -1027,8 +1028,8 @@ abstract public class CDMTypeFcns
         case Enum:
             vectorcopy(((DapEnumeration) datatype).getBaseType(), src, dst, srcoffset, dstoffset);
             break;
-        case Struct:
-        case Seq:
+        case Structure:
+        case Sequence:
         default:
             throw new DapException("Attempt to read non-atomic value of type: " + datatype);
         }

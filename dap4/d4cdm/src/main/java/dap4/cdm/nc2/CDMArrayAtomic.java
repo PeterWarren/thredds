@@ -13,6 +13,7 @@ import dap4.core.dmr.DapVariable;
 import dap4.core.util.Convert;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
+import dap4.core.util.Slice;
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
 import ucar.ma2.Index;
@@ -20,6 +21,7 @@ import ucar.ma2.IndexIterator;
 import ucar.nc2.Group;
 
 import java.io.IOException;
+import java.util.List;
 
 import static dap4.core.data.DataCursor.Scheme;
 
@@ -124,47 +126,47 @@ import static dap4.core.data.DataCursor.Scheme;
 
     public double getDouble(ucar.ma2.Index cdmidx)
     {
-        return getDouble(CDMArray.cdmIndexToIndex(cdmidx));
+        return getDouble(CDMUtil.cdmIndexToIndex(cdmidx));
     }
 
     public float getFloat(ucar.ma2.Index cdmidx)
     {
-        return getFloat(CDMArray.cdmIndexToIndex(cdmidx));
+        return getFloat(CDMUtil.cdmIndexToIndex(cdmidx));
     }
 
     public long getLong(ucar.ma2.Index cdmidx)
     {
-        return getLong(CDMArray.cdmIndexToIndex(cdmidx));
+        return getLong(CDMUtil.cdmIndexToIndex(cdmidx));
     }
 
     public int getInt(ucar.ma2.Index cdmidx)
     {
-        return getInt(CDMArray.cdmIndexToIndex(cdmidx));
+        return getInt(CDMUtil.cdmIndexToIndex(cdmidx));
     }
 
     public short getShort(ucar.ma2.Index cdmidx)
     {
-        return getShort(CDMArray.cdmIndexToIndex(cdmidx));
+        return getShort(CDMUtil.cdmIndexToIndex(cdmidx));
     }
 
     public byte getByte(ucar.ma2.Index cdmidx)
     {
-        return getByte(CDMArray.cdmIndexToIndex(cdmidx));
+        return getByte(CDMUtil.cdmIndexToIndex(cdmidx));
     }
 
     public char getChar(ucar.ma2.Index cdmidx)
     {
-        return getChar(CDMArray.cdmIndexToIndex(cdmidx));
+        return getChar(CDMUtil.cdmIndexToIndex(cdmidx));
     }
 
     public boolean getBoolean(ucar.ma2.Index cdmidx)
     {
-        return getBoolean(CDMArray.cdmIndexToIndex(cdmidx));
+        return getBoolean(CDMUtil.cdmIndexToIndex(cdmidx));
     }
 
     public Object getObject(ucar.ma2.Index cdmidx)
     {
-        return getObject(CDMArray.cdmIndexToIndex(cdmidx));
+        return getObject(CDMUtil.cdmIndexToIndex(cdmidx));
     }
 
     // Convert int base to Index based
@@ -222,6 +224,18 @@ import static dap4.core.data.DataCursor.Scheme;
         long[] dimsizes = DapUtil.getDimSizes(((DapVariable) getTemplate()).getDimensions());
         return getObject(dap4.core.util.Index.offsetToIndex(offset, dimsizes));
     }
+
+    public Object getStorage()
+    {
+        try {
+            List<Slice> slices = DapUtil.dimsetSlices(this.template.getDimensions());
+            Object result = this.data.read(slices);
+            return result;
+        } catch (DapException e) {
+            throw new IllegalArgumentException();
+        }
+    }
+
 
     // Unsupported Methods
 
@@ -315,11 +329,6 @@ import static dap4.core.data.DataCursor.Scheme;
         throw new UnsupportedOperationException();
     }
 
-    public Object getStorage()
-    {
-        throw new UnsupportedOperationException();
-    }
-
     protected void copyTo1DJavaArray(IndexIterator indexIterator, Object o)
     {
         throw new UnsupportedOperationException();
@@ -349,6 +358,7 @@ import static dap4.core.data.DataCursor.Scheme;
         assert data.getScheme() == Scheme.ATOMIC;
         try {
             Object value = data.read(idx);
+            value = java.lang.reflect.Array.get(value, 0);
             return Convert.doubleValue(this.basetype, value);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -367,6 +377,7 @@ import static dap4.core.data.DataCursor.Scheme;
         assert data.getScheme() == Scheme.ATOMIC;
         try {
             Object value = data.read(idx);
+            value = java.lang.reflect.Array.get(value, 0);
             return (float) Convert.doubleValue(this.basetype, value);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -384,6 +395,7 @@ import static dap4.core.data.DataCursor.Scheme;
         assert data.getScheme() == Scheme.ATOMIC;
         try {
             Object value = data.read(idx);
+            value = java.lang.reflect.Array.get(value, 0);
             return Convert.longValue(this.basetype, value);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -401,6 +413,7 @@ import static dap4.core.data.DataCursor.Scheme;
         assert data.getScheme() == Scheme.ATOMIC;
         try {
             Object value = data.read(idx);
+            value = java.lang.reflect.Array.get(value, 0);
             return (int) Convert.longValue(this.basetype, value);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -418,6 +431,7 @@ import static dap4.core.data.DataCursor.Scheme;
         assert data.getScheme() == Scheme.ATOMIC;
         try {
             Object value = data.read(idx);
+            value = java.lang.reflect.Array.get(value, 0);
             return (short) Convert.longValue(this.basetype, value);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -435,6 +449,7 @@ import static dap4.core.data.DataCursor.Scheme;
         assert data.getScheme() == Scheme.ATOMIC;
         try {
             Object value = data.read(idx);
+            value = java.lang.reflect.Array.get(value, 0);
             return (byte) (Convert.longValue(basetype, value) & 0xFFL);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -452,6 +467,7 @@ import static dap4.core.data.DataCursor.Scheme;
         assert data.getScheme() == Scheme.ATOMIC;
         try {
             Object value = data.read(idx);
+            value = java.lang.reflect.Array.get(value, 0);
             return (char) (Convert.longValue(basetype, value) & 0xFFL);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -469,6 +485,7 @@ import static dap4.core.data.DataCursor.Scheme;
         assert data.getScheme() == Scheme.ATOMIC;
         try {
             Object value = data.read(idx);
+            value = java.lang.reflect.Array.get(value, 0);
             return (Convert.longValue(basetype, value) != 0);
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
@@ -485,7 +502,9 @@ import static dap4.core.data.DataCursor.Scheme;
     {
         assert data.getScheme() == Scheme.ATOMIC;
         try {
-            return data.read(idx);
+            Object value = data.read(idx);
+            value = java.lang.reflect.Array.get(value, 0);
+            return value;
         } catch (IOException ioe) {
             throw new IndexOutOfBoundsException(ioe.getMessage());
         }

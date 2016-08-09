@@ -5,9 +5,11 @@
 
 package dap4.servlet;
 
-import dap4.core.dmr.*;
+import dap4.core.dmr.DapEnumConst;
+import dap4.core.dmr.DapEnumeration;
+import dap4.core.dmr.DapType;
+import dap4.core.dmr.TypeSort;
 import dap4.core.util.DapException;
-import dap4.dap4lib.Dap4Util;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -35,7 +37,7 @@ public class RandomValue extends Value
 
     //////////////////////////////////////////////////
     // Accessors
-    
+
     //////////////////////////////////////////////////
     // IValue Interface
 
@@ -46,68 +48,63 @@ public class RandomValue extends Value
 
     public Object
     nextValue(DapType basetype)
-        throws DapException
+            throws DapException
     {
-	Object value = null;
+        Object value = null;
         TypeSort atomtype = basetype.getTypeSort();
         if(atomtype.isIntegerType())
             value = nextInteger(basetype);
         else if(atomtype.isFloatType())
             value = nextFloat(basetype);
         else switch (atomtype) {
-        case Int8:
-        case UInt8:
-        case Int16:
-        case UInt16:
-        case Int32:
-        case UInt32:
-        case Int64:
-        case UInt64:
-            value = nextInteger(basetype);
-	    break;
-        case Float32:
-        case Float64:
-            value = nextFloat(basetype);
-	    break;
-
-        case Char:
-            value = nextString(random, 1, 32, 127).charAt(0);
-	    break;
-        case String:
-            value = nextString(random, MAXSTRINGSIZE, 32, 127);
-	    break;
-        case URL:
-            value = nextURL();
-	    break;
-        case Opaque:
-            int length = 2 + (random.nextInt(MAXOPAQUESIZE) * 2);
-            byte[] bytes = new byte[length];
-            random.nextBytes(bytes);
-            value = ByteBuffer.wrap(bytes);// order is irrelevant
-	    break;
-        case Enum:
-            //Coverity[FB.BC_UNCONFIRMED_CAST]
-            value = nextEnum(((DapEnumeration) basetype));
-	    break;
-        default:
-            throw new DapException("Unexpected type: " + basetype);
+            case Char:
+                value = new char[]{nextString(random, 1, 32, 127).charAt(0)};
+                break;
+            case String:
+                value = new String[]{nextString(random, MAXSTRINGSIZE, 32, 127)};
+                break;
+            case URL:
+                value = new String[]{nextURL()};
+                break;
+            case Opaque:
+                int length = 2 + (random.nextInt(MAXOPAQUESIZE) * 2);
+                byte[] bytes = new byte[length];
+                random.nextBytes(bytes);
+                value = new ByteBuffer[]{ByteBuffer.wrap(bytes)};// order is irrelevant
+                break;
+            case Enum:
+                //Coverity[FB.BC_UNCONFIRMED_CAST]
+                value = nextEnum(((DapEnumeration) basetype));
+                break;
+            case Int8:
+            case UInt8:
+            case Int16:
+            case UInt16:
+            case Int32:
+            case UInt32:
+            case Int64:
+            case UInt64:
+            case Float32:
+            case Float64:
+            default:
+                throw new DapException("Unexpected type: " + basetype);
+            }
+        if(DEBUG) {
+            System.err.printf("RandomValue.nextValue: (%s) %s",
+                    atomtype.toString(), value.toString());
+            if(atomtype.isIntegerType()) {
+                Number nn = (Number) value;
+                System.err.printf(" 0x%x\n", nn.longValue());
+            } else
+                System.err.println();
         }
-	if(DEBUG) {
-        System.err.printf("RandomValue.nextValue: (%s) %s",
-            atomtype.toString(), value.toString());
-        if(atomtype.isIntegerType()) {
-          Number nn = (Number)value;
-          System.err.printf(" 0x%x\n",nn.longValue());
-        } else
-            System.err.println();
-    }
-	return value;
+        return value;
     }
 
     // return an integer type value (including long, but not floats)
     public Object
     nextInteger(DapType basetype)
-        throws DapException
+            throws DapException
     {
         TypeSort atomtype = basetype.getTypeSort();
         if(!atomtype.isIntegerType())
@@ -115,38 +112,38 @@ public class RandomValue extends Value
         boolean unsigned = atomtype.isUnsigned();
         switch (atomtype) {
         case Int8:
-            return Byte.valueOf((byte) (random.nextInt(1 << 8) - (1 << 7)));
+            return new byte[]{(byte) (random.nextInt(1 << 8) - (1 << 7))};
         case UInt8:
-            return Byte.valueOf((byte) (random.nextInt(1 << 8) & 0xFF));
+            return new byte[]{(byte) (random.nextInt(1 << 8) & 0xFF)};
         case Int16:
-            return Short.valueOf((short) (random.nextInt(1 << 16) - (1 << 15)));
+            return new short[]{(short) (random.nextInt(1 << 16) - (1 << 15))};
         case UInt16:
-            return Short.valueOf((short) (random.nextInt(1 << 16)));
+            return new short[]{(short) (random.nextInt(1 << 16))};
         case Int32:
-            return Integer.valueOf(random.nextInt());
+            return new int[]{random.nextInt()};
         case UInt32:
             long l = random.nextLong();
             l = l & 0xFFFFFFFF;
-            return Integer.valueOf((int) l);
+            return new int[]{(int) l};
         case Int64:
-            return Long.valueOf(random.nextLong());
+            return new long[]{random.nextLong()};
         case UInt64:
-            return new BigInteger(64, random);
+            return new long[]{new BigInteger(64, random).longValue()};
         }
         throw new DapException("Unexpected type: " + basetype);
     }
 
-    // return an integer type value (including long, but not floats)
+    // return a float type value
     public Object
     nextFloat(DapType basetype)
-        throws DapException
+            throws DapException
     {
         TypeSort atomtype = basetype.getTypeSort();
         switch (atomtype) {
         case Float32:
-            return random.nextFloat();
+            return new float[]{random.nextFloat()};
         case Float64:
-            return random.nextDouble();
+            return new double[]{random.nextDouble()};
         default:
             break;
         }
@@ -162,7 +159,7 @@ public class RandomValue extends Value
         // Collect the enum const values as BigIntegers
         List<String> ecnames = en.getNames();
         BigInteger[] econsts = new BigInteger[ecnames.size()];
-        for(int i = 0;i < econsts.length;i++) {
+        for(int i = 0; i < econsts.length; i++) {
             DapEnumConst ec = en.lookup(ecnames.get(i));
             econsts[i] = BigInteger.valueOf(ec.getValue());
             if(basetype == TypeSort.UInt64)
@@ -174,28 +171,28 @@ public class RandomValue extends Value
         Object val = null;
         switch (basetype) {
         case Int8:
-            val = new Byte((byte) l);
+            val = new byte[]{(byte) l};
             break;
         case UInt8:
-            val = new Byte((byte) (l & 0xFFL));
+            val = new byte[]{(byte) (l & 0xFFL)};
             break;
         case Int16:
-            val = new Short((short) l);
+            val = new short[]{(short) l};
             break;
         case UInt16:
-            val = new Short((short) (l & 0xFFFFL));
+            val = new short[]{(short) (l & 0xFFFFL)};
             break;
         case Int32:
-            val = new Integer((int) l);
+            val = new int[]{(int) l};
             break;
         case UInt32:
-            val = new Integer((int) (l & 0xFFFFFFFFL));
+            val = new int[]{(int) (l & 0xFFFFFFFFL)};
             break;
         case Int64:
-            val = new Long(l);
+            val = new long[]{l};
             break;
         case UInt64:
-            val = new Long(l);
+            val = new long[]{l};
             break;
         }
         return val;
@@ -207,10 +204,10 @@ public class RandomValue extends Value
         int length = random.nextInt(maxlength) + 1;
         StringBuilder buf = new StringBuilder();
         if(asciionly && max > 127) max = 127;
-	    int range = (max+1) - min; // min..max+1 -> 0..(max+1)-min
-        for(int i = 0;i < length;i++) {
+        int range = (max + 1) - min; // min..max+1 -> 0..(max+1)-min
+        for(int i = 0; i < length; i++) {
             int c = random.nextInt(range); // 0..(max+1)-min
-	        c = c + min; // 0..(max+1)-min -> min..max+1
+            c = c + min; // 0..(max+1)-min -> min..max+1
             buf.append((char) c);
         }
         return buf.toString();
@@ -218,10 +215,10 @@ public class RandomValue extends Value
 
     static final String[] protocols = new String[]{"http", "https"};
     static final String legal =
-        "abcdefghijklmnoqqrstuvwxyz"
-            + "ABCDEFGHIJKLMNOQQRSTUVWXYZ"
-            + "0123456789"
-            + "_";
+            "abcdefghijklmnoqqrstuvwxyz"
+                    + "ABCDEFGHIJKLMNOQQRSTUVWXYZ"
+                    + "0123456789"
+                    + "_";
 
     String
     nextURL()
@@ -229,9 +226,9 @@ public class RandomValue extends Value
         StringBuilder url = new StringBuilder();
         url.append(protocols[random.nextInt(protocols.length)]);
         url.append("://");
-        for(int i = 0;i < HOSTNSEG;i++) {
+        for(int i = 0; i < HOSTNSEG; i++) {
             if(i > 0) url.append(".");
-            for(int j = 0;j < MAXSEGSIZE;j++) {
+            for(int j = 0; j < MAXSEGSIZE; j++) {
                 int c;
                 do {
                     c = random.nextInt('z');
@@ -241,9 +238,9 @@ public class RandomValue extends Value
         }
         if(random.nextBoolean())
             url.append(String.format(":%d", random.nextInt(5000) + 1));
-        for(int i = 0;i < PATHNSEG;i++) {
+        for(int i = 0; i < PATHNSEG; i++) {
             url.append("/");
-            for(int j = 0;j < MAXSEGSIZE;j++) {
+            for(int j = 0; j < MAXSEGSIZE; j++) {
                 int c;
                 do {
                     c = random.nextInt('z');
@@ -263,7 +260,7 @@ public class RandomValue extends Value
      */
     public int
     nextCount(int max)
-        throws DapException
+            throws DapException
     {
         int min = 1;
         if(max < min || min < 1)
@@ -271,8 +268,8 @@ public class RandomValue extends Value
         int range = (max + 1) - min;  // min..max+1 -> 0..(max+1)-min
         int n = random.nextInt(range);   //  0..(max+1)-min
         n = n + min;   // min..(max+1)
-	if(DEBUG)
-	    System.err.println("RandomValue.nextCount: "+n);
+        if(DEBUG)
+            System.err.println("RandomValue.nextCount: " + n);
         return n;
     }
 

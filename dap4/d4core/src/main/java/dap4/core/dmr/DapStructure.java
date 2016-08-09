@@ -39,11 +39,13 @@ public class DapStructure extends DapVariable
     public DapStructure()
     {
         super();
+        this.basetype = DapType.STRUCTURE;
     }
 
     public DapStructure(String name)
     {
         super(name);
+        this.basetype = DapType.STRUCTURE;
     }
 
     //////////////////////////////////////////////////

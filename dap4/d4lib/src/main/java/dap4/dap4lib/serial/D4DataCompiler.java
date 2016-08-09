@@ -239,7 +239,7 @@ public class D4DataCompiler
         long nrecs = getCount(this.databuffer);
         for(int r = 0; r < nrecs; r++) {
             pos = getPos(this.databuffer);
-            D4Cursor rec = new D4Cursor(D4Cursor.Scheme.SEQUENCE, this.dsp, dapseq)
+            D4Cursor rec = new D4Cursor(D4Cursor.Scheme.RECORD, this.dsp, dapseq)
                     .setOffset(pos);
             for(int m = 0; m < dfields.size(); m++) {
                 DapVariable dfield = dfields.get(m);

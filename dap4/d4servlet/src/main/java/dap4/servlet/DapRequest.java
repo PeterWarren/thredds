@@ -35,7 +35,7 @@ public class DapRequest
     //////////////////////////////////////////////////
     // Constants
 
-    static final boolean DEBUG = true;
+    static final boolean DEBUG = false;
 
     static public final String WEBINFPATH = "/WEB-INF";
     static public final String RESOURCEDIRNAME = "resources";

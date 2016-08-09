@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import thredds.server.dap4.Dap4Controller;
+import ucar.nc2.NetcdfFile;
 
 import javax.servlet.ServletContext;
 import java.io.ByteArrayInputStream;
@@ -86,32 +87,24 @@ public class TestServlet extends DapTestCommon
         String dataset;
         String[] extensions;
         boolean checksumming;
-        boolean xfail; // => template should be null
         Dump.Commands template;
         String testinputpath;
         String baselinepath;
         String generatepath;
 
-        TestCase(String dataset, String extensions, boolean checksumming,
-                 Dump.Commands template)
-        {
-            this(dataset, extensions, checksumming, false, template);
-        }
-
         TestCase(String dataset, String extensions, boolean checksumming)
         {
-            this(dataset, extensions, checksumming, true, null);
+            this(dataset, extensions, checksumming, null);
         }
 
         protected TestCase(String dataset, String extensions,
-                           boolean checksumming, boolean xfail,
+                           boolean checksumming,
                            Dump.Commands template)
         {
             this.title = dataset;
             this.dataset = dataset;
             this.extensions = extensions.split(",");
             this.template = template;
-            this.xfail = xfail;
             this.checksumming = checksumming;
             this.testinputpath = canonjoin(this.inputroot, dataset);
             this.baselinepath = canonjoin(this.baselineroot, dataset);
@@ -130,47 +123,6 @@ public class TestServlet extends DapTestCommon
         }
     }
 
-    static /*package*/ class GenerateFilter implements FileFilter
-    {
-        boolean debug;
-
-        public GenerateFilter(boolean debug)
-        {
-            this.debug = debug;
-        }
-
-        public boolean accept(File file)
-        {
-            boolean ok = false;
-            if(file.isFile() && file.canRead() && file.canWrite()) {
-                // Check for proper extension
-                String name = file.getName();
-                for(String ext : GENEXTENSIONS) {
-                    if(name != null && name.endsWith(ext))
-                        ok = true;
-                }
-            }
-            if(!ok && debug) {
-                System.err.println("Ignoring: " + file.toString());
-            }
-            return ok;
-        }
-
-    }
-
-    static /*package*/ class NullValidator implements Validator
-    {
-        public boolean supports(Class<?> clazz)
-        {
-            return true;
-        }
-
-        public void validate(Object target, Errors errors)
-        {
-            return;
-        }
-    }
-
     //////////////////////////////////////////////////
     // Instance variables
 
@@ -182,18 +134,20 @@ public class TestServlet extends DapTestCommon
 
     protected List<TestCase> chosentests = new ArrayList<TestCase>();
 
-    //////////////////////////////////////////////////.
+    //////////////////////////////////////////////////
 
     @Before
     public void setup()
+	throws Exception
     {
         StandaloneMockMvcBuilder mvcbuilder =
                 MockMvcBuilders.standaloneSetup(new Dap4Controller());
-        mvcbuilder.setValidator(new NullValidator());
+        mvcbuilder.setValidator(new TestServlet.NullValidator());
         this.mockMvc = mvcbuilder.build();
         testSetup();
         DapCache.dspregistry.register(FileDSP.class, DSPRegistry.FIRST);
         DapCache.dspregistry.register(SynDSP.class, DSPRegistry.FIRST);
+        //NetcdfFile.registerIOProvider("ucar.nc2.jni.netcdf.Nc4Iosp");
         if(prop_ascii)
             Generator.setASCII(true);
         TestCase.setRoots(canonjoin(getResourceRoot(), TESTINPUTDIR),
@@ -209,10 +163,10 @@ public class TestServlet extends DapTestCommon
     protected void
     chooseTestcases()
     {
-        if(true) {
-            chosentests = locate("test_struct_type.nc");
-            prop_visual = false;
-            prop_debug = false;
+        if(false) {
+            chosentests = locate("test_anon_dim.syn");
+            prop_visual = true;
+            prop_debug = true;
             prop_generate = false;
         } else {
             for(TestCase tc : alltestcases) {
@@ -220,6 +174,127 @@ public class TestServlet extends DapTestCommon
             }
         }
     }
+
+
+    //////////////////////////////////////////////////
+    // Junit test methods
+
+    @Test
+    public void testServlet()
+            throws Exception
+    {
+        DapCache.flush();
+        for(TestCase testcase : chosentests) {
+            doOneTest(testcase);
+        }
+    }
+
+    //////////////////////////////////////////////////
+    // Primary test method
+
+    void
+    doOneTest(TestCase testcase)
+            throws Exception
+    {
+        System.err.println("Testcase: " + testcase.testinputpath);
+        System.err.println("Baseline: " + testcase.baselinepath);
+
+        for(String extension : testcase.extensions) {
+            RequestMode ext = RequestMode.modeFor(extension);
+            switch (ext) {
+            case DMR:
+                dodmr(testcase);
+                break;
+            case DAP:
+                dodata(testcase);
+                break;
+            default:
+                Assert.assertTrue("Unknown extension", false);
+            }
+        }
+    }
+
+    void
+    dodmr(TestCase testcase)
+            throws Exception
+    {
+        String url = testcase.makeurl(RequestMode.DMR);
+
+        MvcResult result = perform(url,RESOURCEPATH,null,this.mockMvc);
+
+        // Collect the output
+        MockHttpServletResponse res = result.getResponse();
+        byte[] byteresult = res.getContentAsByteArray();
+
+        // Test by converting the raw output to a string
+        String sdmr = new String(byteresult, UTF8);
+
+        if(prop_visual)
+            visual(testcase.title + ".dmr", sdmr);
+        if(prop_baseline) {
+            writefile(testcase.baselinepath + ".dmr", sdmr);
+        } else if(prop_diff) { //compare with baseline
+            // Read the baseline file
+            String baselinecontent = readfile(testcase.baselinepath + ".dmr");
+            System.err.println("DMR Comparison");
+            Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdmr));
+        }
+    }
+
+    void
+    dodata(TestCase testcase)
+            throws Exception
+    {
+        String url = testcase.makeurl(RequestMode.DAP);
+
+        MvcResult result = perform(url,RESOURCEPATH,null,this.mockMvc);
+
+        // Collect the output
+        MockHttpServletResponse res = result.getResponse();
+        byte[] byteresult = res.getContentAsByteArray();
+
+        if(prop_debug || DEBUG) {
+            DapDump.dumpbytestream(byteresult, ByteOrder.nativeOrder(), "TestServlet.dodata");
+        }
+
+        if(prop_generate) {
+            // Dump the serialization into a file; this also includes the dmr
+            String target = testcase.generatepath + ".raw";
+            writefile(target, byteresult);
+        }
+
+        if(DEBUG) {
+            DapDump.dumpbytes(ByteBuffer.wrap(byteresult).order(ByteOrder.nativeOrder()), true);
+        }
+
+        // Setup a ChunkInputStream
+        ByteArrayInputStream bytestream = new ByteArrayInputStream(byteresult);
+
+        ChunkInputStream reader = new ChunkInputStream(bytestream, RequestMode.DAP, ByteOrder.nativeOrder());
+
+        String sdmr = reader.readDMR(); // Read the DMR
+        if(prop_visual)
+            visual(testcase.title + ".dmr.dap", sdmr);
+
+        Dump printer = new Dump();
+        String sdata = printer.dumpdata(reader, testcase.checksumming, reader.getByteOrder(), testcase.template);
+
+        if(prop_visual)
+            visual(testcase.title + ".dap", sdata);
+
+        if(prop_baseline)
+            writefile(testcase.baselinepath + ".dap", sdata);
+
+        if(prop_diff) {
+            //compare with baseline
+            // Read the baseline file
+            System.err.println("Data Comparison:");
+            String baselinecontent = readfile(testcase.baselinepath + ".dap");
+            Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdata));
+        }
+    }
+
+    //////////////////////////////////////////////////
 
     protected void
     defineAllTestcases()
@@ -510,39 +585,6 @@ public class TestServlet extends DapTestCommon
                                 printer.printchecksum();
                             }
                         }));
-        this.alltestcases.add(
-                new TestCase("test_sequence_1.syn", "dmr,dap", true,  //0
-                        // S4
-                        new Dump.Commands()
-                        {
-                            public void run(Dump printer) throws IOException
-                            {
-                                int count = printer.printcount();
-                                for(int j = 0; j < count; j++) {
-                                    printer.printvalue('S', 4);
-                                    printer.printvalue('S', 2);
-                                }
-                                printer.printchecksum();
-                            }
-                        }));
-        this.alltestcases.add(
-                new TestCase("test_sequence_2.syn", "dmr,dap", true,  //0
-                        // S4
-                        new Dump.Commands()
-                        {
-                            public void run(Dump printer) throws IOException
-                            {
-                                for(int i = 0; i < 2; i++) {
-                                    int count = printer.printcount();
-                                    for(int j = 0; j < count; j++) {
-                                        printer.printvalue('S', 4);
-                                        printer.printvalue('S', 2);
-                                    }
-                                    printer.newline();
-                                }
-                                printer.printchecksum();
-                            }
-                        }));
 /*Not currently working
         this.alltestcases.add(
             new TestCase("test_vlen1.nc", "dmr,dap", true,
@@ -742,125 +784,6 @@ public class TestServlet extends DapTestCommon
         );
     }
 
-
-    //////////////////////////////////////////////////
-    // Junit test methods
-
-    @Test
-    public void testServlet()
-            throws Exception
-    {
-        DapCache.flush();
-        for(TestCase testcase : chosentests) {
-            doOneTest(testcase);
-        }
-    }
-
-    //////////////////////////////////////////////////
-    // Primary test method
-
-    void
-    doOneTest(TestCase testcase)
-            throws Exception
-    {
-        System.err.println("Testcase: " + testcase.testinputpath);
-        System.err.println("Baseline: " + testcase.baselinepath);
-
-        for(String extension : testcase.extensions) {
-            RequestMode ext = RequestMode.modeFor(extension);
-            switch (ext) {
-            case DMR:
-                dodmr(testcase);
-                break;
-            case DAP:
-                dodata(testcase);
-                break;
-            default:
-                Assert.assertTrue("Unknown extension", false);
-            }
-        }
-    }
-
-    void
-    dodmr(TestCase testcase)
-            throws Exception
-    {
-        String url = testcase.makeurl(RequestMode.DMR);
-
-        MvcResult result = perform(url,RESOURCEPATH,null,this.mockMvc);
-
-        // Collect the output
-        MockHttpServletResponse res = result.getResponse();
-        byte[] byteresult = res.getContentAsByteArray();
-
-        // Test by converting the raw output to a string
-        String sdmr = new String(byteresult, UTF8);
-
-        if(prop_visual)
-            visual(testcase.title + ".dmr", sdmr);
-        if(!testcase.xfail && prop_baseline) {
-            writefile(testcase.baselinepath + ".dmr", sdmr);
-        } else if(prop_diff) { //compare with baseline
-            // Read the baseline file
-            String baselinecontent = readfile(testcase.baselinepath + ".dmr");
-            System.err.println("DMR Comparison");
-            Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdmr));
-        }
-    }
-
-    void
-    dodata(TestCase testcase)
-            throws Exception
-    {
-        String url = testcase.makeurl(RequestMode.DAP);
-
-        MvcResult result = perform(url,RESOURCEPATH,null,this.mockMvc);
-
-        // Collect the output
-        MockHttpServletResponse res = result.getResponse();
-        byte[] byteresult = res.getContentAsByteArray();
-
-        if(prop_debug || DEBUG) {
-            DapDump.dumpbytestream(byteresult, ByteOrder.nativeOrder(), "TestServlet.dodata");
-        }
-
-        if(!testcase.xfail && prop_generate) {
-            // Dump the serialization into a file; this also includes the dmr
-            String target = testcase.generatepath + ".raw";
-            writefile(target, byteresult);
-        }
-
-        if(DEBUG) {
-            DapDump.dumpbytes(ByteBuffer.wrap(byteresult).order(ByteOrder.nativeOrder()), true);
-        }
-
-        // Setup a ChunkInputStream
-        ByteArrayInputStream bytestream = new ByteArrayInputStream(byteresult);
-
-        ChunkInputStream reader = new ChunkInputStream(bytestream, RequestMode.DAP, ByteOrder.nativeOrder());
-
-        String sdmr = reader.readDMR(); // Read the DMR
-        if(prop_visual)
-            visual(testcase.title + ".dmr.dap", sdmr);
-
-        Dump printer = new Dump();
-        String sdata = printer.dumpdata(reader, testcase.checksumming, reader.getByteOrder(), testcase.template);
-
-        if(prop_visual)
-            visual(testcase.title + ".dap", sdata);
-
-        if(!testcase.xfail && prop_baseline)
-            writefile(testcase.baselinepath + ".dap", sdata);
-
-        if(prop_diff) {
-            //compare with baseline
-            // Read the baseline file
-            System.err.println("Note Comparison:");
-            String baselinecontent = readfile(testcase.baselinepath + ".dap");
-            Assert.assertTrue("***Fail", same(getTitle(), baselinecontent, sdata));
-        }
-    }
-
     //////////////////////////////////////////////////
     // Utility methods
 
@@ -875,6 +798,16 @@ public class TestServlet extends DapTestCommon
                 results.add(ct);
         }
         return results;
+    }
+
+
+    //////////////////////////////////////////////////
+    // Support classes
+
+    static /*package*/ class NullValidator implements Validator
+    {
+        public boolean supports(Class<?> clazz) {return true;}
+        public void validate(Object target, Errors errors) {return;}
     }
 
 }

@@ -4,15 +4,15 @@
 
 package dap4.cdm.nc2;
 
+import dap4.cdm.CDMTypeFcns;
 import dap4.core.data.DSP;
 import dap4.core.data.DataCursor;
+import dap4.core.dmr.DapSequence;
 import dap4.core.dmr.DapStructure;
 import dap4.core.dmr.DapType;
 import dap4.core.dmr.DapVariable;
 import dap4.core.util.DapException;
 import dap4.core.util.DapUtil;
-import dap4.core.util.Odometer;
-import dap4.core.util.Slice;
 import ucar.ma2.*;
 import ucar.nc2.Group;
 
@@ -21,29 +21,19 @@ import java.util.List;
 
 /**
  * CDM now has an ArraySequence type intended to
- * support VLEN.
- * So, sequence is simulated as a n+1 D structure where
+ * support VLEN (aka CDM (*) dimension).
+ * So, sequence is simulated as a rank n+1 structure where
  * the last dimension is "*" (i.e. variable length).
  * That is, given the following DAP4:
  * Sequence S {f1,f2,...fm} [d1][d2]...[dn]
  * Represent it in CDM as this:
  * Structure S {f1,f2,...fm} [d1][d2]...[dn][*]
- * <p>
- * With respect to the data, the above is stored
- * as an n-D array of ArrayObject instances where the
- * leaf objects are instances of (CDM)ArraySequence.
- * <p>
- * Internally, the sequence stored as a 2-D ragged array
- * CDMArray[][] records.
- * The first dimension has varying lengths representing
- * the (variable length) set of records in an instance
- * of a Sequence.
- * The second dimension has size |members| i.e. the number
- * of fields in the sequence.
- * <p>
  * We cannot subclass CDMArrayStructure because we need to subclass
  * ArraySequence, so we are forced to duplicate a lot of the CDMArrayStructure
  * code.
+ * The important point to note is that for CDM, we do not need to support
+ * Dimensioned sequences; the dimensions are supported by the enclosing
+ * ArrayStructure covering the non-vlen dimensions
  */
 
 /*package*/ class CDMArraySequence extends ArraySequence implements CDMArray
@@ -52,9 +42,21 @@ import java.util.List;
     //////////////////////////////////////////////////
     // Type decls
 
+    // Define an open wrapper around a field array in order
+    // to make the code somewhat more clear
+
+    static protected class FieldSet
+    {
+        public Array[] fields;
+
+        FieldSet(int nfields)
+        {
+            fields = new Array[nfields];
+        }
+    }
+
     static public class SDI implements StructureDataIterator
     {
-
         protected StructureData[] list;
         protected int position;
 
@@ -95,28 +97,32 @@ import java.util.List;
         }
 
     }
+
     //////////////////////////////////////////////////
     // Instance variables
 
-    protected DSP dsp = null;
-    protected DapVariable template = null;
+    protected Group cdmroot = null;
+    protected DSP dsp;
+    protected DapVariable template;
+    protected DapType basetype;
     protected long bytesize = 0;
-    protected DapType basetype = null;
+    protected long recordcount = 0;
+    protected int nmembers = 0;
 
-    protected DataCursor d4data = null;
-    protected long nmembers = 0;
+    protected DataCursor seqdata = null;
 
     /**
-     * As mentioned above, we store an array of
-     * arrays of CDMArrays, where each CDMArray innstance
-     * represents a single record in some D4DataSequence object.
-     * Total number of objects is |records| * |members|,
-     * where |members| is the number of field members, and |records| is
-     * the total number of records in the sequence instance.
+     * Since in CDM a sequence is the last dimension of
+     * array, we do not need to keep dimensionality info, only
+     * the variable length stuff, which we do using
+     * StructureDataA instances: 1 per record.
      */
 
-    protected Array[][] records = null;
-    protected long nrecords = 0;
+    // Track the records of this sequence as an array
+    // Note: term records here means the elements of the array,
+    // not record as in Sequence
+
+    protected FieldSet[] records = null; // list of records
 
     //////////////////////////////////////////////////
     // Constructor(s)
@@ -127,60 +133,51 @@ import java.util.List;
      * @param data
      */
     CDMArraySequence(Group group, DataCursor data)
-    throws DapException
+            throws DapException
     {
         super(CDMArrayStructure.computemembers((DapStructure) data.getTemplate()),
-                new SDI(), (int) data.getRecordCount());
-        this.dsp = dsp;
+                new SDI(), 0);
         this.template = (DapVariable) data.getTemplate();
-        this.d4data = d4data;
-        this.nmembers = ((DapStructure) template).getFields().size();
-        this.nrecords = d4data.getRecordCount();
+        // Currently do not allow non-scalar sequences
+        if(this.template.getRank() != 0)
+            throw new DapException("Non-scalar sequences unsupported through CDM interface");
+        assert data.getScheme() == DataCursor.Scheme.SEQUENCE;
+        this.cdmroot = group;
+        this.dsp = dsp;
         this.basetype = this.template.getBaseType();
+        this.seqdata = data;
+        this.recordcount = this.seqdata.getRecordCount();
+        this.nmembers = ((DapStructure) template).getFields().size();
 
-
-        // Fill in the instances and structdata vectors
-        // The leaf instances arrays will be filled in by the CDM compiler
-        super.sdata = new StructureDataA[(int) this.nrecords];
-        for(int i = 0; i < this.nrecords; i++) {
+        // Fill in the structdata (in parent) and record vectors
+        super.sdata = new StructureDataA[(int) this.recordcount];
+        records = new FieldSet[(int) this.recordcount];
+        for(int i = 0; i < this.recordcount; i++) {
             super.sdata[i] = new StructureDataA(this, i);
+            records[i] = new FieldSet(this.nmembers);
         }
-        this.records = new Array[(int) (this.nrecords)][(int) this.nmembers];
+
         ((SDI) super.iter).setList(super.sdata);
     }
 
-    /*package*/ void
-    finish()
-    {
-        try {
-            List<Slice> dimset = DapUtil.dimsetSlices(this.template.getDimensions());
-            Odometer odom = Odometer.factory(dimset);
-            while(odom.hasNext()) {
-                /* create instances[i][j]; consider doing on the fly */
-                dap4.core.util.Index index = odom.next();
-                DataCursor ithelement = (DataCursor)this.d4data.read(index);
-            }
-        } catch (DapException e) {
-            throw new IndexOutOfBoundsException(e.getMessage());
-        }
-        this.bytesize = computeTotalSize();
-    }
-
     //////////////////////////////////////////////////
-    // API
+    // Compiler API
 
+    /*package*/
     void
-    addField(long recno, int fieldno, Array instance)
+    add(long recno, int fieldno, Array field)
     {
-        assert this.records != null : "Internal Error";
-        if(recno < 0 || recno >= this.nrecords)
-            throw new ArrayIndexOutOfBoundsException("CDMArrayStructure: record index out of range: " + recno);
-        if(fieldno < 0 || fieldno >= this.nmembers)
-            throw new ArrayIndexOutOfBoundsException("CDMArrayStructure: field index out of range: " + fieldno);
-        Array[] fields = this.records[(int) recno];
-        if(fields == null)
-            throw new ArrayIndexOutOfBoundsException("CDMArrayStructure: record: " + recno);
-        fields[fieldno] = instance;
+        //Make sure all the space is allocated
+        if(records.length <= recno) {
+            FieldSet[] newrecs = new FieldSet[(int) recno + 1];
+            System.arraycopy(records, 0, newrecs, 0, records.length);
+            records = newrecs;
+        }
+        FieldSet fs = records[(int) recno];
+        if(fs == null) {
+            records[(int) recno] = (fs = new FieldSet(this.nmembers));
+        }
+        fs.fields[fieldno] = field;
     }
 
     //////////////////////////////////////////////////
@@ -209,35 +206,18 @@ import java.util.List;
     public String toString()
     {
         StringBuilder buf = new StringBuilder();
-        DapStructure struct = (DapStructure) this.template;
-        for(int i = 0; i < this.nrecords; i++) {
-            List<DapVariable> fields = struct.getFields();
-            if(i < (this.nrecords - 1))
+        DapSequence seq = (DapSequence) this.template;
+        long dimsize = DapUtil.dimProduct(seq.getDimensions());
+        for(int i = 0; i < dimsize; i++) {
+            List<DapVariable> fields = seq.getFields();
+            if(i < (dimsize - 1))
                 buf.append("\n");
             buf.append("Sequence {\n");
-            if(fields != null) {
-                for(int j = 0; j < this.nmembers; j++) {
-                    DapVariable field = fields.get(j);
-                }
-            }
-            buf.append(String.format("} [%d/%d]", i, this.nrecords));
+            buf.append(String.format("} [%d/%d]", i, dimsize));
         }
         return buf.toString();
     }
 
-    public long
-    computeTotalSize()
-    {
-        long totalsize = 0;
-        for(int recno = 0; recno < this.nrecords; recno++) {
-            Array[] fields = this.records[recno];
-            assert fields != null : "internal error";
-            for(int m = 0; m < this.nmembers; m++) {
-                totalsize += fields[m].getSizeBytes();
-            }
-        }
-        return totalsize;
-    }
 
     //////////////////////////////////////////////////
     // ArraySequence/ArrayStructure overrides
@@ -245,13 +225,7 @@ import java.util.List;
     @Override
     public int getStructureDataCount()
     {
-        return (int) this.nrecords;
-    }
-
-    @Override
-    public long getSizeBytes()
-    {
-        return this.bytesize;
+        return this.records.length;
     }
 
     @Override
@@ -259,7 +233,6 @@ import java.util.List;
     {
         throw new UnsupportedOperationException("Cannot subset a Sequence");
     }
-
 
     /**
      * Get the index'th StructureData(StructureDataA) object
@@ -275,7 +248,7 @@ import java.util.List;
     public StructureData getStructureData(int index)
     {
         assert (super.sdata != null);
-        if(index < 0 || index >= this.nrecords)
+        if(index < 0 || index >= this.records.length)
             throw new IllegalArgumentException(index + " >= " + super.sdata.length);
         assert (super.sdata[index] != null);
         return super.sdata[index];
@@ -286,6 +259,8 @@ import java.util.List;
         return this;
     }
 
+    /////////////////////////
+    // Define API required by StructureDataA
     @Override
     public Array copy()
     {
@@ -307,6 +282,8 @@ import java.util.List;
         return (ucar.ma2.Array) memberArray(recno, CDMArrayStructure.memberIndex(m));
     }
 
+    /////////////////////////
+
     protected CDMArrayAtomic
     getAtomicArray(int index, StructureMembers.Member m)
     {
@@ -319,8 +296,21 @@ import java.util.List;
     protected Array
     memberArray(int recno, int memberindex)
     {
-        Array cdmdata = records[recno][memberindex];
-        return cdmdata;
+
+        Object[] values = new Object[(int) this.recordcount];
+        for(int i = 0; i < this.recordcount; i++) {
+            FieldSet fs = records[i];
+            values[i] = fs.fields[memberindex];
+        }
+        DapSequence template = (DapSequence)this.getTemplate();
+                DapVariable field = template.getField(memberindex);
+        DapType base = field.getBaseType();
+        if(base == null)
+            throw new IllegalStateException("Unknown field type: "+field);
+        DataType dt = CDMTypeFcns.daptype2cdmtype(base);
+        Class elemtype = CDMTypeFcns.cdmElementClass(dt);
+        int shape[] = new int[]{(int) this.recordcount};
+        return new ArrayObject(dt, elemtype, false, shape, values);
     }
 }
 

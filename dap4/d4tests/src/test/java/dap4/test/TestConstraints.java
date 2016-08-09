@@ -27,7 +27,7 @@ public class TestConstraints extends DapTestCommon
 
     static final boolean NCDUMP = true; // Use NcDumpW instead of D4Print
 
-    static final String BASEEXTENSION = (NCDUMP ? "ncdump" : "dmp");
+    static final String BASEEXTENSION = "txt";
     static final String TESTEXTENSION = "dap";
 
     static final String DAP4TAG = "protocol=dap4";
@@ -117,8 +117,8 @@ public class TestConstraints extends DapTestCommon
 
     // Test cases
 
-    List<TestCase> alltestcases = new ArrayList<TestCase>();
-    List<TestCase> chosentests = new ArrayList<TestCase>();
+    protected List<TestCase> alltestcases = new ArrayList<TestCase>();
+    protected List<TestCase> chosentests = new ArrayList<TestCase>();
 
     //////////////////////////////////////////////////
 
@@ -142,7 +142,7 @@ public class TestConstraints extends DapTestCommon
     void
     chooseTestcases()
     {
-        if(true) {
+        if(false) {
             chosentests.add(locate1(8));
             prop_visual = true;
         } else {

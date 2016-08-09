@@ -8,11 +8,8 @@ package dap4.cdm.nc2;
 import dap4.cdm.NodeMap;
 import dap4.core.data.DSP;
 import dap4.core.data.DataCursor;
-import dap4.core.dmr.DapDataset;
-import dap4.core.dmr.DapVariable;
-import dap4.core.util.DapException;
-import dap4.core.util.DapUtil;
-import dap4.core.util.Escape;
+import dap4.core.dmr.*;
+import dap4.core.util.*;
 import ucar.ma2.Array;
 import ucar.nc2.Attribute;
 import ucar.nc2.Group;
@@ -78,9 +75,10 @@ public class DataToCDM
     {
         // iterate over the variables represented in the DSP
         List<DapVariable> topvars = this.dmr.getTopVariables();
+        Map<Variable, Array> map = null;
         for(DapVariable var : topvars) {
             DataCursor cursor = this.dsp.getVariableData(var);
-            Array array = createVar(var, cursor);
+            Array array = createVar(cursor);
             Variable cdmvar = (Variable) nodemap.get(var);
             arraymap.put(cdmvar, array);
         }
@@ -88,9 +86,10 @@ public class DataToCDM
     }
 
     protected Array
-    createVar(DapVariable d4var, DataCursor data)
+    createVar(DataCursor data)
             throws DapException
     {
+        DapVariable d4var = (DapVariable) data.getTemplate();
         Array array = null;
         switch (d4var.getSort()) {
         case ATOMICVARIABLE:
@@ -122,7 +121,7 @@ public class DataToCDM
      * @return An Array object wrapping d4var.
      * @throws DapException
      */
-    protected Array
+    protected CDMArrayAtomic
     createAtomicVar(DataCursor data)
             throws DapException
     {
@@ -138,13 +137,33 @@ public class DataToCDM
      * @return A CDMArrayStructure for the databuffer for this struct.
      * @throws DapException
      */
-    protected Array
+    protected CDMArrayStructure
     createStructure(DataCursor data)
             throws DapException
     {
-        CDMArrayStructure arraystruct;
-        arraystruct = new CDMArrayStructure(this.cdmroot, data);
-        arraystruct.finish();
+        CDMArrayStructure arraystruct = new CDMArrayStructure(this.cdmroot, data);
+        DapStructure struct = (DapStructure) data.getTemplate();
+        int nmembers = struct.getFields().size();
+        List<DapDimension> dimset = struct.getDimensions();
+        if(((DapVariable)data.getTemplate()).getRank()  == 0) { // scalar
+            for(int f = 0; f < nmembers; f++) {
+                DataCursor dc = data.getField(f);
+                Array afield = createVar(dc);
+                arraystruct.add(0, f, afield);
+            }
+        } else {
+            Odometer odom = Odometer.factory(DapUtil.dimsetSlices(dimset));
+            while(odom.hasNext()) {
+                Index index = odom.next();
+                long offset = index.index();
+                DataCursor ithelement = (DataCursor) data.read(index);
+                for(int f = 0; f < nmembers; f++) {
+                    DataCursor dc = ithelement.getField(f);
+                    Array afield = createVar(dc);
+                    arraystruct.add(offset, f, afield);
+                }
+            }
+        }
         return arraystruct;
     }
 
@@ -162,10 +181,19 @@ public class DataToCDM
     createSequence(DataCursor data)
             throws DapException
     {
-        CDMArraySequence arrayseq;
-        arrayseq = new CDMArraySequence(this.cdmroot, data);
-        arrayseq.finish();
+        CDMArraySequence arrayseq = new CDMArraySequence(this.cdmroot, data);
+        DapSequence template = (DapSequence) data.getTemplate();
+        List<DapDimension> dimset = template.getDimensions();
+        long dimsize = DapUtil.dimProduct(dimset);
+        int nfields = template.getFields().size();
+        for(int r = 0; r < data.getRecordCount(); r++) {
+            DataCursor rec = (DataCursor) data.getRecord(r);
+            for(int f = 0; f < nfields; f++) {
+                DataCursor dc = rec.getField(f);
+                Array afield = createVar(dc);
+                arrayseq.add(r, f, afield);
+            }
+        }
         return arrayseq;
     }
-
 }

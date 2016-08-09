@@ -304,8 +304,8 @@ abstract public class CoreTypeFcns
             return ((ByteBuffer[]) v)[n];
         case Enum:
             return get(((DapEnumeration) type).getBaseType(), v, n);
-        case Struct:
-        case Seq:
+        case Structure:
+        case Sequence:
         default:
             break;
         }
@@ -349,8 +349,8 @@ abstract public class CoreTypeFcns
             ((ByteBuffer[]) v)[n] = ((ByteBuffer[]) value)[0];
             break;
         case Enum:
-        case Struct:
-        case Seq:
+        case Structure:
+        case Sequence:
         default:
             throw new IllegalArgumentException();
         }
@@ -403,8 +403,8 @@ abstract public class CoreTypeFcns
             System.arraycopy(((ByteBuffer[]) v), offset, ((ByteBuffer[]) vec), 0, len);
             break;
         case Enum:
-        case Struct:
-        case Seq:
+        case Structure:
+        case Sequence:
         default:
             throw new IllegalArgumentException();
         }
@@ -442,8 +442,8 @@ abstract public class CoreTypeFcns
             b.get(bytes);
             return ByteBuffer.wrap(bytes);
         case Enum:
-        case Struct:
-        case Seq:
+        case Structure:
+        case Sequence:
         default:
             break;
         }

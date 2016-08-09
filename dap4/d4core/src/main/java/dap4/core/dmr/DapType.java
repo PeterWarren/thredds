@@ -5,10 +5,8 @@
 package dap4.core.dmr;
 
 import dap4.core.util.DapSort;
-import dap4.core.util.DapUtil;
 
 import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +40,10 @@ public class DapType extends DapNode implements DapDecl
     static public final DapType URL;
     static public final DapType OPAQUE;
 
+    // Non-primitives
+    static public final DapType STRUCTURE;
+    static public final DapType SEQUENCE;
+
     /**
      * Define a map from the Atomic Type Sort to the
      * corresponding DapType primitive.
@@ -73,6 +75,8 @@ public class DapType extends DapNode implements DapDecl
         STRING = new DapType(TypeSort.String);
         URL = new DapType(TypeSort.URL);
         OPAQUE = new DapType(TypeSort.Opaque);
+        STRUCTURE = new DapType(TypeSort.Structure);
+        SEQUENCE = new DapType(TypeSort.Sequence);
 
         typemap.put(TypeSort.Char, DapType.CHAR);
         typemap.put(TypeSort.Int8, DapType.INT8);
@@ -88,6 +92,9 @@ public class DapType extends DapNode implements DapDecl
         typemap.put(TypeSort.String, DapType.STRING);
         typemap.put(TypeSort.URL, DapType.URL);
         typemap.put(TypeSort.Opaque, DapType.OPAQUE);
+
+        typemap.put(TypeSort.Structure, DapType.STRUCTURE);
+        typemap.put(TypeSort.Sequence, DapType.SEQUENCE);
     }
 
     //////////////////////////////////////////////////
@@ -241,10 +248,9 @@ public class DapType extends DapNode implements DapDecl
         return typesort.isFixedSize();
     }
 
-    public boolean isStructType()
-    {
-        return typesort.isStructType();
-    }
+    public boolean isStructType() {return typesort.isStructType();}
+    public boolean isSeqType() {return typesort.isSeqType();}
+    public boolean isCompoundType() {return typesort.isCompoundType();}
 
     public boolean isLegalAttrType()
     {

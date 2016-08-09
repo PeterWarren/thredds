@@ -15,11 +15,13 @@ public class DapSequence extends DapStructure
     public DapSequence()
     {
         super();
+        this.basetype = DapType.SEQUENCE;
     }
 
     public DapSequence(String name)
     {
         super(name);
+        this.basetype = DapType.SEQUENCE;
     }
 
 } // class DapSequence

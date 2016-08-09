@@ -35,17 +35,21 @@ public class TestDSP extends DapTestCommon
 {
     static final boolean DEBUG = false;
 
-    static final String TESTEXTENSION = "txt";
+    static final String BASEEXTENSION = "txt";
+
+    static final String DAP4TAG = "#protocol=dap4";
 
     //////////////////////////////////////////////////
     // Constants
 
-    static final String DATADIR = "src/test/data/"; // relative to dap4 root
-    static final String TESTDATADIR = DATADIR + "/resources";
+    static final String DATADIR = "src/test/data/resources"; // relative to dap4 root
     static final String BASELINEDIR = "TestDSP/baseline";
+    static final String TESTCDMINPUT = "TestCDMClient/testinput";
     static final String TESTDSPINPUT = "TestDSP/testinput";
-    static final String TESTCLIENTINPUT = "TestCDMClient/testinput";
     static final String TESTFILESINPUT = "testfiles";
+
+    static final String[] EXCLUDEDFILETESTS = new String[] {
+    };
 
     //////////////////////////////////////////////////
     // Type Declarations
@@ -59,33 +63,71 @@ public class TestDSP extends DapTestCommon
             root = r;
         }
 
-        /////////////////////////
-
-        String title;
-        String dataset;
-        boolean checksumming;
-        String testurl;
-        String baselinepath;
-
-        TestCase(String prefix, String path)
+        static String getRoot()
         {
-            this.title = dataset;
-            this.dataset = dataset;
-            this.checksumming = false;
-            this.testurl = prefix + "/" + path;
-            this.baselinepath
-                    = root + "/" + BASELINEDIR + "/" + path + "." + TESTEXTENSION;
+            return root;
         }
 
-        public TestCase checksum()
+        /////////////////////////
+
+        private String title;
+        private String dataset;
+        private boolean checksumming;
+        private String testpath;
+        private String baselinepath;
+        private String url;
+
+        TestCase(String url)
         {
-            this.checksumming = true;
-            return this;
+            this(url, true);
+        }
+
+        TestCase(String url, boolean csum)
+        {
+            this.title = dataset;
+            this.checksumming = csum;
+            this.url = url;
+            try {
+                URL u = new URL(url);
+                this.testpath = DapUtil.canonicalpath(u.getPath());
+                int i = this.testpath.lastIndexOf('/');
+                assert i > 0;
+                this.dataset = this.testpath.substring(i + 1, this.testpath.length());
+                // strip off any raw extension
+                this.baselinepath = root + "/" + BASELINEDIR + "/" + this.dataset + "." + BASEEXTENSION;
+            } catch (MalformedURLException e) {
+                throw new IllegalArgumentException(url);
+            }
+        }
+
+        public String getURL()
+        {
+            return this.url + DAP4TAG;
+        }
+
+        public String getPath()
+        {
+            return this.testpath;
+        }
+
+        public String getDataset()
+        {
+            return this.dataset;
+        }
+
+        public String getBaseline()
+        {
+            return this.baselinepath;
+        }
+
+        public String getTitle()
+        {
+            return this.title;
         }
 
         public String toString()
         {
-            return this.testurl;
+            return this.url;
         }
     }
 
@@ -129,10 +171,10 @@ public class TestDSP extends DapTestCommon
 
     // Test cases
 
-    List<TestCase> alltestcases = new ArrayList<TestCase>();
-    List<TestCase> chosentests = new ArrayList<TestCase>();
+    protected List<TestCase> alltestcases = new ArrayList<TestCase>();
+    protected List<TestCase> chosentests = new ArrayList<TestCase>();
 
-    String resourceroot = null;
+    protected String resourceroot = null;
 
     //////////////////////////////////////////////////
 
@@ -143,9 +185,6 @@ public class TestDSP extends DapTestCommon
         this.resourceroot = getResourceRoot();
         this.resourceroot = DapUtil.absolutize(this.resourceroot); // handle problem of windows paths
         TestCase.setRoot(resourceroot);
-        StringBuilder buf = new StringBuilder();
-        buf.setLength(0);
-
         defineAllTestcases();
         chooseTestcases();
     }
@@ -164,7 +203,7 @@ public class TestDSP extends DapTestCommon
                 return "file:/"
                         + this.resourceroot
                         + "/"
-                        + TESTCLIENTINPUT;
+                        + TESTCDMINPUT;
             if(ext.equals("syn"))
                 return "file:/"
                         + this.resourceroot
@@ -186,8 +225,9 @@ public class TestDSP extends DapTestCommon
     chooseTestcases()
     {
         if(false) {
-            chosentests = locate("file:", "test_atomic_array.nc");
+            chosentests = locate("file:", "test_atomic_array.nc.raw");
             prop_visual = true;
+            prop_baseline = false;
         } else {
             for(TestCase tc : alltestcases) {
                 chosentests.add(tc);
@@ -198,90 +238,39 @@ public class TestDSP extends DapTestCommon
     void
     defineAllTestcases()
     {
-        if(false) {
-            add("file", "test_atomic_types.nc.raw");
-            add("file", "test_atomic_array.nc.raw");
-            add("file", "test_groups1.nc.raw");
-            add("file", "test_one_var.nc.raw");
-            add("file", "test_one_vararray.nc.raw");
-            add("file", "test_opaque.nc.raw");
-            add("file", "test_opaque_array.nc.raw");
-            add("file", "test_enum.nc.raw");
-            add("file", "test_enum_2.nc.raw");
-            add("file", "test_enum_array.nc.raw");
-            add("file", "test_utf8.nc.raw");
-            add("file", "test_fill.nc.raw");
-            add("file", "test_struct_type.nc.raw");
-            add("file", "test_anon_dim.syn");
-            add("file", "test_atomic_array.syn");
-            add("file", "test_atomic_types.syn");
-            add("file", "test_struct_array.syn");
-            add("file", "test_struct_nested.hdf5.raw");
-            add("file", "test_struct_nested3.hdf5.raw");
-            add("file", "test_atomic_types.nc");
-            add("file", "test_atomic_array.nc");
-            add("file", "test_groups1.nc");
-            add("file", "test_one_var.nc");
-            add("file", "test_one_vararray.nc");
-            add("file", "test_opaque.nc");
-            add("file", "test_opaque_array.nc");
-            add("file", "test_enum.nc");
-            add("file", "test_enum_2.nc");
-            add("file", "test_enum_array.nc");
-            add("file", "test_utf8.nc");
-            add("file", "test_fill.nc");
-        }
-        if(false) {
-            add("http", "test_atomic_array.nc");
-            add("http", "test_atomic_types.nc");
-            add("http", "test_enum.nc");
-            add("http", "test_enum_2.nc");
-            add("http", "test_enum_array.nc");
-            add("http", "test_groups1.nc");
-            add("http", "test_misc1.nc");
-            add("http", "test_one_var.nc");
-            add("http", "test_one_vararray.nc");
-            add("http", "test_opaque.nc");
-            add("http", "test_opaque_array.nc");
-            add("http", "test_test.nc");
-            add("http", "test_utf8.nc");
-            add("http", "test_anon_dim.syn");
-            add("http", "test_struct_array.nc");
-            add("http", "test_struct_nested.nc");
-            add("http", "test_struct_nested3.nc");
-            add("http", "test_struct_type.nc");
-            add("http", "test_atomic_array.syn");
-            add("http", "test_atomic_types.syn");
-            add("http", "test_sequence_1.syn");
-            add("http", "test_sequence_2.syn");
-            add("http", "test_struct_array.syn");
-            add("http", "test_struct_nested.hdf5");
-            add("http", "test_struct_nested3.hdf5");
-            add("http", "test_test.hdf5");
+        List<String> matches = new ArrayList<>();
+        String dir = TestCase.root + "/" + TESTCDMINPUT;
+        TestFilter.filterfiles(dir, matches, "raw");
+        dir = TestCase.root + "/" + TESTFILESINPUT;
+        TestFilter.filterfiles(dir, matches, "nc");
+        for(String f : matches) {
+            boolean excluded = false;
+            for(String x: EXCLUDEDFILETESTS) {
+                if(f.endsWith(x)) {excluded = true; break;}
+            }
+            if(!excluded)
+                add("file:/" + f);
         }
     }
 
     protected void
-    add(String scheme, String path)
+    add(String url)
     {
-        String ext = path.substring(path.lastIndexOf('.'), path.length());
-        String prefix = prefix(scheme, ext);
-        TestCase tc = new TestCase(prefix, path);
+        try {
+            URL u = new URL(url);
+            File f = new File(u.getPath());
+            if(!f.canRead()) {
+                System.err.println("Unreadable file test case: " + url);
+            }
+        } catch (MalformedURLException e) {
+            System.err.println("Malformed file test case: " + url);
+        }
+        String ext = url.substring(url.lastIndexOf('.'), url.length());
+        TestCase tc = new TestCase(url);
         for(TestCase t : this.alltestcases) {
-            assert !t.testurl.equals(tc.testurl) : "Duplicate TestCases: " + t;
+            assert !t.getURL().equals(tc.getURL()) : "Duplicate TestCases: " + t;
         }
         this.alltestcases.add(tc);
-        if(scheme.equals("file")) {
-            try {
-                URL u = new URL(tc.testurl);
-                File f = new File(u.getPath());
-                if(!f.canRead()) {
-                    System.err.println("Unreadable file test case: " + tc.testurl);
-                }
-            } catch (MalformedURLException e) {
-                System.err.println("Malformed file test case: " + tc.testurl);
-            }
-        }
     }
 
     //////////////////////////////////////////////////
@@ -303,22 +292,22 @@ public class TestDSP extends DapTestCommon
     doOneTest(TestCase testcase)
             throws Exception
     {
-        System.out.println("Testcase: " + testcase.testurl);
-        System.out.println("Baseline: " + testcase.baselinepath);
+        System.out.println("Testcase: " + testcase.getURL());
+        System.out.println("Baseline: " + testcase.getBaseline());
 
-        DSP dsp = dspFor(testcase.testurl);
+        DSP dsp = dspFor(testcase.getURL());
 
         dsp.setContext(new DapContext());
-        dsp.open(testcase.testurl);
+        dsp.open(testcase.getURL());
 
         String metadata = dumpmetadata(dsp);
         String data = dumpdata(dsp);
         String testoutput = metadata + data;
 
         if(prop_visual)
-            visual(testcase.title + ".dap", testoutput);
+            visual(testcase.getTitle() + ".dap", testoutput);
 
-        String baselinefile = testcase.baselinepath;
+        String baselinefile = testcase.getBaseline();
 
         if(prop_baseline)
             writefile(baselinefile, testoutput);
@@ -372,8 +361,8 @@ public class TestDSP extends DapTestCommon
         if(list == null) list = new ArrayList<>();
         int matches = 0;
         for(TestCase ct : this.alltestcases) {
-            if(!ct.testurl.startsWith(scheme)) continue;
-            if(ct.testurl.endsWith(s)) {
+            if(!ct.getURL().startsWith(scheme)) continue;
+            if(ct.getPath().endsWith(s)) {
                 matches++;
                 list.add(ct);
             }

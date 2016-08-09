@@ -5,9 +5,13 @@
 package dap4.servlet;
 
 import dap4.core.ce.CEConstraint;
-import dap4.core.data.*;
+import dap4.core.data.DSP;
+import dap4.core.data.DataCursor;
 import dap4.core.dmr.*;
-import dap4.core.util.*;
+import dap4.core.util.DapUtil;
+import dap4.core.util.Index;
+import dap4.core.util.Odometer;
+import dap4.core.util.Slice;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -86,15 +90,21 @@ public class DapSerializer
     {
         DapVariable template = (DapVariable) data.getTemplate();
         dst.startVariable();
-        switch (template.getSort()) {
-        case ATOMICVARIABLE:
+        switch (data.getScheme()) {
+        case ATOMIC:
             writeAtomicVariable(data, dst);
             break;
-        case STRUCTURE:
+        case STRUCTARRAY:
             writeStructure(data, dst);
             break;
-        case SEQUENCE:
+        case SEQARRAY:
             writeSequence(data, dst);
+            break;
+        case STRUCTURE:
+            writeStructure1(data, dst);
+            break;
+        case SEQUENCE:
+            writeSequence1(data, dst);
             break;
         default:
             assert false : "Unexpected variable type";
@@ -147,8 +157,6 @@ public class DapSerializer
             writeStructure1(data, dst);
         } else {
             List<Slice> slices = ce.getConstrainedSlices(template);
-            long count = DapUtil.sliceProduct(slices);
-            dst.writeCount(count);
             Odometer odom = Odometer.factory(slices);
             while(odom.hasNext()) {
                 Index index = odom.next();
@@ -161,8 +169,8 @@ public class DapSerializer
     /**
      * Write out a single structure instance
      *
-     * @param data
-     * @param dst  - where to write
+     * @param instance
+     * @param dst      - where to write
      * @throws dap4.core.util.DapException
      */
 
@@ -200,8 +208,6 @@ public class DapSerializer
             writeSequence1(data, dst);
         } else {
             List<Slice> slices = ce.getConstrainedSlices(template);
-            long count = DapUtil.sliceProduct(slices);
-            dst.writeCount(count);
             Odometer odom = Odometer.factory(slices);
             while(odom.hasNext()) {
                 Index index = odom.next();
@@ -228,6 +234,7 @@ public class DapSerializer
         DapSequence template = (DapSequence) instance.getTemplate();
         assert (this.ce.references(template));
         long nrecs = instance.getRecordCount();
+        dst.writeCount(nrecs);
         for(long i = 0; i < nrecs; i++) {
             DataCursor record = instance.getRecord(i);
             writeRecord(record, dst);
