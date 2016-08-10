@@ -33,7 +33,7 @@ public class D4TSServlet extends DapController
 
     static final boolean PARSEDEBUG = false;
 
-    static protected final String RESOURCEPATH = "WEB-INF/testfiles";
+    static protected final String RESOURCEPATH = "WEB-INF/resources/testfiles";
 
     //////////////////////////////////////////////////
     // Type Decls
@@ -153,10 +153,12 @@ public class D4TSServlet extends DapController
         String datasetfilepath = DapUtil.canonjoin(prefix, location);
         // See if it really exists and is readable and of proper type
         File dataset = new File(datasetfilepath);
-        if(!dataset.exists())
-            throw new DapException("Requested file does not exist: " + datasetfilepath)
+        if(!dataset.exists()) {
+            String msg = String.format("Requested file does not exist: prefix=%s location=%s datasetfilepath=%s",
+                    prefix,location,datasetfilepath);
+            throw new DapException(msg)
                     .setCode(HttpServletResponse.SC_NOT_FOUND);
-
+        }
         if(!dataset.canRead())
             throw new DapException("Requested file not readable: " + datasetfilepath)
                     .setCode(HttpServletResponse.SC_FORBIDDEN);

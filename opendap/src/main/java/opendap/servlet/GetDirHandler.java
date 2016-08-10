@@ -76,12 +76,16 @@ public class GetDirHandler {
 
         if (_Debug) System.out.println("sendDIR request = " + rs.getRequest());
 
-        // ignore String ddxCacheDir = rs.getDDXCache(rs.getRootPath());
-        String ddsCacheDir = rs.getDDSCache(rs.getRootPath());
 
         try {
 
             PrintWriter pw = new PrintWriter(new OutputStreamWriter(rs.getResponse().getOutputStream(), Util.UTF8));
+
+            // ignore String ddxCacheDir = rs.getDDXCache(rs.getRootPath());
+            String ddsCacheDir = rs.getDDSCache(rs.getRootPath());
+            String msg = String.format("DDS: rootpath=%s cachpath=%s",
+                    ddsCacheDir,rs.getRootPath());
+            pw.println("DDS:: "+msg);
 
             String thisServer = rs.getRequest().getRequestURL().toString();
             pw.println("<html>");

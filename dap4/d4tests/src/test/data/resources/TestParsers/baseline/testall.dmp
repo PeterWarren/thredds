@@ -38,7 +38,7 @@
         <Dim size="10"/>
     </Sequence>
     <Int32 name="funny">
-        <Dim name="/g\.@\/\\$/lon\/2\.\\"/>
+        <Dim name="/g.@\/\\$/lon\/2.\\"/>
     </Int32>
     <Group name="g1">
         <Dimension name="d1" size="10"/>
