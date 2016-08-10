@@ -56,6 +56,7 @@ abstract public class HTTPUtil
 
     static final public Charset UTF8 = Charset.forName("UTF-8");
     static final public Charset ASCII = Charset.forName("US-ASCII");
+    static final public String DRIVELETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     //////////////////////////////////////////////////
 
@@ -383,11 +384,11 @@ abstract public class HTTPUtil
         }
     }
 
-    static protected Map<HTTPSession.Prop,Object>
-    merge(Map<HTTPSession.Prop,Object> globalsettings, Map<HTTPSession.Prop,Object> localsettings)
+    static protected Map<HTTPSession.Prop, Object>
+    merge(Map<HTTPSession.Prop, Object> globalsettings, Map<HTTPSession.Prop, Object> localsettings)
     {
         // merge global and local settings; local overrides global.
-        Map<HTTPSession.Prop,Object> merge = new ConcurrentHashMap<HTTPSession.Prop,Object>();
+        Map<HTTPSession.Prop, Object> merge = new ConcurrentHashMap<HTTPSession.Prop, Object>();
         for(HTTPSession.Prop key : globalsettings.keySet()) {
             merge.put(key, globalsettings.get(key));
         }
@@ -421,6 +422,29 @@ abstract public class HTTPUtil
     }
 
     /**
+     * Join two string together to form proper path
+     * WITHOUT trailing slash
+     *
+     * @param prefix
+     * @param suffix
+     * @return
+     */
+    static public String canonjoin(String prefix, String suffix)
+    {
+        if(prefix == null) prefix = "";
+        if(suffix == null) suffix = "";
+        prefix = HTTPUtil.canonicalpath(prefix);
+        suffix = HTTPUtil.canonicalpath(suffix);
+        if(suffix.endsWith("/"))
+            suffix = suffix.substring(0,suffix.length()-1);
+        if(suffix.startsWith("/"))
+                    suffix = suffix.substring(1);
+        if(prefix.endsWith("/"))
+            prefix = prefix.substring(0,prefix.length()-1);
+        return prefix + "/" + suffix;
+    }
+
+    /**
      * Convert path to use '/' consistently and
      * to remove any trailing '/'
      *
@@ -437,7 +461,7 @@ abstract public class HTTPUtil
     }
 
     /**
-     * Convert path to remove any leading '/'; assumes canonical.
+     * Convert path to remove any leading '/' or drive letter assumes canonical.
      *
      * @param path convert this path
      * @return relatived version
@@ -445,9 +469,34 @@ abstract public class HTTPUtil
     static public String relpath(String path)
     {
         if(path == null) return null;
+        if(hasDriveLetter(path))
+            path = path.substring(2);
         if(path.startsWith("/"))
             path = path.substring(1);
         return path;
+    }
+
+    /**
+     * @param path to test
+     * @return true if path appears to start with Windows drive letter
+     */
+    static public boolean
+    hasDriveLetter(String path)
+    {
+        return (path != null && path.length() >= 2
+                && path.charAt(1) == ':'
+                && DRIVELETTERS.indexOf(path.charAt(0)) >= 0);
+    }
+
+    /**
+     * @param path to test
+     * @return true if path is absolute
+     */
+    static public boolean
+    isAbsolutePath(String path)
+    {
+        return (path != null && path.length() > 0
+                && (path.charAt(0) == '/' || hasDriveLetter(path)));
     }
 
     /**
@@ -459,8 +508,8 @@ abstract public class HTTPUtil
     static public String abspath(String path)
     {
         if(path == null) return "/";
-        if(!path.startsWith("/"))
-            path = "/" + path;
-        return path;
+        if(path.startsWith("/")) return path;
+        if(hasDriveLetter(path)) return path;
+        return "/" + path;
     }
 }

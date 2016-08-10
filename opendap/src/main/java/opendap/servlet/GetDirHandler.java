@@ -83,9 +83,6 @@ public class GetDirHandler {
 
             // ignore String ddxCacheDir = rs.getDDXCache(rs.getRootPath());
             String ddsCacheDir = rs.getDDSCache(rs.getRootPath());
-            String msg = String.format("DDS: rootpath=%s cachpath=%s",
-                    ddsCacheDir,rs.getRootPath());
-            pw.println("DDS:: "+msg);
 
             String thisServer = rs.getRequest().getRequestURL().toString();
             pw.println("<html>");

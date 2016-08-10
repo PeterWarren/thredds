@@ -147,7 +147,7 @@ public class D4TSServlet extends DapController
     {
         String prefix = (String) this.dapcxt.get("RESOURCEDIR");
         if(prefix == null)
-            throw new DapException("Cannot location resource: " + location)
+            throw new DapException("Cannot find location resource: " + location)
                     .setCode(DapCodes.SC_NOT_FOUND);
         location = DapUtil.canonicalpath(location);
         String datasetfilepath = DapUtil.canonjoin(prefix, location);
