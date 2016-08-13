@@ -18,13 +18,15 @@ war {
         into('WEB-INF/')
     }
     from (new File(d4testsResourcesDir, "testfiles/")) {
-        into('WEB-INF/resources/')
+        into('WEB-INF/resources/testfiles/')
         include('*.syn')
         include('*.nc')
         include('*.hdf5')
     }
+    /* ignore for now
     from(new File(d4testsResourcesDir, "testfiles/dmr/")) {
         into('WEB-INF/resources/testfiles/dmr/')
         include('*.dmr')
     }
+    */
 }
